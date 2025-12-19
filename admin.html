@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <header>
+        <h1>Painel Administrativo</h1>
+    </header>
+
+    <main>
+        <section class="cadastro-produtos">
+            <h2>Adicionar Produto</h2>
+            <form id="formProduto">
+                <label>Nome do Produto</label>
+                <input type="text" name="nome" required>
+
+                <label>Imagem</label>
+                <input type="file" name="imagem" accept="image/*" required>
+
+                <label>Preço</label>
+                <input type="number" name="preco" required>
+
+                <button type="submit">Cadastrar</button>
+            </form>
+        </section>
+
+        <section class="lista-produtos">
+            <h2>Produtos Cadastrados</h2>
+            <div id="produtos"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 Marcinhas Semijoias</p>
+    </footer>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
