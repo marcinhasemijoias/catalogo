@@ -16,6 +16,8 @@
         .lux-border { border-color: #E5DACE; }
         .lux-gold { color: #A68966; }
         input:focus { border-bottom-color: #A68966 !important; outline: none; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #E5DACE; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -38,6 +40,8 @@
                 pixDiscount: 10,
                 maxInstallments: 12
             });
+            
+            const [editingId, setEditingId] = useState(null);
             const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '', image: '' });
 
             useEffect(() => {
@@ -62,20 +66,36 @@
                 if (file) reader.readAsDataURL(file);
             };
 
-            const addProduct = (e) => {
+            const handleSubmit = (e) => {
                 e.preventDefault();
                 if (!newProduct.name || !newProduct.price) return;
-                const updated = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
-                setProducts(updated);
-                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                
+                let updatedProducts;
+                if (editingId) {
+                    updatedProducts = products.map(p => p.id === editingId ? { ...newProduct, id: editingId, price: parseFloat(newProduct.price) } : p);
+                    setEditingId(null);
+                } else {
+                    updatedProducts = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
+                }
+                
+                setProducts(updatedProducts);
+                localStorage.setItem('luxury_products', JSON.stringify(updatedProducts));
                 setNewProduct({ sku: '', name: '', price: '', image: '' });
                 e.target.reset();
             };
 
+            const startEdit = (product) => {
+                setEditingId(product.id);
+                setNewProduct({ sku: product.sku, name: product.name, price: product.price, image: product.image });
+                window.scrollTo({ top: 500, behavior: 'smooth' }); // Rola até o formulário
+            };
+
             const deleteProduct = (id) => {
-                const updated = products.filter(p => p.id !== id);
-                setProducts(updated);
-                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                if(confirm("Deseja remover esta peça da coleção?")) {
+                    const updated = products.filter(p => p.id !== id);
+                    setProducts(updated);
+                    localStorage.setItem('luxury_products', JSON.stringify(updated));
+                }
             };
 
             return (
@@ -86,19 +106,16 @@
 
                     <main className="max-w-2xl mx-auto px-6 space-y-12">
                         
-                        {/* 1. HISTÓRICO DE PEDIDOS */}
+                        {/* HISTÓRICO */}
                         <section className="bg-white border lux-border p-8 rounded-sm shadow-sm">
                             <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-6 border-l-2 border-[#A68966] pl-4 flex items-center gap-3">
                                 <Icon name="history" className="lux-gold" /> Histórico de Pedidos
                             </h2>
-                            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                            <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scroll">
                                 {orders.length === 0 ? <p className="text-xs italic text-gray-300 font-light">Nenhum pedido realizado ainda.</p> : 
                                     orders.map(o => (
                                         <div key={o.id} className="p-4 bg-[#FDFBF7] border lux-border text-[10px] flex justify-between items-center">
-                                            <div>
-                                                <p className="font-bold uppercase tracking-tighter">{o.customer?.name}</p>
-                                                <p className="text-gray-400 mt-1">{o.date}</p>
-                                            </div>
+                                            <div><p className="font-bold uppercase tracking-tighter">{o.customer?.name}</p><p className="text-gray-400 mt-1">{o.date}</p></div>
                                             <span className="font-bold">R$ {o.total?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
                                         </div>
                                     ))
@@ -106,65 +123,64 @@
                             </div>
                         </section>
 
-                        {/* 2. DADOS DA EMPRESA E PAGAMENTOS */}
+                        {/* CONFIGURAÇÕES E PAGAMENTOS */}
                         <section className="bg-white border lux-border p-8 rounded-sm shadow-sm space-y-8">
-                            <div>
-                                <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-8 border-l-2 border-[#A68966] pl-4">Configurações Gerais</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Nome Comercial</label>
-                                        <input className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.name} onChange={(e) => updateConfig('name', e.target.value)} />
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">WhatsApp (Com DDD)</label>
-                                        <input className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.whatsapp} onChange={(e) => updateConfig('whatsapp', e.target.value)} />
-                                    </div>
+                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] border-l-2 border-[#A68966] pl-4">Configurações Gerais</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Nome Comercial</label>
+                                    <input className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.name} onChange={(e) => updateConfig('name', e.target.value)} />
                                 </div>
-                            </div>
-
-                            <div className="pt-6 border-t lux-border">
-                                <h3 className="text-[10px] uppercase font-bold text-gray-400 mb-6 tracking-widest">Meios de Pagamento</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Desconto PIX (%)</label>
-                                        <input type="number" className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.pixDiscount} onChange={(e) => updateConfig('pixDiscount', e.target.value)} />
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Parcelas Máximas (Cartão)</label>
-                                        <input type="number" className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.maxInstallments} onChange={(e) => updateConfig('maxInstallments', e.target.value)} />
-                                    </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">WhatsApp (DDD + Número)</label>
+                                    <input className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.whatsapp} onChange={(e) => updateConfig('whatsapp', e.target.value)} />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Desconto PIX (%)</label>
+                                    <input type="number" className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.pixDiscount} onChange={(e) => updateConfig('pixDiscount', e.target.value)} />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Parcelas Máximas</label>
+                                    <input type="number" className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.maxInstallments} onChange={(e) => updateConfig('maxInstallments', e.target.value)} />
                                 </div>
                             </div>
                         </section>
 
-                        {/* 3. CATÁLOGO DE PRODUTOS */}
+                        {/* CADASTRO E EDIÇÃO DE PRODUTOS */}
                         <section className="bg-white border lux-border p-8 rounded-sm shadow-sm">
-                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-8 border-l-2 border-[#A68966] pl-4">Cadastro de Peças</h2>
-                            <form onSubmit={addProduct} className="space-y-6">
+                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-8 border-l-2 border-[#A68966] pl-4">
+                                {editingId ? "Editando Peça" : "Cadastro de Peças"}
+                            </h2>
+                            <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <input className="border-b lux-border py-2 text-sm" placeholder="Nome da Peça" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                                    <input className="border-b lux-border py-2 text-sm" placeholder="SKU (Ex: RJ-101)" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
+                                    <input className="border-b lux-border py-2 text-sm" placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
                                     <input className="border-b lux-border py-2 text-sm" placeholder="Valor (R$)" type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
                                 </div>
                                 
-                                <label className="flex flex-col items-center justify-center border-2 border-dashed lux-border p-6 cursor-pointer hover:bg-[#FDFBF7] transition-all group">
-                                    <Icon name="image" size={24} className="lux-gold mb-2 group-hover:scale-110 transition-transform" />
+                                <label className="flex flex-col items-center justify-center border-2 border-dashed lux-border p-6 cursor-pointer hover:bg-[#FDFBF7] transition-all group relative">
+                                    <Icon name="image" size={24} className="lux-gold mb-2" />
                                     <span className="text-[10px] uppercase font-bold text-gray-400">
-                                        {newProduct.image ? "Imagem Carregada ✓" : "Adicionar Foto de Luxo"}
+                                        {newProduct.image ? "Imagem Pronta" : "Fazer Upload de Foto"}
                                     </span>
                                     <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                                    {newProduct.image && <img src={newProduct.image} className="h-24 mt-4 rounded-sm shadow-md" />}
+                                    {newProduct.image && <img src={newProduct.image} className="h-32 mt-4 rounded-sm shadow-md object-contain" />}
                                 </label>
 
-                                <button className="w-full bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-colors">
-                                    Adicionar à Coleção
-                                </button>
+                                <div className="flex gap-2">
+                                    <button className="flex-grow bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-colors">
+                                        {editingId ? "Salvar Alterações" : "Adicionar à Coleção"}
+                                    </button>
+                                    {editingId && (
+                                        <button type="button" onClick={() => {setEditingId(null); setNewProduct({sku:'', name:'', price:'', image:''})}} className="px-6 border lux-border text-[10px] uppercase tracking-widest font-bold">Cancelar</button>
+                                    )}
+                                </div>
                             </form>
 
-                            {/* Listagem com Scroll */}
+                            {/* LISTA DE PRODUTOS */}
                             <div className="mt-12 space-y-4 border-t lux-border pt-8">
                                 {products.map(p => (
-                                    <div key={p.id} className="flex items-center gap-5 p-4 border lux-border hover:bg-[#FDFBF7] transition-all">
+                                    <div key={p.id} className="flex items-center gap-5 p-4 border lux-border hover:bg-[#FDFBF7] transition-all group">
                                         <div className="w-14 h-14 bg-gray-50 flex-shrink-0 border lux-border overflow-hidden">
                                             {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-200"><Icon name="image" size={16} /></div>}
                                         </div>
@@ -172,11 +188,18 @@
                                             <p className="text-[11px] font-bold uppercase tracking-tight">{p.name}</p>
                                             <p className="text-[9px] lux-gold font-bold tracking-widest uppercase">SKU: {p.sku || '---'}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-xs font-bold tracking-tighter">R$ {p.price?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                                            <button onClick={() => deleteProduct(p.id)} className="text-red-200 hover:text-red-500 mt-1 transition-colors">
-                                                <Icon name="trash-2" size={14} />
-                                            </button>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                                <p className="text-xs font-bold tracking-tighter">R$ {p.price?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <button onClick={() => startEdit(p)} className="text-gray-400 hover:text-[#A68966] transition-colors" title="Editar">
+                                                    <Icon name="edit-3" size={16} />
+                                                </button>
+                                                <button onClick={() => deleteProduct(p.id)} className="text-red-100 hover:text-red-500 transition-colors" title="Excluir">
+                                                    <Icon name="trash-2" size={16} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
