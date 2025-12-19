@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Administrativo - Abella Joias</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
-    .font-serif { font-family: 'Playfair Display', serif; }
-    .animate-in { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    input, select { border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo - Abella Joias</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
+body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
+.font-serif { font-family: 'Playfair Display', serif; }
+.animate-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+input, select { border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem; }
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -28,9 +28,9 @@ const Icons = {
 };
 
 function Admin() {
-  const [products, setProducts] = useState([]);
-  const [storeConfig, setStoreConfig] = useState({ name:'Abella Joias', whatsapp:'', pixDiscount:0.10, cardInstallments:3 });
-  const [form, setForm] = useState({ id:null, name:'', price:'', stock:'', image:'' });
+  const [products,setProducts] = useState([]);
+  const [storeConfig,setStoreConfig] = useState({name:'Abella Joias',whatsapp:'5511999999999',pixDiscount:0.10,cardInstallments:3});
+  const [form,setForm] = useState({id:null,name:'',price:'',stock:'',image:''});
 
   useEffect(()=>{
     const savedProducts = JSON.parse(localStorage.getItem('products')||'[]');
@@ -40,7 +40,7 @@ function Admin() {
   },[]);
 
   const saveConfig = ()=>{
-    localStorage.setItem('storeConfig', JSON.stringify(storeConfig));
+    localStorage.setItem('storeConfig',JSON.stringify(storeConfig));
     alert('Configurações salvas!');
   };
 
@@ -48,30 +48,36 @@ function Admin() {
     if(!form.name || !form.price) return alert('Preencha nome e preço');
     let updated;
     if(form.id!==null){
-      updated = products.map(p=>p.id===form.id?{...form, price:Number(form.price), stock:Number(form.stock)}:p);
-    } else {
-      updated = [...products,{...form,id:Date.now(), price:Number(form.price), stock:Number(form.stock)}];
+      updated = products.map(p=>p.id===form.id ? {...form,price:Number(form.price),stock:Number(form.stock)}:p);
+    }else{
+      updated = [...products,{...form,id:Date.now(),price:Number(form.price),stock:Number(form.stock)}];
     }
     setProducts(updated);
-    localStorage.setItem('products', JSON.stringify(updated));
-    setForm({ id:null, name:'', price:'', stock:'', image:'' });
+    localStorage.setItem('products',JSON.stringify(updated));
+    setForm({id:null,name:'',price:'',stock:'',image:''});
   };
 
-  const editProduct = p=>{
-    setForm(p);
-  };
+  const editProduct = p => setForm(p);
 
-  const deleteProduct = id=>{
+  const deleteProduct = id => {
     const updated = products.filter(p=>p.id!==id);
     setProducts(updated);
-    localStorage.setItem('products', JSON.stringify(updated));
+    localStorage.setItem('products',JSON.stringify(updated));
+  };
+
+  const handleImageUpload = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setForm({...form,image:ev.target.result});
+    reader.readAsDataURL(file);
   };
 
   return (
     <div className="max-w-3xl mx-auto p-8 space-y-10">
       <h1 className="text-3xl font-serif italic text-gray-800 border-b pb-4">Painel Administrativo</h1>
 
-      {/* Configurações */}
+      {/* Configurações da Loja */}
       <section className="space-y-4">
         <h2 className="text-xl font-serif">Configurações da Loja</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -90,8 +96,9 @@ function Admin() {
           <input placeholder="Nome do Produto" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
           <input type="number" placeholder="Preço" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/>
           <input type="number" placeholder="Estoque" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})}/>
-          <input placeholder="URL Imagem" value={form.image} onChange={e=>setForm({...form,image:e.target.value})}/>
+          <input type="file" accept="image/*" onChange={handleImageUpload}/>
         </div>
+        {form.image && <img src={form.image} alt="Preview" className="w-32 h-32 object-cover border rounded-sm"/>}
         <button onClick={saveProduct} className="bg-[#2D2926] text-white px-6 py-2 rounded-sm">{form.id!==null?'Salvar Alterações':'Adicionar Produto'}</button>
       </section>
 
@@ -102,13 +109,16 @@ function Admin() {
         <div className="space-y-3">
           {products.map(p=>(
             <div key={p.id} className="flex justify-between items-center border p-3 rounded-sm shadow-sm animate-in">
-              <div>
-                <p className="font-bold">{p.name}</p>
-                <p>R$ {p.price.toFixed(2)} | Estoque: {p.stock} | Parcelas: {storeConfig.cardInstallments}x</p>
+              <div className="flex gap-3 items-center">
+                {p.image && <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded-sm"/>}
+                <div>
+                  <p className="font-bold">{p.name}</p>
+                  <p>R$ {p.price.toFixed(2)} | Estoque: {p.stock} | Parcelas: {storeConfig.cardInstallments}x</p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button onClick={()=>editProduct(p)} className="bg-yellow-500 text-white px-3 py-1 rounded-sm">Editar</button>
-                <button onClick={()=>deleteProduct(p.id)} className="bg-red-500 text-white px-3 py-1 rounded-sm"><Icons.Trash2 /></button>
+                <button onClick={()=>deleteProduct(p.id)} className="bg-red-500 text-white px-3 py-1 rounded-sm"><Icons.Trash2/></button>
               </div>
             </div>
           ))}
@@ -122,3 +132,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(<Admin />);
 </script>
 </body>
 </html>
+
