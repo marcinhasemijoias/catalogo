@@ -15,8 +15,8 @@
         .font-serif { font-family: 'Playfair Display', serif; }
         .lux-border { border-color: #E5DACE; }
         .lux-gold { color: #A68966; }
-        .bg-lux-gold { background-color: #A68966; }
-        .product-card:hover img { transform: scale(1.05); }
+        .product-card img { transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .product-card:hover img { transform: scale(1.08); }
     </style>
 </head>
 <body>
@@ -34,81 +34,72 @@
             const [products, setProducts] = useState([]);
             const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias' });
             const [cart, setCart] = useState([]);
-            const [view, setView] = useState('grid'); // 'grid' ou 'checkout'
 
             useEffect(() => {
-                // Sincroniza com o que foi feito no Admin
                 const savedProducts = localStorage.getItem('luxury_products');
                 const savedConfig = localStorage.getItem('luxury_config');
-                
                 if (savedProducts) setProducts(JSON.parse(savedProducts));
                 if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
             }, []);
-
-            const addToCart = (product) => {
-                setCart([...cart, product]);
-                alert("Peça adicionada à sua seleção.");
-            };
 
             const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
             return (
                 <div className="min-h-screen">
-                    {/* Header Minimalista */}
-                    <header className="bg-white/80 backdrop-blur-md border-b lux-border py-8 px-6 sticky top-0 z-50 flex justify-between items-center">
-                        <div className="w-10"></div>
-                        <h1 className="text-2xl font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
-                        <button className="relative lux-gold" onClick={() => cart.length > 0 && setView('checkout')}>
+                    {/* Header */}
+                    <header className="bg-white/90 backdrop-blur-md border-b lux-border py-8 px-6 sticky top-0 z-50 flex justify-between items-center">
+                        <div className="w-10 text-xs lux-gold font-bold uppercase tracking-tighter cursor-pointer" onClick={() => window.location.href='admin.html'}>Adm</div>
+                        <h1 className="text-2xl font-serif tracking-[0.4em] uppercase text-center">{storeConfig.name}</h1>
+                        <button className="relative lux-gold">
                             <Icon name="shopping-bag" size={24} />
-                            {cart.length > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                                    {cart.length}
-                                </span>
-                            )}
+                            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
                         </button>
                     </header>
 
-                    <main className="max-w-6xl mx-auto px-6 py-12">
-                        {products.length === 0 ? (
-                            <div className="text-center py-20">
-                                <p className="font-serif italic text-gray-400">Nossa nova coleção está sendo preparada...</p>
-                                <p className="text-[10px] uppercase tracking-widest mt-4">Aguarde novidades</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                                {products.map(product => (
-                                    <div key={product.id} className="product-card group cursor-pointer">
-                                        <div className="aspect-[4/5] bg-[#F5F2EE] overflow-hidden border lux-border mb-4 relative">
-                                            {product.image ? (
-                                                <img src={product.image} className="w-full h-full object-cover transition-transform duration-700" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                    <Icon name="image" size={40} />
-                                                </div>
-                                            )}
-                                            <button 
-                                                onClick={() => addToCart(product)}
-                                                className="absolute bottom-4 left-4 right-4 bg-white/90 py-3 text-[10px] uppercase tracking-widest font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                            >
-                                                Adicionar à Seleção
-                                            </button>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-1">{product.sku}</p>
-                                            <h3 className="font-serif text-lg tracking-wide mb-2">{product.name}</h3>
-                                            <p className="lux-gold font-semibold tracking-tighter">
-                                                {formatMoney(product.price)}
-                                            </p>
-                                        </div>
+                    {/* Vitrine */}
+                    <main className="max-w-5xl mx-auto px-6 py-16">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                            {products.length > 0 ? products.map(product => (
+                                <div key={product.id} className="product-card flex flex-col items-center group">
+                                    <div className="w-full aspect-square bg-[#F5F2EE] overflow-hidden border lux-border mb-6 relative shadow-sm">
+                                        {product.image ? (
+                                            <img 
+                                                src={product.image} 
+                                                alt={product.name} 
+                                                className="w-full h-full object-cover" 
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-[#D6C6B5]">
+                                                <Icon name="image" size={48} />
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                    
+                                    <div className="text-center space-y-2">
+                                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">{product.sku || 'Edição Limitada'}</p>
+                                        <h3 className="font-serif text-xl tracking-wide uppercase">{product.name}</h3>
+                                        <p className="lux-gold font-bold text-lg">{formatMoney(product.price)}</p>
+                                        
+                                        <button 
+                                            className="mt-4 px-8 py-3 border border-[#2D2926] text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-[#2D2926] hover:text-white transition-all duration-300"
+                                            onClick={() => alert('Peça selecionada para o checkout.')}
+                                        >
+                                            Ver Detalhes
+                                        </button>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="col-span-full text-center py-20 border-2 border-dashed lux-border">
+                                    <p className="font-serif italic text-gray-400">Nenhuma peça em exibição no momento.</p>
+                                </div>
+                            )}
+                        </div>
                     </main>
 
-                    {/* Footer Fixo */}
-                    <footer className="py-20 border-t lux-border text-center">
-                        <p className="text-[10px] tracking-[0.6em] uppercase lux-gold font-bold">
+                    {/* Footer */}
+                    <footer className="py-24 border-t lux-border text-center opacity-60">
+                        <p className="text-[9px] tracking-[0.6em] uppercase lux-gold font-bold">
                             Autenticidade • Excelência • {storeConfig.name}
                         </p>
                     </footer>
