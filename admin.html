@@ -11,9 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
-body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
-.font-serif { font-family: 'Playfair Display', serif; }
-input, select, textarea { outline: none; }
+body{font-family:'Inter',sans-serif;background:#FDFBF7;}
+.font-serif{font-family:'Playfair Display',serif;}
 </style>
 </head>
 <body>
@@ -21,12 +20,11 @@ input, select, textarea { outline: none; }
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-function AdminApp() {
-  const [products,setProducts] = useState([]);
-  const [orders,setOrders] = useState([]);
-  const [storeConfig,setStoreConfig] = useState({name:'Abella Joias', whatsapp:'5511999999999', pixDiscount:0.1, cardInstallments:3});
-  const [newProduct,setNewProduct] = useState({id:'',name:'',price:'',stock:'',image:''});
-  const [editingProduct,setEditingProduct] = useState(null);
+function AdminApp(){
+  const [products,setProducts]=useState([]);
+  const [orders,setOrders]=useState([]);
+  const [storeConfig,setStoreConfig]=useState({name:'Abella Joias',whatsapp:'5511999999999',pixDiscount:0.1,cardInstallments:3});
+  const [newProduct,setNewProduct]=useState({name:'',sku:'',price:'',stock:'',image:''});
 
   useEffect(()=>{
     const savedProducts=JSON.parse(localStorage.getItem('products')||'[]');
@@ -37,64 +35,17 @@ function AdminApp() {
     if(savedConfig)setStoreConfig(savedConfig);
   },[]);
 
-  const saveProducts=products=>{
-    setProducts(products);
-    localStorage.setItem('products',JSON.stringify(products));
+  const saveProducts=p=>{
+    setProducts(p);
+    localStorage.setItem('products',JSON.stringify(p));
   }
 
-  const handleAddOrUpdate=()=>{
-    if(editingProduct){
-      const updated=products.map(p=>p.id===editingProduct.id?{...newProduct}:p);
-      saveProducts(updated);
-      setEditingProduct(null);
-    }else{
-      const newP={...newProduct,id:Date.now().toString()};
-      saveProducts([...products,newP]);
-    }
-    setNewProduct({id:'',name:'',price:'',stock:'',image:''});
+  const saveOrders=o=>{
+    setOrders(o);
+    localStorage.setItem('orders',JSON.stringify(o));
   }
 
-  const handleEdit=p=>{
-    setEditingProduct(p);
-    setNewProduct(p);
-  }
-
-  const handleDelete=id=>{
-    if(confirm('Deseja realmente excluir este produto?')){
-      saveProducts(products.filter(p=>p.id!==id));
-    }
-  }
-
-  const generatePDF=(order)=>{
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({unit:'mm', format:'a4'});
-    doc.setFont('Playfair Display','bold');
-    doc.setFontSize(22);
-    doc.setTextColor('#A68966');
-    doc.text(storeConfig.name,105,20,{align:'center'});
-    doc.setFont('Inter','normal');
-    doc.setFontSize(12);
-    doc.setTextColor('#000');
-    doc.text(`Pedido #${order.id}`,14,35);
-    doc.text(`Cliente: ${order.customer.name}`,14,42);
-    doc.text(`WhatsApp: ${order.customer.phone}`,14,49);
-    doc.text(`Forma de pagamento: ${order.payment}`,14,56);
-    doc.text('Itens:',14,63);
-    let y=70;
-    order.items.forEach(i=>{
-      doc.text(`- ${i.qty}x ${i.name} (${Number(i.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`,14,y);
-      y+=7;
-    });
-    doc.setFont('Playfair Display','bold');
-    doc.text(`Total: ${Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`,14,y+7);
-    doc.setFont('Inter','normal');
-    doc.setFontSize(10);
-    doc.setTextColor('#A68966');
-    doc.text('Agradecemos sua compra! Aguarde nosso contato via WhatsApp.',105,280,{align:'center'});
-    doc.save(`Pedido_${order.id}.pdf`);
-  }
-
-  const handleUpload=(e)=>{
+  const handleImageUpload=e=>{
     const file=e.target.files[0];
     if(file){
       const reader=new FileReader();
@@ -103,77 +54,98 @@ function AdminApp() {
     }
   }
 
-  const updateConfig=(field,value)=>{
-    const newConfig={...storeConfig,[field]:value};
-    setStoreConfig(newConfig);
-    localStorage.setItem('storeConfig',JSON.stringify(newConfig));
+  const addProduct=()=>{
+    if(!newProduct.name||!newProduct.price)return;
+    const p={...newProduct,id:Math.floor(Math.random()*100000)};
+    saveProducts([...products,p]);
+    setNewProduct({name:'',sku:'',price:'',stock:'',image:''});
   }
 
-  return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <h1 className="text-3xl font-serif text-[#A68966]">Painel Administrativo</h1>
+  const deleteProduct=id=>saveProducts(products.filter(p=>p.id!==id));
 
-      {/* Configurações da Loja */}
-      <section className="bg-white p-6 rounded-md shadow-sm space-y-3">
-        <h2 className="font-serif text-xl text-[#A68966]">Configurações da Loja</h2>
+  const deleteOrder=id=>saveOrders(orders.filter(o=>o.id!==id));
+
+  const generatePDF=order=>{
+    const { jsPDF } = window.jspdf;
+    const doc=new jsPDF({unit:'mm',format:'a4'});
+    doc.setFont('Playfair Display','bold');
+    doc.setFontSize(22);
+    doc.text(storeConfig.name,105,20,{align:'center'});
+    doc.setFontSize(14);
+    doc.setFont('Inter','normal');
+    doc.text(`Pedido #${order.id}`,20,35);
+    doc.text(`Cliente: ${order.customer.name}`,20,45);
+    doc.text(`Telefone: ${order.customer.phone}`,20,52);
+    doc.text(`Pagamento: ${order.payment}`,20,59);
+    doc.text('Itens:',20,69);
+    let y=75;
+    order.items.forEach(i=>{
+      doc.text(`${i.qty}x ${i.name} (SKU: ${i.sku||'-'}) - ${Number(i.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`,20,y);
+      y+=8;
+    });
+    doc.text(`Total: ${Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`,20,y+5);
+    doc.save(`Romaneio_Pedido_${order.id}.pdf`);
+  }
+
+  const sendWhatsApp=order=>{
+    const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name} (SKU: ${i.sku||''})`).join('%0A');
+    const msg=`*PEDIDO #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*Itens:*%0A${itemsList}%0A%0A*Total:* ${Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}%0A*Pagamento:* ${order.payment}`;
+    window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
+  }
+
+  return(
+    <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <h1 className="text-3xl font-serif mb-4 text-center">Painel Admin - {storeConfig.name}</h1>
+
+      <section className="bg-white p-6 rounded shadow space-y-4">
+        <h2 className="text-xl font-semibold mb-2">Cadastrar Produto</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input className="border p-2" placeholder="Nome da Loja" value={storeConfig.name} onChange={e=>updateConfig('name',e.target.value)}/>
-          <input className="border p-2" placeholder="WhatsApp da Loja" value={storeConfig.whatsapp} onChange={e=>updateConfig('whatsapp',e.target.value)}/>
-          <input type="number" className="border p-2" placeholder="% de desconto PIX" value={storeConfig.pixDiscount} step="0.01" onChange={e=>updateConfig('pixDiscount',parseFloat(e.target.value))}/>
-          <input type="number" className="border p-2" placeholder="Parcelas Cartão" value={storeConfig.cardInstallments} onChange={e=>updateConfig('cardInstallments',parseInt(e.target.value))}/>
+          <input placeholder="Nome do Produto" className="border p-2" value={newProduct.name} onChange={e=>setNewProduct({...newProduct,name:e.target.value})}/>
+          <input placeholder="SKU" className="border p-2" value={newProduct.sku} onChange={e=>setNewProduct({...newProduct,sku:e.target.value})}/>
+          <input placeholder="Preço (R$)" type="number" className="border p-2" value={newProduct.price} onChange={e=>setNewProduct({...newProduct,price:e.target.value})}/>
+          <input placeholder="Estoque" type="number" className="border p-2" value={newProduct.stock} onChange={e=>setNewProduct({...newProduct,stock:e.target.value})}/>
+          <input type="file" accept="image/*" onChange={handleImageUpload}/>
         </div>
+        {newProduct.image&&<img src={newProduct.image} className="w-32 h-32 object-contain mt-2 border"/>}
+        <button onClick={addProduct} className="bg-[#A68966] text-white py-2 px-4 mt-2 rounded hover:bg-[#8f7a5b]">Adicionar Produto</button>
       </section>
 
-      {/* Cadastro de Produtos */}
-      <section className="bg-white p-6 rounded-md shadow-sm space-y-3">
-        <h2 className="font-serif text-xl text-[#A68966]">Adicionar/Editar Produto</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input className="border p-2" placeholder="Nome" value={newProduct.name} onChange={e=>setNewProduct({...newProduct,name:e.target.value})}/>
-          <input className="border p-2" placeholder="Preço" type="number" value={newProduct.price} onChange={e=>setNewProduct({...newProduct,price:e.target.value})}/>
-          <input className="border p-2" placeholder="Estoque" type="number" value={newProduct.stock} onChange={e=>setNewProduct({...newProduct,stock:e.target.value})}/>
-          <input className="border p-2 col-span-2" type="file" onChange={handleUpload}/>
-        </div>
-        <button onClick={handleAddOrUpdate} className="bg-[#A68966] text-white px-6 py-2 rounded-md font-bold">{editingProduct?'Atualizar':'Adicionar'} Produto</button>
-      </section>
-
-      {/* Lista de Produtos */}
-      <section className="bg-white p-6 rounded-md shadow-sm">
-        <h2 className="font-serif text-xl text-[#A68966]">Produtos Cadastrados</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <section className="bg-white p-6 rounded shadow space-y-4">
+        <h2 className="text-xl font-semibold">Produtos Cadastrados</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {products.map(p=>(
-            <div key={p.id} className="border rounded-md p-4 flex gap-4 items-center">
-              {p.image && <img src={p.image} className="w-20 h-20 object-contain"/>}
-              <div className="flex-1">
+            <div key={p.id} className="border rounded p-4 flex justify-between items-center">
+              <div>
                 <p className="font-bold">{p.name}</p>
-                <p>R$ {Number(p.price).toFixed(2)}</p>
-                <p>Estoque: {p.stock}</p>
+                <p className="text-sm">SKU: {p.sku||'-'}</p>
+                <p className="text-sm">Preço: {Number(p.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p>
+                <p className="text-sm">Estoque: {p.stock}</p>
               </div>
               <div className="flex flex-col gap-2">
-                <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={()=>handleEdit(p)}>Editar</button>
-                <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={()=>handleDelete(p.id)}>Excluir</button>
+                <button onClick={()=>deleteProduct(p.id)} className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Relatório de Vendas */}
-      <section className="bg-white p-6 rounded-md shadow-sm">
-        <h2 className="font-serif text-xl text-[#A68966]">Relatório de Vendas</h2>
-        {orders.length===0?<p className="italic text-gray-400 mt-4">Nenhuma venda registrada ainda.</p>:(
-          <div className="space-y-3 mt-4">
+      <section className="bg-white p-6 rounded shadow space-y-4">
+        <h2 className="text-xl font-semibold">Relatório de Vendas</h2>
+        {orders.length===0?<p className="italic text-gray-400">Nenhum pedido realizado.</p>:(
+          <div className="space-y-4">
             {orders.map(o=>(
-              <div key={o.id} className="border p-4 rounded-md flex justify-between items-center">
+              <div key={o.id} className="border rounded p-4 flex justify-between items-center">
                 <div>
-                  <p className="font-bold">Pedido #{o.id}</p>
-                  <p>Cliente: {o.customer.name}</p>
-                  <p>WhatsApp: {o.customer.phone}</p>
-                  <p>Total: R$ {Number(o.total).toFixed(2)}</p>
-                  <p>Pagamento: {o.payment}</p>
+                  <p className="font-bold">Pedido #{o.id} - {o.customer.name}</p>
+                  <p className="text-sm">Telefone: {o.customer.phone}</p>
+                  <p className="text-sm">Pagamento: {o.payment}</p>
+                  <p className="text-sm">Total: {Number(o.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p>
+                  <p className="text-sm">Itens: {o.items.map(i=>`${i.qty}x ${i.name} (SKU: ${i.sku||'-'})`).join(', ')}</p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={()=>generatePDF(o)}>Gerar Romaneio PDF</button>
-                  {o.customer.phone && <a className="bg-[#25D366] text-white px-3 py-1 rounded text-center" href={`https://wa.me/${o.customer.phone}`} target="_blank">WhatsApp Cliente</a>}
+                  <button onClick={()=>generatePDF(o)} className="bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-900">PDF</button>
+                  <button onClick={()=>sendWhatsApp(o)} className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">WhatsApp</button>
+                  <button onClick={()=>deleteOrder(o.id)} className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
                 </div>
               </div>
             ))}
@@ -181,7 +153,7 @@ function AdminApp() {
         )}
       </section>
     </div>
-  );
+  )
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp/>);
