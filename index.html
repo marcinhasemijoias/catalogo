@@ -1,1 +1,121 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  ShoppingCart, Send, ChevronLeft, CreditCard, QrCode, 
+  CheckCircle2, MessageCircle, Download, Star 
+} from 'lucide-react';
 
+export default function StoreFront() {
+  const [view, setView] = useState('catalog');
+  const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [customerData, setCustomerData] = useState({ name: '', phone: '', address: '' });
+  const [paymentMethod, setPaymentMethod] = useState('pix');
+  const [installments, setInstallments] = useState(1);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [activeOrder, setActiveOrder] = useState(null);
+  const [storeConfig, setStoreConfig] = useState({
+    name: 'Royal Joias',
+    whatsapp: '5511999999999',
+    pixDiscount: 0.1,
+    maxInstallments: 12
+  });
+
+  useEffect(() => {
+    const savedProducts = localStorage.getItem('luxury_products');
+    const savedConfig = localStorage.getItem('luxury_config');
+    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
+
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  const subtotal = useMemo(() => cart.reduce((acc, item) => acc + item.price * item.quantity, 0), [cart]);
+  const discountAmount = paymentMethod === 'pix' ? subtotal * storeConfig.pixDiscount : 0;
+  const total = subtotal - discountAmount;
+
+  const formatCurrency = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const finalizePurchase = () => {
+    if (!customerData.name) return alert("Preencha o nome do cliente.");
+    const orderData = {
+      id: Date.now(),
+      date: new Date().toLocaleString('pt-BR'),
+      customer: { ...customerData },
+      items: [...cart],
+      paymentMethod,
+      installments: paymentMethod === 'card' ? installments : 1,
+      subtotal,
+      discount: discountAmount,
+      total
+    };
+    
+    const savedOrders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
+    localStorage.setItem('luxury_orders', JSON.stringify([orderData, ...savedOrders]));
+    setActiveOrder(orderData);
+    setView('success');
+  };
+
+  const handleDownloadPdf = () => {
+    if (!activeOrder) return;
+    setIsGeneratingPdf(true);
+    const element = document.getElementById('receipt-content-print');
+    const opt = {
+      margin: 0,
+      filename: `Certificado_${activeOrder.customer.name}.pdf`,
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    window.html2pdf().from(element).set(opt).save().then(() => setIsGeneratingPdf(false));
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDFBF7] font-serif text-[#2D2926]">
+      <header className="sticky top-0 z-50 bg-white border-b border-[#E5DACE] px-6 py-4 flex justify-between items-center shadow-sm">
+        <h1 className="text-lg tracking-[0.4em] uppercase" onClick={() => setView('catalog')}>{storeConfig.name}</h1>
+        <button onClick={() => setView('cart')} className="relative p-2"><ShoppingCart size={20} />{cart.length > 0 && <span className="absolute top-0 right-0 bg-[#A68966] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}</button>
+      </header>
+
+      <main className="max-w-2xl mx-auto p-6 pb-32">
+        {view === 'catalog' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in fade-in">
+            {products.map(p => (
+              <div key={p.id} className="text-center group cursor-pointer" onClick={() => { setCart([{...p, quantity: 1}]); setView('cart'); }}>
+                <div className="h-64 bg-[#F5F2EE] flex items-center justify-center mb-4 group-hover:bg-[#E5DACE] transition-all"><Star size={40} className="text-[#A68966]" /></div>
+                <h3 className="text-xs uppercase font-bold">{p.name}</h3>
+                <p className="text-sm font-sans text-gray-500">{formatCurrency(p.price)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {view === 'cart' && (
+          <div className="max-w-md mx-auto animate-in slide-in-from-bottom-4">
+             <h2 className="text-xl italic text-center py-8">Checkout Exclusivo</h2>
+             <input placeholder="Nome Completo" className="w-full border-b mb-4 py-2 outline-none" onChange={e => setCustomerData({...customerData, name: e.target.value})} />
+             <input placeholder="WhatsApp" className="w-full border-b mb-6 py-2 outline-none" onChange={e => setCustomerData({...customerData, phone: e.target.value})} />
+             <div className="grid grid-cols-2 gap-2 mb-6">
+                <button onClick={() => setPaymentMethod('pix')} className={`p-4 border text-[10px] ${paymentMethod === 'pix' ? 'border-[#A68966]' : 'opacity-50'}`}>PIX</button>
+                <button onClick={() => setPaymentMethod('card')} className={`p-4 border text-[10px] ${paymentMethod === 'card' ? 'border-[#A68966]' : 'opacity-50'}`}>CARTÃO</button>
+             </div>
+             <button onClick={finalizePurchase} className="w-full bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-widest">Finalizar e Gerar Recibo</button>
+          </div>
+        )}
+
+        {view === 'success' && activeOrder && (
+          <div className="text-center py-10">
+            <CheckCircle2 size={64} className="mx-auto text-[#A68966] mb-4" />
+            <h2 className="text-2xl mb-8">Venda Confirmada</h2>
+            <button onClick={handleDownloadPdf} className="w-full bg-[#2D2926] text-white py-4 text-[10px] mb-4 uppercase">
+              {isGeneratingPdf ? 'Gerando...' : 'Baixar Certificado A4'}
+            </button>
+            <button onClick={() => setView('catalog')} className="text-[10px] uppercase text-gray-400">Voltar ao Início</button>
+            
+            {/* O conteúdo do PDF (id="receipt-content-print") deve ser mantido aqui conforme o código original */}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
