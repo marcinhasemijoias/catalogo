@@ -1,106 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, PlusCircle, Trash2, History, Download, MessageCircle, Save, Package } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Royal Joias</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body className="bg-gray-50">
+    <div id="root"></div>
 
-export default function AdminPanel() {
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [storeConfig, setStoreConfig] = useState({
-    name: 'Royal Joias', whatsapp: '5511999999999', pixDiscount: 0.1, maxInstallments: 12
-  });
-  const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '' });
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  useEffect(() => {
-    const savedProducts = localStorage.getItem('luxury_products');
-    const savedConfig = localStorage.getItem('luxury_config');
-    const savedOrders = localStorage.getItem('luxury_orders');
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
-    if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
-    if (savedOrders) setOrders(JSON.parse(savedOrders));
-  }, []);
+        const Icon = ({ name, size = 18 }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{width: size, height: size}}></i>;
+        };
 
-  const saveProducts = (list) => {
-    setProducts(list);
-    localStorage.setItem('luxury_products', JSON.stringify(list));
-  };
+        function Admin() {
+            const [products, setProducts] = useState([]);
+            const [orders, setOrders] = useState([]);
+            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '' });
+            const [newItem, setNewItem] = useState({ name: '', price: '', sku: '' });
 
-  const handleAddProduct = (e) => {
-    e.preventDefault();
-    const product = { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) };
-    saveProducts([...products, product]);
-    setNewProduct({ sku: '', name: '', price: '' });
-  };
+            useEffect(() => {
+                setProducts(JSON.parse(localStorage.getItem('luxury_products') || '[]'));
+                setOrders(JSON.parse(localStorage.getItem('luxury_orders') || '[]'));
+                setStoreConfig(JSON.parse(localStorage.getItem('luxury_config') || '{"name":"Royal Joias"}'));
+            }, []);
 
-  const deleteProduct = (id) => saveProducts(products.filter(p => p.id !== id));
+            const addProduct = () => {
+                const updated = [...products, { ...newItem, id: Date.now(), price: parseFloat(newItem.price) }];
+                setProducts(updated);
+                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                setNewItem({ name: '', price: '', sku: '' });
+            };
 
-  const updateConfig = (key, value) => {
-    const newConfig = { ...storeConfig, [key]: value };
-    setStoreConfig(newConfig);
-    localStorage.setItem('luxury_config', JSON.stringify(newConfig));
-  };
+            const removeProduct = (id) => {
+                const updated = products.filter(p => p.id !== id);
+                setProducts(updated);
+                localStorage.setItem('luxury_products', JSON.stringify(updated));
+            };
 
-  return (
-    <div className="min-h-screen bg-[#FDFBF7] p-6 font-sans">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <header className="flex items-center gap-2 border-b border-[#E5DACE] pb-4">
-          <Settings className="text-[#A68966]" />
-          <h1 className="text-xl font-serif uppercase tracking-widest">Painel Administrativo</h1>
-        </header>
+            return (
+                <div className="p-6 max-w-2xl mx-auto space-y-8 font-sans">
+                    <h1 className="text-2xl font-bold border-b pb-4 flex items-center gap-2"><Icon name="settings"/> Painel Admin</h1>
+                    
+                    <section className="bg-white p-4 shadow-sm border">
+                        <h2 className="font-bold mb-4 uppercase text-xs">Cadastrar Produto</h2>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <input className="border p-2 text-sm" placeholder="Nome" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
+                            <input className="border p-2 text-sm" placeholder="Preço" type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} />
+                        </div>
+                        <button onClick={addProduct} className="w-full bg-black text-white p-2 text-xs uppercase font-bold">Adicionar</button>
+                    </section>
 
-        {/* Configurações */}
-        <section className="bg-white p-6 rounded shadow-sm border border-[#E5DACE]">
-          <h2 className="text-xs font-bold uppercase mb-4 flex items-center gap-2"><Save size={14}/> Configurações da Loja</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <input className="border-b py-2 text-sm" value={storeConfig.name} onChange={e => updateConfig('name', e.target.value)} placeholder="Nome da Loja" />
-            <input className="border-b py-2 text-sm" value={storeConfig.whatsapp} onChange={e => updateConfig('whatsapp', e.target.value)} placeholder="WhatsApp" />
-          </div>
-        </section>
+                    <section className="bg-white p-4 shadow-sm border text-xs">
+                        <h2 className="font-bold mb-4 uppercase">Estoque Atual</h2>
+                        {products.map(p => (
+                            <div key={p.id} className="flex justify-between py-2 border-b">
+                                <span>{p.name}</span>
+                                <div className="flex gap-4 items-center">
+                                    <span>R$ {p.price}</span>
+                                    <button onClick={() => removeProduct(p.id)} className="text-red-500"><Icon name="trash-2" size={14}/></button>
+                                </div>
+                            </div>
+                        ))}
+                    </section>
 
-        {/* Cadastro de Produtos */}
-        <section className="bg-white p-6 rounded shadow-sm border border-[#E5DACE]">
-          <h2 className="text-xs font-bold uppercase mb-4 flex items-center gap-2"><Package size={14}/> Gerenciar Catálogo</h2>
-          <form onSubmit={handleAddProduct} className="space-y-4">
-            <div className="grid grid-cols-3 gap-2">
-              <input className="border-b py-2 text-xs" placeholder="Nome" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-              <input className="border-b py-2 text-xs" placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
-              <input className="border-b py-2 text-xs" placeholder="Preço" type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
-            </div>
-            <button className="w-full bg-[#2D2926] text-white py-3 text-[10px] uppercase flex items-center justify-center gap-2">
-              <PlusCircle size={14}/> Adicionar Peça
-            </button>
-          </form>
-          
-          <div className="mt-6 space-y-2">
-            {products.map(p => (
-              <div key={p.id} className="flex justify-between items-center p-2 border-b text-xs">
-                <span>{p.name} ({p.sku})</span>
-                <div className="flex items-center gap-4">
-                  <span className="font-bold">R$ {p.price}</span>
-                  <button onClick={() => deleteProduct(p.id)} className="text-red-400"><Trash2 size={14}/></button>
+                    <section className="bg-white p-4 shadow-sm border text-xs">
+                        <h2 className="font-bold mb-4 uppercase flex items-center gap-2"><Icon name="history"/> Vendas</h2>
+                        {orders.map(o => (
+                            <div key={o.id} className="py-2 border-b">
+                                <p><strong>{o.customer.name}</strong> - {o.date}</p>
+                                <p className="text-gray-500">Total: R$ {o.total}</p>
+                            </div>
+                        ))}
+                    </section>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+            );
+        }
 
-        {/* Histórico */}
-        <section className="bg-white p-6 rounded shadow-sm border border-[#E5DACE]">
-          <h2 className="text-xs font-bold uppercase mb-4 flex items-center gap-2"><History size={14}/> Vendas Recentes</h2>
-          <div className="space-y-3">
-            {orders.map(order => (
-              <div key={order.id} className="p-3 bg-[#FDFBF7] border flex justify-between items-center">
-                <div className="text-[10px]">
-                  <p className="font-bold uppercase">{order.customer.name}</p>
-                  <p className="text-gray-400">{order.date} • R$ {order.total}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="p-2 border rounded"><Download size={14}/></button>
-                  <button className="p-2 bg-[#25D366] text-white rounded"><MessageCircle size={14}/></button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Admin />);
+    </script>
+</body>
+</html>
