@@ -15,6 +15,7 @@ body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
 .animate-in { animation: fadeIn 0.4s ease-out; }
 .product-img { object-fit: contain; width: 100%; height: 100%; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.button-payment { flex:1; py-3; text-center; font-bold; uppercase; tracking-[0.2em]; rounded-sm; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -59,14 +60,14 @@ function App() {
     });
   };
 
-  const finalizeSale=()=>{
+  const finalizeSale=chosenPayment=>{
     if(!customer.name||customer.phone.length<10)return alert('Preencha nome e WhatsApp corretamente');
     const order={
       id:Math.floor(1000+Math.random()*8999),
       customer,
       items:cart,
       total,
-      payment,
+      payment:chosenPayment,
       date:new Date().toLocaleString()
     };
     const updatedProducts=products.map(p=>{
@@ -75,14 +76,20 @@ function App() {
     });
     setProducts(updatedProducts);
     localStorage.setItem('products',JSON.stringify(updatedProducts));
+    const orders=JSON.parse(localStorage.getItem('orders')||'[]');
+    orders.push(order);
+    localStorage.setItem('orders',JSON.stringify(orders));
     setLastOrder(order);
     setCart([]);
     setView('confirmed');
 
-    // Envio automático WhatsApp
+    // Envio para empresa
     const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
-    const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*WhatsApp:* ${order.customer.phone}%0A*Itens:*%0A${itemsList}%0A%0A*Total:* ${formatCurrency(order.total)}%0A*Pagamento:* ${order.payment}`;
+    const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*Itens:*%0A${itemsList}%0A%0A*Total:* ${formatCurrency(order.total)}%0A*Pagamento:* ${order.payment}`;
     window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
+
+    // Mensagem para cliente
+    alert(`Olá ${order.customer.name}, seu pedido foi confirmado! Aguarde o contato da empresa via WhatsApp.`);
   };
 
   return (
@@ -137,18 +144,16 @@ function App() {
               <div className="bg-white p-6 border rounded-sm space-y-5 shadow-sm">
                 <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="Seu Nome Completo" value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/>
                 <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="WhatsApp (com DDD)" value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
-                <div className="flex justify-between items-center pt-4">
-                  <label className="text-[10px] font-bold tracking-wider">Forma de pagamento:</label>
-                  <select className="border px-2 py-1 rounded-sm" value={payment} onChange={e=>setPayment(e.target.value)}>
-                    <option value="PIX">PIX ({storeConfig.pixDiscount*100}% de desconto)</option>
-                    <option value="Cartão">Cartão ({storeConfig.cardInstallments}x)</option>
-                  </select>
+
+                <div className="flex gap-4 pt-4">
+                  <button onClick={()=>finalizeSale('PIX')} className="w-1/2 py-3 bg-green-500 text-white font-bold uppercase tracking-[0.2em] rounded-sm">PIX</button>
+                  <button onClick={()=>finalizeSale('Cartão')} className="w-1/2 py-3 bg-blue-500 text-white font-bold uppercase tracking-[0.2em] rounded-sm">{storeConfig.cardInstallments}x Cartão</button>
                 </div>
+
                 <div className="flex justify-between text-xl font-serif pt-4 border-t mt-4 text-gray-800">
                   <span>Total:</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
-                <button onClick={finalizeSale} className="w-full bg-[#A68966] text-white py-5 uppercase font-bold tracking-[0.2em] rounded-sm shadow-lg active:scale-95 transition-transform">Finalizar e Enviar</button>
               </div>
             </>
           )}
@@ -156,8 +161,8 @@ function App() {
 
         {view==='confirmed' && <div className="text-center py-20 space-y-8 animate-in">
           <div className="flex justify-center text-green-500"><Icons.CheckCircle2 /></div>
-          <h2 className="text-3xl font-serif italic text-gray-800">Pedido Enviado!</h2>
-          <p className="text-gray-500 text-sm max-w-xs mx-auto">O pedido foi enviado para o WhatsApp da empresa.</p>
+          <h2 className="text-3xl font-serif italic text-gray-800">Pedido Confirmado!</h2>
+          <p className="text-gray-500 text-sm max-w-xs mx-auto">Obrigado {lastOrder?.customer.name}, seu pedido foi enviado para a empresa. Aguarde o contato via WhatsApp.</p>
           <button onClick={()=>setView('catalog')} className="text-[#A68966] uppercase text-[10px] font-bold tracking-widest border-b border-[#A68966] pb-1">Voltar à Loja</button>
         </div>}
 
