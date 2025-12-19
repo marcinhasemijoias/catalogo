@@ -1,5 +1,4 @@
-/* ================= CONFIG ================= */
-const WHATS_LOJA = "5511999999999"; // troque pelo WhatsApp da loja
+const WHATS_LOJA = "5511999999999";
 
 const config = JSON.parse(localStorage.getItem("configLoja")) || {
   pixDesconto: 0,
@@ -15,29 +14,21 @@ function carregarProdutos() {
   container.innerHTML = "";
 
   produtos.forEach((p, index) => {
-    const desconto = (p.preco * config.pixDesconto) / 100;
-    const precoPix = p.preco - desconto;
+    const esgotado = p.estoque === 0;
 
     container.innerHTML += `
-      <div class="bg-white p-4 shadow space-y-4">
+      <div class="bg-white p-4 shadow space-y-4 ${esgotado ? 'opacity-50' : ''}">
         <img src="${p.imagem}" class="w-full h-60 object-cover">
         <div>
           <h3 class="text-sm uppercase font-bold">${p.nome}</h3>
           <p class="text-sm">R$ ${p.preco.toFixed(2)}</p>
-          ${
-            config.pixDesconto > 0
-              ? `<p class="text-xs text-green-600">
-                   PIX: R$ ${precoPix.toFixed(2)} (${config.pixDesconto}% OFF)
-                 </p>`
-              : ""
-          }
-          <p class="text-xs text-gray-400">
-            Cartão até ${config.parcelas}x
-          </p>
+          <p class="text-xs text-gray-400">Estoque: ${p.estoque}</p>
         </div>
-        <button onclick="adicionarCarrinho(${index})"
-          class="w-full bg-black text-white py-2 text-xs uppercase">
-          Adicionar
+        <button
+          onclick="adicionarCarrinho(${index})"
+          ${esgotado ? "disabled" : ""}
+          class="w-full ${esgotado ? 'bg-gray-300' : 'bg-black text-white'} py-2 text-xs uppercase">
+          ${esgotado ? 'Esgotado' : 'Adicionar'}
         </button>
       </div>
     `;
@@ -47,6 +38,12 @@ function carregarProdutos() {
 /* ================= CARRINHO ================= */
 function adicionarCarrinho(index) {
   const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+
+  if (produtos[index].estoque === 0) {
+    alert("Produto esgotado");
+    return;
+  }
+
   carrinho.push(produtos[index]);
   renderCarrinho();
 }
@@ -65,7 +62,7 @@ function renderCarrinho() {
   carrinho.forEach((p, i) => {
     total += p.preco;
     div.innerHTML += `
-      <div class="flex justify-between items-center border-b py-2">
+      <div class="flex justify-between border-b py-2">
         <span>${p.nome}</span>
         <span>
           R$ ${p.preco.toFixed(2)}
@@ -75,11 +72,9 @@ function renderCarrinho() {
     `;
   });
 
-  div.innerHTML += `
-    <div class="font-bold text-right pt-2">
-      Total: R$ ${total.toFixed(2)}
-    </div>
-  `;
+  div.innerHTML += `<div class="font-bold text-right pt-2">
+    Total: R$ ${total.toFixed(2)}
+  </div>`;
 }
 
 /* ================= FINALIZAR ================= */
@@ -92,52 +87,45 @@ function finalizarPedido() {
     return;
   }
 
+  let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+
+  carrinho.forEach(item => {
+    const prod = produtos.find(p => p.nome === item.nome);
+    if (prod) prod.estoque--;
+  });
+
+  localStorage.setItem("produtos", JSON.stringify(produtos));
+
   const total = carrinho.reduce((s, p) => s + p.preco, 0);
-  const descontoPix = (total * config.pixDesconto) / 100;
-  const totalPix = total - descontoPix;
 
   const pedidos = JSON.parse(localStorage.getItem("pedidos")) || [];
-
-  const pedido = {
+  pedidos.push({
     cliente: nome,
     whatsapp: whats,
     itens: carrinho,
     total,
-    totalPix,
-    descontoPix,
     data: new Date().toLocaleString()
-  };
+  });
 
-  pedidos.push(pedido);
   localStorage.setItem("pedidos", JSON.stringify(pedidos));
 
-  /* ===== WHATSAPP LOJA ===== */
   const itensMsg = carrinho
     .map(p => `• ${p.nome} — R$ ${p.preco.toFixed(2)}`)
     .join("%0A");
 
   const mensagem =
     `🛍️ *Marcinha Semijoias*%0A%0A` +
-    `👤 *Cliente:* ${nome}%0A` +
-    `📦 *Itens:*%0A${itensMsg}%0A%0A` +
-    `💰 *Total:* R$ ${total.toFixed(2)}%0A` +
-    (config.pixDesconto > 0
-      ? `💸 *PIX (${config.pixDesconto}% OFF):* R$ ${totalPix.toFixed(2)}%0A`
-      : "") +
-    `💳 *Cartão:* até ${config.parcelas}x%0A%0A` +
-    `Pedido enviado pelo catálogo online`;
+    `👤 Cliente: ${nome}%0A%0A` +
+    `📦 Itens:%0A${itensMsg}%0A%0A` +
+    `💰 Total: R$ ${total.toFixed(2)}`;
 
-  window.open(
-    `https://wa.me/${WHATS_LOJA}?text=${mensagem}`,
-    "_blank"
-  );
-
-  alert("Pedido enviado com sucesso!");
+  window.open(`https://wa.me/${WHATS_LOJA}?text=${mensagem}`, "_blank");
 
   carrinho = [];
   renderCarrinho();
-  document.getElementById("clienteNome").value = "";
-  document.getElementById("clienteWhats").value = "";
+  carregarProdutos();
 }
 
+/* INIT */
 carregarProdutos();
+
