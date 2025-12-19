@@ -2,21 +2,55 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Painel Administrativo – Marcinha Semijoias</title>
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <title>Admin – Marcinha Semijoias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f6f6;
+      padding: 20px;
+    }
+    h1 {
+      color: #2b5cff;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: #2b5cff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .produto {
+      background: #fff;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
+<body>
 
-  <div id="root"></div>
+  <h1>Painel Administrativo</h1>
+
+  <h3>Cadastrar Produto</h3>
+
+  <input id="sku" placeholder="SKU" />
+  <input id="nome" placeholder="Nome do produto" />
+  <input id="preco" placeholder="Preço" type="number" />
+  <input id="desconto" placeholder="Preço com desconto" type="number" />
+
+  <button onclick="salvarProduto()">Salvar Produto</button>
+
+  <h3>Produtos cadastrados</h3>
+  <div id="listaProdutos"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
 
   <!-- IMPORTANTE: type="text/babel" -->
   <script type="text/babel" src="./admin.js"></script>
