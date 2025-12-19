@@ -19,16 +19,14 @@ function salvar() {
 function telaLogin() {
   app.innerHTML = `
     <div class="min-h-screen flex items-center justify-center">
-      <div class="bg-white p-8 shadow-md w-full max-w-sm space-y-6">
+      <div class="bg-white p-8 shadow w-full max-w-sm space-y-6">
         <h2 class="text-center uppercase tracking-widest text-sm">
           Admin • Marcinha Semijoias
         </h2>
-
         <input id="senha" type="password" placeholder="Senha"
           class="w-full border-b py-3 outline-none">
-
         <button onclick="login()"
-          class="w-full bg-[#2D2926] text-white py-3 uppercase text-xs tracking-widest">
+          class="w-full bg-black text-white py-3 uppercase text-xs">
           Entrar
         </button>
       </div>
@@ -66,69 +64,65 @@ function dashboard() {
         <h3 class="uppercase text-xs tracking-widest text-gray-400">
           Configurações da Loja
         </h3>
-
-        <input type="number" id="pix"
-          placeholder="% desconto no PIX"
-          value="${config.pixDesconto}"
-          class="w-full border-b py-2">
-
-        <input type="number" id="parcelas"
-          placeholder="Parcelas no cartão"
-          value="${config.parcelas}"
-          class="w-full border-b py-2">
-
+        <input id="pix" type="number" value="${config.pixDesconto}"
+          placeholder="% desconto PIX" class="w-full border-b py-2">
+        <input id="parcelas" type="number" value="${config.parcelas}"
+          placeholder="Parcelas cartão" class="w-full border-b py-2">
         <button onclick="salvarConfig()"
-          class="bg-[#A68966] text-white px-6 py-2 text-xs uppercase tracking-widest">
+          class="bg-[#A68966] text-white px-6 py-2 text-xs uppercase">
           Salvar
         </button>
       </section>
 
       <!-- PRODUTOS -->
-      <section class="bg-white p-6 shadow space-y-6">
+      <section class="bg-white p-6 shadow space-y-4">
         <h3 class="uppercase text-xs tracking-widest text-gray-400">
           Produtos
         </h3>
 
-        <input id="nome" placeholder="Nome do produto" class="w-full border-b py-2">
+        <input id="nome" placeholder="Nome" class="w-full border-b py-2">
         <input id="preco" type="number" placeholder="Preço" class="w-full border-b py-2">
-
         <input id="imagem" type="file" class="w-full">
 
         <button onclick="adicionarProduto()"
-          class="bg-black text-white py-2 uppercase text-xs tracking-widest">
+          class="bg-black text-white py-2 text-xs uppercase">
           Adicionar Produto
         </button>
 
-        <div class="space-y-3">
-          ${produtos.map((p, i) => `
-            <div class="flex justify-between items-center border p-3">
-              <div>
-                <strong>${p.nome}</strong><br>
-                R$ ${p.preco.toFixed(2)}
-              </div>
-              <div class="space-x-2">
-                <button onclick="editarProduto(${i})">✏️</button>
-                <button onclick="excluirProduto(${i})">🗑️</button>
-              </div>
+        ${produtos.map((p, i) => `
+          <div class="flex justify-between items-center border p-3">
+            <div>
+              <strong>${p.nome}</strong><br>
+              R$ ${p.preco.toFixed(2)}
             </div>
-          `).join("")}
-        </div>
+            <div class="space-x-2">
+              <button onclick="editarProduto(${i})">✏️</button>
+              <button onclick="excluirProduto(${i})">🗑️</button>
+            </div>
+          </div>
+        `).join("")}
       </section>
 
       <!-- PEDIDOS -->
-      <section class="bg-white p-6 shadow space-y-6">
+      <section class="bg-white p-6 shadow space-y-4">
         <h3 class="uppercase text-xs tracking-widest text-gray-400">
           Relatório de Vendas
         </h3>
 
-        ${pedidos.length === 0 ? `<p class="text-sm text-gray-400">Nenhum pedido</p>` :
-          pedidos.map((p, i) => `
+        ${pedidos.length === 0
+          ? `<p class="text-sm text-gray-400">Nenhum pedido</p>`
+          : pedidos.map((p, i) => `
             <div class="border p-4 space-y-2">
-              <strong>${p.cliente}</strong> – ${p.data}<br>
+              <strong>${p.cliente}</strong><br>
+              ${p.data}<br>
               Total: R$ ${p.total.toFixed(2)}
               <div class="flex gap-2 mt-2">
-                <button onclick="pdf(${i})" class="border px-3 py-1 text-xs">PDF</button>
-                <button onclick="whats(${i})" class="border px-3 py-1 text-xs">WhatsApp</button>
+                <button onclick="pdf(${i})" class="border px-3 py-1 text-xs">
+                  PDF
+                </button>
+                <button onclick="whats(${i})" class="border px-3 py-1 text-xs">
+                  WhatsApp
+                </button>
               </div>
             </div>
           `).join("")
@@ -170,18 +164,9 @@ function adicionarProduto() {
   reader.readAsDataURL(file);
 }
 
-function excluirProduto(i) {
-  if (confirm("Excluir produto?")) {
-    produtos.splice(i, 1);
-    salvar();
-    dashboard();
-  }
-}
-
 function editarProduto(i) {
-  const p = produtos[i];
-  const nome = prompt("Nome", p.nome);
-  const preco = prompt("Preço", p.preco);
+  const nome = prompt("Nome", produtos[i].nome);
+  const preco = prompt("Preço", produtos[i].preco);
   if (nome && preco) {
     produtos[i].nome = nome;
     produtos[i].preco = Number(preco);
@@ -190,27 +175,48 @@ function editarProduto(i) {
   }
 }
 
+function excluirProduto(i) {
+  if (confirm("Excluir produto?")) {
+    produtos.splice(i, 1);
+    salvar();
+    dashboard();
+  }
+}
+
 function pdf(i) {
-  const pedido = pedidos[i];
+  const p = pedidos[i];
   const div = document.createElement("div");
   div.innerHTML = `
     <h2>Marcinha Semijoias</h2>
-    Cliente: ${pedido.cliente}<br>
-    Data: ${pedido.data}<br><br>
-    Total: R$ ${pedido.total.toFixed(2)}
+    Cliente: ${p.cliente}<br>
+    Data: ${p.data}<br><br>
+    Total: R$ ${p.total.toFixed(2)}
   `;
   html2pdf().from(div).save(`pedido_${i}.pdf`);
 }
 
 function whats(i) {
   const p = pedidos[i];
-  const msg = `Olá ${p.cliente}, seu pedido foi registrado! Total R$ ${p.total.toFixed(2)}`;
-  window.open(`https://wa.me/${p.whatsapp}?text=${encodeURIComponent(msg)}`);
+
+  const itens = p.itens
+    .map(it => `• ${it.nome} — R$ ${it.preco.toFixed(2)}`)
+    .join("%0A");
+
+  const mensagem =
+    `🛍️ *Marcinha Semijoias*%0A%0A` +
+    `Olá, *${p.cliente}*! 💖%0A%0A` +
+    `📦 *Seu pedido:*%0A${itens}%0A%0A` +
+    `💰 *Total:* R$ ${p.total.toFixed(2)}%0A` +
+    (p.descontoPix
+      ? `💸 *PIX:* R$ ${p.totalPix.toFixed(2)}%0A`
+      : "") +
+    `%0AObrigada pela preferência ✨`;
+
+  window.open(
+    `https://wa.me/${p.whatsapp}?text=${mensagem}`,
+    "_blank"
+  );
 }
 
 /* INIT */
-if (localStorage.getItem("adminLogado")) {
-  dashboard();
-} else {
-  telaLogin();
-}
+localStorage.getItem("adminLogado") ? dashboard() : telaLogin();
