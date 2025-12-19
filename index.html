@@ -1,112 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Marcinha Semijoias • Catálogo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Marcinha Semijoias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Fonte elegante -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f7f5f2;
-    }
-    h1, h2, h3 {
-      font-family: 'Playfair Display', serif;
-    }
+    body { font-family: Arial; margin: 0; padding: 0; background: #fafafa; }
+    header { background: #000; color: #fff; padding: 15px; text-align: center; }
+    .produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 15px; padding: 15px; }
+    .produto { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,.1); }
+    .produto img { width: 100%; border-radius: 6px; }
+    button { width: 100%; padding: 8px; background: #000; color: #fff; border: none; cursor: pointer; }
+    #carrinho { padding: 15px; background: #fff; }
   </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
-<header class="bg-white border-b">
-  <div class="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
-    <h1 class="text-2xl tracking-wide">Marcinha <span class="font-light">Semijoias</span></h1>
-    <button onclick="document.getElementById('checkout').scrollIntoView({behavior:'smooth'})"
-      class="text-sm uppercase tracking-widest border px-4 py-2 hover:bg-black hover:text-white transition">
-      Carrinho
-    </button>
-  </div>
+<header>
+  <h1>Marcinha Semijoias</h1>
 </header>
 
-<!-- HERO -->
-<section class="bg-[#eae4dc]">
-  <div class="max-w-6xl mx-auto px-6 py-20 text-center space-y-6">
-    <h2 class="text-4xl md:text-5xl">Elegância que ilumina</h2>
-    <p class="max-w-xl mx-auto text-gray-600">
-      Semijoias selecionadas para valorizar cada detalhe do seu estilo.
-    </p>
-  </div>
+<section class="produtos" id="listaProdutos"></section>
+
+<section id="carrinho">
+  <h2>Carrinho</h2>
+  <ul id="itensCarrinho"></ul>
+  <p id="total"></p>
+  <button onclick="finalizarPedido()">Finalizar Pedido</button>
 </section>
 
-<!-- PRODUTOS -->
-<section class="max-w-6xl mx-auto px-6 py-16">
-  <h2 class="text-2xl mb-10 text-center">Coleção</h2>
-
-  <div id="produtos"
-    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-    <!-- Produtos via JS -->
-  </div>
-</section>
-
-<!-- CHECKOUT -->
-<section id="checkout" class="bg-white border-t">
-  <div class="max-w-5xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12">
-
-    <!-- CARRINHO -->
-    <div>
-      <h3 class="text-xl mb-6">Seu Carrinho</h3>
-      <div id="carrinho" class="space-y-4 text-sm"></div>
-    </div>
-
-    <!-- DADOS CLIENTE -->
-    <div class="space-y-6">
-      <h3 class="text-xl">Finalizar Pedido</h3>
-
-      <input
-        id="clienteNome"
-        placeholder="Seu nome"
-        class="w-full border-b py-3 outline-none"
-      />
-
-      <input
-        id="clienteWhats"
-        placeholder="WhatsApp (DDD + número)"
-        class="w-full border-b py-3 outline-none"
-      />
-
-      <button onclick="finalizarPedido()"
-        class="w-full bg-black text-white py-4 uppercase tracking-widest text-sm hover:opacity-90 transition">
-        Enviar Pedido pelo WhatsApp
-      </button>
-
-      <p class="text-xs text-gray-400">
-        Atendimento personalizado via WhatsApp 💬
-      </p>
-    </div>
-
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="bg-[#111] text-gray-400">
-  <div class="max-w-6xl mx-auto px-6 py-10 text-center text-xs space-y-2">
-    <p>© Marcinha Semijoias</p>
-    <p>Catálogo online • Atendimento exclusivo</p>
-  </div>
-</footer>
-
-<!-- SCRIPT -->
 <script src="app.js"></script>
-
 </body>
 </html>
 
