@@ -2,25 +2,31 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Marcinha Semijoias</title>
+  <title>Marcinha Semijoias – Catálogo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-  <!-- Babel (ESSENCIAL) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fffaf4;
+      padding: 20px;
+    }
+    h1 {
+      color: #ff2d55;
+    }
+    .produto {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
-<body class="bg-[#FDFBF7]">
+<body>
 
-  <div id="root"></div>
+  <h1>Marcinha Semijoias</h1>
 
-  <!-- App -->
-  <script type="text/babel" src="app.js"></script>
+  <div id="produtos"></div>
 
+  <script src="app.js"></script>
 </body>
 </html>
