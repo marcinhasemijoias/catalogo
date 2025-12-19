@@ -88,6 +88,7 @@ function AdminApp(){
   };
 
   const sendWhatsAppCustomer=order=>{
+    if(!order.customer.phone)return;
     const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
     const msg=`*Pedido #${order.id}*%0ACliente: ${order.customer.name}%0AItens:%0A${itemsList}%0ATotal: ${Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}%0APagamento: ${order.payment}`;
     window.open(`https://wa.me/${order.customer.phone.replace(/\D/g,'')}?text=${msg}`,'_blank');
@@ -117,17 +118,21 @@ function AdminApp(){
               <p className="font-bold">{p.name}</p>
               <p>R$ {Number(p.price).toFixed(2)}</p>
               <p>Estoque: {p.stock}</p>
-              <button onClick={()=>handleDeleteProduct(p.id)} className="absolute top-2 right-2 text-red-500"><Icons.Trash2/></button>
+              <div className="flex gap-2 mt-2">
+                <button onClick={()=>setNewProduct({...p})} className="bg-blue-500 text-white px-2 py-1 rounded-sm">Editar</button>
+                <button onClick={()=>handleDeleteProduct(p.id)} className="bg-red-500 text-white px-2 py-1 rounded-sm">Excluir</button>
+              </div>
             </div>
           ))}
         </div>
+
         <div className="border p-4 rounded-sm space-y-2">
-          <h3 className="font-bold">Adicionar / Editar Produto</h3>
+          <h3 className="font-bold">{newProduct.id?'Editar Produto':'Adicionar Produto'}</h3>
           <input className="border p-2 w-full" placeholder="Nome" value={newProduct.name} onChange={e=>setNewProduct({...newProduct,name:e.target.value})}/>
           <input className="border p-2 w-full" type="number" placeholder="Preço" value={newProduct.price} onChange={e=>setNewProduct({...newProduct,price:e.target.value})}/>
           <input className="border p-2 w-full" type="number" placeholder="Estoque" value={newProduct.stock} onChange={e=>setNewProduct({...newProduct,stock:e.target.value})}/>
           <input type="file" onChange={handleImageUpload} className="w-full"/>
-          <button onClick={handleSaveProduct} className="bg-[#2D2926] text-white px-4 py-2 rounded-sm">Salvar Produto</button>
+          <button onClick={handleSaveProduct} className="bg-[#2D2926] text-white px-4 py-2 rounded-sm">{newProduct.id?'Salvar Alterações':'Salvar Produto'}</button>
         </div>
       </section>
 
@@ -139,7 +144,7 @@ function AdminApp(){
               <div key={order.id} className="border p-2 rounded-sm space-y-1">
                 <p><strong>ID:</strong> {order.id} | <strong>Cliente:</strong> {order.customer.name} | <strong>Total:</strong> {Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} | <strong>Pagamento:</strong> {order.payment}</p>
                 <button onClick={()=>generatePDF(order)} className="bg-[#A68966] text-white px-3 py-1 rounded-sm mr-2">Gerar PDF</button>
-                <button onClick={()=>sendWhatsAppCustomer(order)} className="bg-green-500 text-white px-3 py-1 rounded-sm">WhatsApp Cliente</button>
+                {order.customer.phone && <button onClick={()=>sendWhatsAppCustomer(order)} className="bg-green-500 text-white px-3 py-1 rounded-sm">WhatsApp Cliente</button>}
               </div>
             ))}
           </div>
@@ -153,3 +158,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp/>);
 </script>
 </body>
 </html>
+
