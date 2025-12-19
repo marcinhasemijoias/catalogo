@@ -13,12 +13,12 @@
 body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
 .font-serif { font-family: 'Playfair Display', serif; }
 .animate-in { animation: fadeIn 0.4s ease-out; }
+.product-img { object-fit: contain; width: 100%; height: 100%; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useEffect, useMemo } = React;
 
@@ -35,6 +35,7 @@ function App() {
   const [products,setProducts]=useState([]);
   const [cart,setCart]=useState([]);
   const [customer,setCustomer]=useState({name:'',phone:'+55'});
+  const [payment,setPayment]=useState('PIX');
   const [storeConfig,setStoreConfig]=useState({name:'Abella Joias',whatsapp:'5511999999999',pixDiscount:0.10,cardInstallments:3});
   const [lastOrder,setLastOrder]=useState(null);
 
@@ -47,7 +48,7 @@ function App() {
 
   const formatCurrency=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const subtotal=useMemo(()=>cart.reduce((a,i)=>a+i.price*i.qty,0),[cart]);
-  const total=useMemo(()=>subtotal*(1-storeConfig.pixDiscount),[subtotal,storeConfig.pixDiscount]);
+  const total=useMemo(()=>payment==='PIX'?subtotal*(1-storeConfig.pixDiscount):subtotal,[subtotal,payment,storeConfig.pixDiscount]);
 
   const addToCart=p=>{
     if(p.stock<=0)return;
@@ -60,7 +61,14 @@ function App() {
 
   const finalizeSale=()=>{
     if(!customer.name||customer.phone.length<10)return alert('Preencha nome e WhatsApp corretamente');
-    const order={id:Math.floor(1000+Math.random()*8999),customer,items:cart,total};
+    const order={
+      id:Math.floor(1000+Math.random()*8999),
+      customer,
+      items:cart,
+      total,
+      payment,
+      date:new Date().toLocaleString()
+    };
     const updatedProducts=products.map(p=>{
       const item=cart.find(ci=>ci.id===p.id);
       return item?{...p,stock:Math.max(0,p.stock-item.qty)}:p;
@@ -70,11 +78,10 @@ function App() {
     setLastOrder(order);
     setCart([]);
     setView('confirmed');
-  };
 
-  const sendWhatsApp=order=>{
+    // Envio automático WhatsApp
     const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
-    const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*Itens:*%0A${itemsList}%0A%0A*Total c/ Desc:* ${formatCurrency(order.total)}`;
+    const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*WhatsApp:* ${order.customer.phone}%0A*Itens:*%0A${itemsList}%0A%0A*Total:* ${formatCurrency(order.total)}%0A*Pagamento:* ${order.payment}`;
     window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
   };
 
@@ -90,20 +97,19 @@ function App() {
       </header>
 
       <main className="max-w-xl mx-auto p-4 md:p-8">
-      {view==='catalog'&&(
-        <div className="grid gap-12 animate-in">
+        {view==='catalog' && <div className="grid gap-12 animate-in">
           {products.length===0?<div className="text-center py-20 text-gray-400 italic">Nenhum produto disponível.</div>:
           products.map(p=>(
             <div key={p.id} className="group">
               <div className="aspect-[4/5] bg-[#F5F2EE] relative rounded-sm overflow-hidden mb-5 shadow-sm">
-                {p.stock<=0&&<div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-red-400">Esgotado</div>}
-                {p.image?<img src={p.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={p.name}/>:<div className="h-full flex items-center justify-center opacity-10 font-serif italic text-5xl text-[#A68966]">AJ</div>}
+                {p.stock<=0 && <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-red-400">Esgotado</div>}
+                {p.image?<img src={p.image} className="product-img group-hover:scale-105 transition-transform duration-700" alt={p.name}/>:<div className="h-full flex items-center justify-center opacity-10 font-serif italic text-5xl text-[#A68966]">AJ</div>}
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-end border-b border-[#F5F2EE] pb-3 font-serif">
                   <div>
                     <h3 className="text-xl text-gray-800">{p.name}</h3>
-                    <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">{formatCurrency(p.price*(1-storeConfig.pixDiscount))} no pix</p>
+                    <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">{formatCurrency(p.price*(1-storeConfig.pixDiscount))} no PIX</p>
                   </div>
                   <p className="text-lg font-light text-gray-600">{formatCurrency(p.price)}</p>
                 </div>
@@ -111,18 +117,16 @@ function App() {
               </div>
             </div>
           ))}
-        </div>
-      )}
+        </div>}
 
-      {view==='cart'&&(
-        <div className="space-y-6 animate-in">
+        {view==='cart' && <div className="space-y-6 animate-in">
           <button onClick={()=>setView('catalog')} className="flex items-center gap-2 text-[#A68966] text-[10px] font-bold uppercase tracking-widest hover:opacity-70"><Icons.ChevronLeft/> Voltar ao Catálogo</button>
           <h2 className="text-2xl font-serif italic border-b pb-4">Sua Sacola</h2>
           {cart.length===0?<div className="text-center py-16 space-y-4"><p className="text-gray-400 italic">Sua sacola está vazia.</p></div>:(
             <>
               {cart.map(i=>(
                 <div key={i.id} className="flex gap-4 bg-white p-4 border rounded-sm shadow-sm items-center animate-in">
-                  <div className="w-14 h-18 bg-gray-50 rounded-sm overflow-hidden shrink-0">{i.image&&<img src={i.image} className="w-full h-full object-cover" alt={i.name}/>}</div>
+                  <div className="w-14 h-18 bg-gray-50 rounded-sm overflow-hidden shrink-0">{i.image && <img src={i.image} className="product-img" alt={i.name}/>}</div>
                   <div className="flex-1">
                     <p className="text-xs font-bold uppercase text-gray-800">{i.name}</p>
                     <p className="text-[10px] text-gray-500">{i.qty}x {formatCurrency(i.price)}</p>
@@ -133,27 +137,29 @@ function App() {
               <div className="bg-white p-6 border rounded-sm space-y-5 shadow-sm">
                 <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="Seu Nome Completo" value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/>
                 <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="WhatsApp (com DDD)" value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
+                <div className="flex justify-between items-center pt-4">
+                  <label className="text-[10px] font-bold tracking-wider">Forma de pagamento:</label>
+                  <select className="border px-2 py-1 rounded-sm" value={payment} onChange={e=>setPayment(e.target.value)}>
+                    <option value="PIX">PIX ({storeConfig.pixDiscount*100}% de desconto)</option>
+                    <option value="Cartão">Cartão ({storeConfig.cardInstallments}x)</option>
+                  </select>
+                </div>
                 <div className="flex justify-between text-xl font-serif pt-4 border-t mt-4 text-gray-800">
-                  <span>Total c/ Desc.</span>
+                  <span>Total:</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
-                <p className="text-[10px] text-gray-500 italic text-center">Parcelamento cartão: até {storeConfig.cardInstallments}x sem juros</p>
                 <button onClick={finalizeSale} className="w-full bg-[#A68966] text-white py-5 uppercase font-bold tracking-[0.2em] rounded-sm shadow-lg active:scale-95 transition-transform">Finalizar e Enviar</button>
               </div>
             </>
           )}
-        </div>
-      )}
+        </div>}
 
-      {view==='confirmed'&&(
-        <div className="text-center py-20 space-y-8 animate-in">
-          <div className="flex justify-center text-green-500"><Icons.CheckCircle2/></div>
-          <h2 className="text-3xl font-serif italic text-gray-800">Pedido Quase Pronto!</h2>
-          <p className="text-gray-500 text-sm max-w-xs mx-auto">Clique no botão abaixo para enviar os detalhes para WhatsApp.</p>
-          <button onClick={()=>sendWhatsApp(lastOrder)} className="w-full bg-[#25D366] text-white py-5 flex items-center justify-center gap-3 font-bold uppercase tracking-[0.1em] rounded-sm shadow-xl hover:brightness-110 transition-all"><Icons.MessageCircle/> Enviar Pedido via WhatsApp</button>
+        {view==='confirmed' && <div className="text-center py-20 space-y-8 animate-in">
+          <div className="flex justify-center text-green-500"><Icons.CheckCircle2 /></div>
+          <h2 className="text-3xl font-serif italic text-gray-800">Pedido Enviado!</h2>
+          <p className="text-gray-500 text-sm max-w-xs mx-auto">O pedido foi enviado para o WhatsApp da empresa.</p>
           <button onClick={()=>setView('catalog')} className="text-[#A68966] uppercase text-[10px] font-bold tracking-widest border-b border-[#A68966] pb-1">Voltar à Loja</button>
-        </div>
-      )}
+        </div>}
 
       </main>
     </div>
@@ -164,4 +170,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
-
