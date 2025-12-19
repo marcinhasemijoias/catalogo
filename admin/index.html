@@ -3,214 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <title>Painel Administrativo | Marcinha Semijoias</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    h2, h3 {
-      margin-top: 0;
-    }
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    .box {
-      background: #fff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 6px;
-      max-width: 800px;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-
-    button {
-      background: #111;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
-
-    button.whatsapp {
-      background: #25D366;
-    }
-
-    button.pdf {
-      background: #555;
-    }
-
-    button.small {
-      width: auto;
-      margin-right: 5px;
-      margin-top: 5px;
-    }
-
-    .produto, .pedido {
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      background: #fafafa;
-    }
-
-    .produto img {
-      max-width: 100px;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .print-area, .print-area * {
-        visibility: visible;
-      }
-      .print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-    }
-  </style>
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body>
 
-<!-- LOGIN -->
-<div id="loginBox" class="box">
-  <h2>Login Administrativo</h2>
-  <input type="password" id="senha" placeholder="Senha do admin" />
-  <button onclick="login()">Entrar</button>
-</div>
+<body class="bg-[#FDFBF7] text-[#2D2926] font-sans">
 
-<!-- PAINEL -->
-<div id="adminBox" class="hidden">
+  <div id="app"></div>
 
-  <h2>Marcinha Semijoias — Painel Administrativo</h2>
-
-  <!-- CONFIGURAÇÕES -->
-  <div class="box">
-    <h3>Configurações da Loja</h3>
-    <input id="pixDesconto" type="number" placeholder="Desconto PIX (%)" />
-    <input id="parcelas" type="number" placeholder="Parcelas no cartão" />
-    <button onclick="salvarConfig()">Salvar Configurações</button>
-  </div>
-
-  <!-- PRODUTOS -->
-  <div class="box">
-    <h3>Cadastrar / Editar Produto</h3>
-    <input id="sku" placeholder="SKU" />
-    <input id="nome" placeholder="Nome do produto" />
-    <input id="preco" type="number" placeholder="Preço" />
-    <input id="imagem" type="file" accept="image/*" />
-    <button onclick="salvarProduto()">Salvar Produto</button>
-  </div>
-
-  <div class="box">
-    <h3>Produtos Cadastrados</h3>
-    <div id="listaProdutos"></div>
-  </div>
-
-  <!-- RELATÓRIO DE VENDAS -->
-  <div class="box">
-    <h3>Relatório de Vendas</h3>
-    <div id="listaPedidos"></div>
-  </div>
-
-</div>
-
-<!-- ÁREA DE IMPRESSÃO -->
-<div id="printArea" class="print-area hidden"></div>
-
-<script src="admin.js"></script>
-
-<script>
-/* ===== LOGIN ===== */
-const SENHA_ADMIN = "1234";
-
-function login() {
-  if (document.getElementById("senha").value === SENHA_ADMIN) {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminBox").classList.remove("hidden");
-    listarPedidos();
-  } else {
-    alert("Senha incorreta");
-  }
-}
-
-/* ===== RELATÓRIO DE VENDAS ===== */
-function listarPedidos() {
-  const pedidos = JSON.parse(localStorage.getItem("pedidos")) || [];
-  const lista = document.getElementById("listaPedidos");
-  lista.innerHTML = "";
-
-  if (pedidos.length === 0) {
-    lista.innerHTML = "<p>Nenhuma venda registrada.</p>";
-    return;
-  }
-
-  pedidos.forEach((p, i) => {
-    lista.innerHTML += `
-      <div class="pedido">
-        <strong>Pedido #${i + 1}</strong><br>
-        Cliente: ${p.cliente}<br>
-        WhatsApp: ${p.whatsapp}<br>
-        Total: R$ ${p.total.toFixed(2)}<br><br>
-
-        <button class="small whatsapp"
-          onclick="contatarCliente('${p.whatsapp}')">
-          📲 WhatsApp
-        </button>
-
-        <button class="small pdf"
-          onclick="gerarPDF(${i})">
-          🧾 Gerar PDF
-        </button>
-      </div>
-    `;
-  });
-}
-
-function contatarCliente(numero) {
-  const url = `https://wa.me/55${numero.replace(/\D/g, "")}`;
-  window.open(url, "_blank");
-}
-
-function gerarPDF(index) {
-  const pedidos = JSON.parse(localStorage.getItem("pedidos")) || [];
-  const p = pedidos[index];
-
-  const area = document.getElementById("printArea");
-  area.innerHTML = `
-    <h2>Marcinha Semijoias</h2>
-    <p><strong>Cliente:</strong> ${p.cliente}</p>
-    <p><strong>WhatsApp:</strong> ${p.whatsapp}</p>
-    <hr>
-    ${p.itens.map(i =>
-      `<p>${i.nome} — R$ ${i.preco.toFixed(2)}</p>`
-    ).join("")}
-    <hr>
-    <h3>Total: R$ ${p.total.toFixed(2)}</h3>
-  `;
-
-  area.classList.remove("hidden");
-  window.print();
-  area.classList.add("hidden");
-}
-</script>
-
+  <script src="./admin.js"></script>
 </body>
 </html>
-
