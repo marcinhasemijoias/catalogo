@@ -1,1 +1,106 @@
+import React, { useState, useEffect } from 'react';
+import { Settings, PlusCircle, Trash2, History, Download, MessageCircle, Save, Package } from 'lucide-react';
 
+export default function AdminPanel() {
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [storeConfig, setStoreConfig] = useState({
+    name: 'Royal Joias', whatsapp: '5511999999999', pixDiscount: 0.1, maxInstallments: 12
+  });
+  const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '' });
+
+  useEffect(() => {
+    const savedProducts = localStorage.getItem('luxury_products');
+    const savedConfig = localStorage.getItem('luxury_config');
+    const savedOrders = localStorage.getItem('luxury_orders');
+    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
+    if (savedOrders) setOrders(JSON.parse(savedOrders));
+  }, []);
+
+  const saveProducts = (list) => {
+    setProducts(list);
+    localStorage.setItem('luxury_products', JSON.stringify(list));
+  };
+
+  const handleAddProduct = (e) => {
+    e.preventDefault();
+    const product = { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) };
+    saveProducts([...products, product]);
+    setNewProduct({ sku: '', name: '', price: '' });
+  };
+
+  const deleteProduct = (id) => saveProducts(products.filter(p => p.id !== id));
+
+  const updateConfig = (key, value) => {
+    const newConfig = { ...storeConfig, [key]: value };
+    setStoreConfig(newConfig);
+    localStorage.setItem('luxury_config', JSON.stringify(newConfig));
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FDFBF7] p-6 font-sans">
+      <div className="max-w-2xl mx-auto space-y-8">
+        <header className="flex items-center gap-2 border-b border-[#E5DACE] pb-4">
+          <Settings className="text-[#A68966]" />
+          <h1 className="text-xl font-serif uppercase tracking-widest">Painel Administrativo</h1>
+        </header>
+
+        {/* Configurações */}
+        <section className="bg-white p-6 rounded shadow-sm border border-[#E5DACE]">
+          <h2 className="text-xs font-bold uppercase mb-4 flex items-center gap-2"><Save size={14}/> Configurações da Loja</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <input className="border-b py-2 text-sm" value={storeConfig.name} onChange={e => updateConfig('name', e.target.value)} placeholder="Nome da Loja" />
+            <input className="border-b py-2 text-sm" value={storeConfig.whatsapp} onChange={e => updateConfig('whatsapp', e.target.value)} placeholder="WhatsApp" />
+          </div>
+        </section>
+
+        {/* Cadastro de Produtos */}
+        <section className="bg-white p-6 rounded shadow-sm border border-[#E5DACE]">
+          <h2 className="text-xs font-bold uppercase mb-4 flex items-center gap-2"><Package size={14}/> Gerenciar Catálogo</h2>
+          <form onSubmit={handleAddProduct} className="space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              <input className="border-b py-2 text-xs" placeholder="Nome" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+              <input className="border-b py-2 text-xs" placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
+              <input className="border-b py-2 text-xs" placeholder="Preço" type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+            </div>
+            <button className="w-full bg-[#2D2926] text-white py-3 text-[10px] uppercase flex items-center justify-center gap-2">
+              <PlusCircle size={14}/> Adicionar Peça
+            </button>
+          </form>
+          
+          <div className="mt-6 space-y-2">
+            {products.map(p => (
+              <div key={p.id} className="flex justify-between items-center p-2 border-b text-xs">
+                <span>{p.name} ({p.sku})</span>
+                <div className="flex items-center gap-4">
+                  <span className="font-bold">R$ {p.price}</span>
+                  <button onClick={() => deleteProduct(p.id)} className="text-red-400"><Trash2 size={14}/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Histórico */}
+        <section className="bg-white p-6 rounded shadow-sm border border-[#E5DACE]">
+          <h2 className="text-xs font-bold uppercase mb-4 flex items-center gap-2"><History size={14}/> Vendas Recentes</h2>
+          <div className="space-y-3">
+            {orders.map(order => (
+              <div key={order.id} className="p-3 bg-[#FDFBF7] border flex justify-between items-center">
+                <div className="text-[10px]">
+                  <p className="font-bold uppercase">{order.customer.name}</p>
+                  <p className="text-gray-400">{order.date} • R$ {order.total}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="p-2 border rounded"><Download size={14}/></button>
+                  <button className="p-2 bg-[#25D366] text-white rounded"><MessageCircle size={14}/></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
