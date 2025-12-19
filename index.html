@@ -2,39 +2,214 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Marcinha Semijoias</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
+  <title>Abella Joias - Catálogo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    body { font-family: Arial; margin: 0; padding: 0; background: #fafafa; }
-    header { background: #000; color: #fff; padding: 15px; text-align: center; }
-    .produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 15px; padding: 15px; }
-    .produto { background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,.1); }
-    .produto img { width: 100%; border-radius: 6px; }
-    button { width: 100%; padding: 8px; background: #000; color: #fff; border: none; cursor: pointer; }
-    #carrinho { padding: 15px; background: #fff; }
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .animate-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
+  <div id="root"></div>
 
-<header>
-  <h1>Marcinha Semijoias</h1>
-</header>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-<section class="produtos" id="listaProdutos"></section>
+    const Icons = {
+      ShoppingCart: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>,
+      ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+      Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+      CheckCircle2: () => <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
+      MessageCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+    };
 
-<section id="carrinho">
-  <h2>Carrinho</h2>
-  <ul id="itensCarrinho"></ul>
-  <p id="total"></p>
-  <button onclick="finalizarPedido()">Finalizar Pedido</button>
-</section>
+    function App() {
+      const [view, setView] = useState('catalog');
+      const [products, setProducts] = useState([]);
+      const [cart, setCart] = useState([]);
+      const [customer, setCustomer] = useState({ name: '', phone: '+55' });
+      const [storeConfig, setStoreConfig] = useState({ name: 'Abella Joias', whatsapp: '5511999999999', pixDiscount: 0.10 });
+      const [lastOrder, setLastOrder] = useState(null);
 
-<script src="app.js"></script>
+      // Produtos de exemplo
+      useEffect(() => {
+        const exampleProducts = [
+          { id: 1, name: 'Anel Dourado', price: 120, stock: 5, image: 'imagens/produto1.jpg' },
+          { id: 2, name: 'Brinco Prateado', price: 90, stock: 3, image: 'imagens/produto2.jpg' },
+          { id: 3, name: 'Colar Elegante', price: 150, stock: 4, image: 'imagens/produto3.jpg' },
+        ];
+        const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+        if (savedProducts.length) setProducts(savedProducts);
+        else {
+          setProducts(exampleProducts);
+          localStorage.setItem('products', JSON.stringify(exampleProducts));
+        }
+      }, []);
+
+      const formatCurrency = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const subtotal = useMemo(() => cart.reduce((a, i) => a + (Number(i.price) * i.qty), 0), [cart]);
+      const total = useMemo(() => subtotal * (1 - storeConfig.pixDiscount), [subtotal, storeConfig.pixDiscount]);
+
+      const addToCart = p => {
+        if (p.stock <= 0) return;
+        setCart(prev => {
+          const exists = prev.find(item => item.id === p.id);
+          if (exists) return prev.map(item => item.id === p.id ? { ...item, qty: item.qty + 1 } : item);
+          return [...prev, { ...p, qty: 1 }];
+        });
+      };
+
+      const finalizeSale = () => {
+        if (!customer.name || customer.phone.length < 10) {
+          alert("Por favor, preencha o seu nome e WhatsApp corretamente.");
+          return;
+        }
+        const order = { id: Math.floor(1000 + Math.random()*8999), customer, items: cart, total };
+        const updatedProducts = products.map(p => {
+          const item = cart.find(ci => ci.id === p.id);
+          return item ? { ...p, stock: Math.max(0, p.stock - item.qty) } : p;
+        });
+        localStorage.setItem('products', JSON.stringify(updatedProducts));
+        setProducts(updatedProducts);
+        setLastOrder(order);
+        setCart([]);
+        setView('confirmed');
+      };
+
+      const sendWhatsApp = order => {
+        const itemsList = order.items.map(i => `- ${i.qty}x ${i.name}`).join('%0A');
+        const msg = `*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*Itens:*%0A${itemsList}%0A%0A*Total c/ Desc:* ${formatCurrency(order.total)}`;
+        window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`, '_blank');
+      };
+
+      return (
+        <div className="min-h-screen pb-20">
+          <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b p-5 flex justify-between items-center shadow-sm">
+            <div className="w-10"></div>
+            <h1 className="text-lg tracking-[0.3em] uppercase font-serif font-light">{storeConfig.name}</h1>
+            <button onClick={() => setView('cart')} className="relative p-2 text-[#A68966] hover:opacity-70 transition-opacity">
+              <Icons.ShoppingCart />
+              {cart.length > 0 && (
+                <span className="absolute top-0 right-0 bg-[#A68966] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold border border-white">
+                  {cart.length}
+                </span>
+              )}
+            </button>
+          </header>
+
+          <main className="max-w-xl mx-auto p-4 md:p-8">
+            {view === 'catalog' && (
+              <div className="grid gap-12 animate-in">
+                {products.map(p => (
+                  <div key={p.id} className="group">
+                    <div className="aspect-[4/5] bg-[#F5F2EE] relative rounded-sm overflow-hidden mb-5 shadow-sm">
+                      {p.stock <= 0 && (
+                        <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-red-400">
+                          Esgotado
+                        </div>
+                      )}
+                      <img src={p.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={p.name} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-end border-b border-[#F5F2EE] pb-3 font-serif">
+                        <div>
+                          <h3 className="text-xl text-gray-800">{p.name}</h3>
+                          <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">
+                            {formatCurrency(p.price * (1 - storeConfig.pixDiscount))} no pix
+                          </p>
+                        </div>
+                        <p className="text-lg font-light text-gray-600">{formatCurrency(p.price)}</p>
+                      </div>
+                      <button 
+                        disabled={p.stock <= 0} 
+                        onClick={() => addToCart(p)} 
+                        className="w-full py-4 bg-[#2D2926] text-white text-[10px] uppercase font-bold tracking-[0.2em] hover:bg-black transition-all disabled:opacity-30 active:scale-95"
+                      >
+                        Adicionar à Sacola
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {view === 'cart' && (
+              <div className="space-y-6 animate-in">
+                <button onClick={() => setView('catalog')} className="flex items-center gap-2 text-[#A68966] text-[10px] font-bold uppercase tracking-widest hover:opacity-70">
+                  <Icons.ChevronLeft /> Voltar ao Catálogo
+                </button>
+                <h2 className="text-2xl font-serif italic border-b pb-4">Sua Sacola</h2>
+                {cart.length === 0 ? (
+                  <div className="text-center py-16 space-y-4">
+                    <p className="text-gray-400 italic">Sua sacola está vazia.</p>
+                  </div>
+                ) : (
+                  <>
+                    {cart.map(i => (
+                      <div key={i.id} className="flex gap-4 bg-white p-4 border rounded-sm shadow-sm items-center animate-in">
+                        <div className="w-14 h-18 bg-gray-50 rounded-sm overflow-hidden shrink-0">
+                          {i.image && <img src={i.image} className="w-full h-full object-cover" alt={i.name} />}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold uppercase text-gray-800">{i.name}</p>
+                          <p className="text-[10px] text-gray-500">{i.qty}x {formatCurrency(i.price)}</p>
+                        </div>
+                        <button onClick={() => setCart(cart.filter(x => x.id !== i.id))} className="text-red-200 hover:text-red-500 transition-colors p-2">
+                          <Icons.Trash2 />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="bg-white p-6 border rounded-sm space-y-5 shadow-sm">
+                      <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="Seu Nome Completo" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
+                      <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="WhatsApp (com DDD)" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} />
+                      <div className="flex justify-between text-xl font-serif pt-4 border-t mt-4 text-gray-800">
+                        <span>Total c/ Desc.</span>
+                        <span>{formatCurrency(total)}</span>
+                      </div>
+                      <button onClick={finalizeSale} className="w-full bg-[#A68966] text-white py-5 uppercase font-bold tracking-[0.2em] rounded-sm shadow-lg active:scale-95 transition-transform">
+                        Finalizar e Enviar
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            {view === 'confirmed' && (
+              <div className="text-center py-20 space-y-8 animate-in">
+                <div className="flex justify-center text-green-500"><Icons.CheckCircle2 /></div>
+                <div className="space-y-3">
+                  <h2 className="text-3xl font-serif italic text-gray-800">Pedido Quase Pronto!</h2>
+                  <p className="text-gray-500 text-sm max-w-xs mx-auto">Clique no botão abaixo para enviar os detalhes do seu pedido para o nosso WhatsApp.</p>
+                </div>
+                <button onClick={() => sendWhatsApp(lastOrder)} className="w-full bg-[#25D366] text-white py-5 flex items-center justify-center gap-3 font-bold uppercase tracking-[0.1em] rounded-sm shadow-xl hover:brightness-110 transition-all">
+                  <Icons.MessageCircle /> Enviar Pedido via WhatsApp
+                </button>
+                <button onClick={() => setView('catalog')} className="text-[#A68966] uppercase text-[10px] font-bold tracking-widest border-b border-[#A68966] pb-1">Voltar à Loja</button>
+              </div>
+            )}
+          </main>
+
+          <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t py-4 flex justify-around items-center z-40 text-[#A68966]">
+            <button onClick={() => setView('catalog')} className={`flex flex-col items-center gap-1 ${view === 'catalog' ? 'opacity-100' : 'opacity-30'}`}>
+              <span className="text-[10px] uppercase font-bold tracking-widest">Vitrine</span>
+            </button>
+            <button onClick={() => setView('cart')} className={`flex flex-col items-center gap-1 ${view === 'cart' ? 'opacity-100' : 'opacity-30'}`}>
+              <span className="text-[10px] uppercase font-bold tracking-widest">Minha Sacola</span>
+            </button>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
 </html>
+
 
