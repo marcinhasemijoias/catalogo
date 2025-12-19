@@ -1,121 +1,132 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  ShoppingCart, Send, ChevronLeft, CreditCard, QrCode, 
-  CheckCircle2, MessageCircle, Download, Star 
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Royal Joias</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-export default function StoreFront() {
-  const [view, setView] = useState('catalog');
-  const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [customerData, setCustomerData] = useState({ name: '', phone: '', address: '' });
-  const [paymentMethod, setPaymentMethod] = useState('pix');
-  const [installments, setInstallments] = useState(1);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [activeOrder, setActiveOrder] = useState(null);
-  const [storeConfig, setStoreConfig] = useState({
-    name: 'Royal Joias',
-    whatsapp: '5511999999999',
-    pixDiscount: 0.1,
-    maxInstallments: 12
-  });
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        
+        // Mock dos ícones Lucide para rodar via CDN
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{width: size, height: size}} className={className}></i>;
+        };
 
-  useEffect(() => {
-    const savedProducts = localStorage.getItem('luxury_products');
-    const savedConfig = localStorage.getItem('luxury_config');
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
-    if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
+        function App() {
+            const [view, setView] = useState('catalog');
+            const [products, setProducts] = useState([]);
+            const [cart, setCart] = useState([]);
+            const [customerData, setCustomerData] = useState({ name: '', phone: '' });
+            const [paymentMethod, setPaymentMethod] = useState('pix');
+            const [activeOrder, setActiveOrder] = useState(null);
+            const [storeConfig, setStoreConfig] = useState({
+                name: 'Royal Joias',
+                whatsapp: '5511999999999',
+                pixDiscount: 0.1
+            });
 
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
+            useEffect(() => {
+                const savedProducts = localStorage.getItem('luxury_products');
+                const savedConfig = localStorage.getItem('luxury_config');
+                if (savedProducts) setProducts(JSON.parse(savedProducts));
+                if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
+            }, []);
 
-  const subtotal = useMemo(() => cart.reduce((acc, item) => acc + item.price * item.quantity, 0), [cart]);
-  const discountAmount = paymentMethod === 'pix' ? subtotal * storeConfig.pixDiscount : 0;
-  const total = subtotal - discountAmount;
+            const total = useMemo(() => {
+                const sub = cart.reduce((acc, item) => acc + item.price, 0);
+                return paymentMethod === 'pix' ? sub * (1 - storeConfig.pixDiscount) : sub;
+            }, [cart, paymentMethod, storeConfig]);
 
-  const formatCurrency = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const formatCurrency = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  const finalizePurchase = () => {
-    if (!customerData.name) return alert("Preencha o nome do cliente.");
-    const orderData = {
-      id: Date.now(),
-      date: new Date().toLocaleString('pt-BR'),
-      customer: { ...customerData },
-      items: [...cart],
-      paymentMethod,
-      installments: paymentMethod === 'card' ? installments : 1,
-      subtotal,
-      discount: discountAmount,
-      total
-    };
-    
-    const savedOrders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
-    localStorage.setItem('luxury_orders', JSON.stringify([orderData, ...savedOrders]));
-    setActiveOrder(orderData);
-    setView('success');
-  };
+            const finalizePurchase = () => {
+                if (!customerData.name) return alert("Digite seu nome");
+                const order = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString(),
+                    customer: customerData,
+                    items: cart,
+                    total: total,
+                    paymentMethod
+                };
+                const orders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
+                localStorage.setItem('luxury_orders', JSON.stringify([order, ...orders]));
+                setActiveOrder(order);
+                setView('success');
+            };
 
-  const handleDownloadPdf = () => {
-    if (!activeOrder) return;
-    setIsGeneratingPdf(true);
-    const element = document.getElementById('receipt-content-print');
-    const opt = {
-      margin: 0,
-      filename: `Certificado_${activeOrder.customer.name}.pdf`,
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    window.html2pdf().from(element).set(opt).save().then(() => setIsGeneratingPdf(false));
-  };
+            return (
+                <div className="min-h-screen bg-[#FDFBF7] text-[#2D2926]">
+                    <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50">
+                        <h1 className="font-serif tracking-widest uppercase text-lg">{storeConfig.name}</h1>
+                        <button onClick={() => setView('cart')} className="relative">
+                            <Icon name="shopping-cart" />
+                            {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-[#A68966] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{cart.length}</span>}
+                        </button>
+                    </header>
 
-  return (
-    <div className="min-h-screen bg-[#FDFBF7] font-serif text-[#2D2926]">
-      <header className="sticky top-0 z-50 bg-white border-b border-[#E5DACE] px-6 py-4 flex justify-between items-center shadow-sm">
-        <h1 className="text-lg tracking-[0.4em] uppercase" onClick={() => setView('catalog')}>{storeConfig.name}</h1>
-        <button onClick={() => setView('cart')} className="relative p-2"><ShoppingCart size={20} />{cart.length > 0 && <span className="absolute top-0 right-0 bg-[#A68966] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}</button>
-      </header>
+                    <main className="p-6 max-w-xl mx-auto">
+                        {view === 'catalog' && (
+                            <div className="grid grid-cols-1 gap-8">
+                                <h2 className="font-serif text-3xl italic text-center my-8">Nossa Coleção</h2>
+                                {products.map(p => (
+                                    <div key={p.id} className="bg-white p-4 border rounded-sm text-center shadow-sm" onClick={() => {setCart([p]); setView('cart');}}>
+                                        <div className="h-48 bg-[#F5F2EE] flex items-center justify-center mb-4">
+                                            <Icon name="star" size={40} className="text-[#A68966]" />
+                                        </div>
+                                        <h3 className="font-bold uppercase text-sm tracking-widest">{p.name}</h3>
+                                        <p className="text-[#A68966] mt-2">{formatCurrency(p.price)}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-      <main className="max-w-2xl mx-auto p-6 pb-32">
-        {view === 'catalog' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in fade-in">
-            {products.map(p => (
-              <div key={p.id} className="text-center group cursor-pointer" onClick={() => { setCart([{...p, quantity: 1}]); setView('cart'); }}>
-                <div className="h-64 bg-[#F5F2EE] flex items-center justify-center mb-4 group-hover:bg-[#E5DACE] transition-all"><Star size={40} className="text-[#A68966]" /></div>
-                <h3 className="text-xs uppercase font-bold">{p.name}</h3>
-                <p className="text-sm font-sans text-gray-500">{formatCurrency(p.price)}</p>
-              </div>
-            ))}
-          </div>
-        )}
+                        {view === 'cart' && (
+                            <div className="space-y-6">
+                                <button onClick={() => setView('catalog')} className="text-xs uppercase flex items-center gap-1"><Icon name="chevron-left" size={14}/> Voltar</button>
+                                <h2 className="font-serif text-2xl italic">Checkout</h2>
+                                <input className="w-full border-b p-2 outline-none" placeholder="Nome Completo" onChange={e => setCustomerData({...customerData, name: e.target.value})} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => setPaymentMethod('pix')} className={`p-4 border ${paymentMethod === 'pix' ? 'border-[#A68966] bg-[#FDFBF7]' : 'opacity-50'}`}>PIX</button>
+                                    <button onClick={() => setPaymentMethod('card')} className={`p-4 border ${paymentMethod === 'card' ? 'border-[#A68966] bg-[#FDFBF7]' : 'opacity-50'}`}>CARTÃO</button>
+                                </div>
+                                <div className="border-t pt-4">
+                                    <p className="flex justify-between font-bold text-xl font-serif"><span>Total</span> <span>{formatCurrency(total)}</span></p>
+                                </div>
+                                <button onClick={finalizePurchase} className="w-full bg-[#2D2926] text-white py-4 uppercase text-xs tracking-widest">Finalizar Pedido</button>
+                            </div>
+                        )}
 
-        {view === 'cart' && (
-          <div className="max-w-md mx-auto animate-in slide-in-from-bottom-4">
-             <h2 className="text-xl italic text-center py-8">Checkout Exclusivo</h2>
-             <input placeholder="Nome Completo" className="w-full border-b mb-4 py-2 outline-none" onChange={e => setCustomerData({...customerData, name: e.target.value})} />
-             <input placeholder="WhatsApp" className="w-full border-b mb-6 py-2 outline-none" onChange={e => setCustomerData({...customerData, phone: e.target.value})} />
-             <div className="grid grid-cols-2 gap-2 mb-6">
-                <button onClick={() => setPaymentMethod('pix')} className={`p-4 border text-[10px] ${paymentMethod === 'pix' ? 'border-[#A68966]' : 'opacity-50'}`}>PIX</button>
-                <button onClick={() => setPaymentMethod('card')} className={`p-4 border text-[10px] ${paymentMethod === 'card' ? 'border-[#A68966]' : 'opacity-50'}`}>CARTÃO</button>
-             </div>
-             <button onClick={finalizePurchase} className="w-full bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-widest">Finalizar e Gerar Recibo</button>
-          </div>
-        )}
+                        {view === 'success' && (
+                            <div className="text-center py-20 space-y-4">
+                                <Icon name="check-circle-2" size={60} className="mx-auto text-[#A68966]" />
+                                <h2 className="font-serif text-2xl italic">Pedido Confirmado!</h2>
+                                <button onClick={() => setView('catalog')} className="text-xs underline">Voltar para a loja</button>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
 
-        {view === 'success' && activeOrder && (
-          <div className="text-center py-10">
-            <CheckCircle2 size={64} className="mx-auto text-[#A68966] mb-4" />
-            <h2 className="text-2xl mb-8">Venda Confirmada</h2>
-            <button onClick={handleDownloadPdf} className="w-full bg-[#2D2926] text-white py-4 text-[10px] mb-4 uppercase">
-              {isGeneratingPdf ? 'Gerando...' : 'Baixar Certificado A4'}
-            </button>
-            <button onClick={() => setView('catalog')} className="text-[10px] uppercase text-gray-400">Voltar ao Início</button>
-            
-            {/* O conteúdo do PDF (id="receipt-content-print") deve ser mantido aqui conforme o código original */}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
