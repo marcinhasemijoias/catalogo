@@ -2,31 +2,83 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Marcinha Semijoias – Catálogo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #fffaf4;
-      padding: 20px;
-    }
-    h1 {
-      color: #ff2d55;
-    }
-    .produto {
-      border: 1px solid #ddd;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-    }
-  </style>
+  <title>Marcinha Semijoias | Catálogo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
 
-  <h1>Marcinha Semijoias</h1>
+<body class="bg-[#FDFBF7] text-[#2D2926] font-sans">
 
-  <div id="produtos"></div>
+  <!-- HEADER -->
+  <header class="sticky top-0 bg-white border-b border-[#E5DACE] z-50">
+    <div class="max-w-5xl mx-auto px-4 py-4 text-center">
+      <h1 class="text-xl tracking-[0.4em] uppercase font-light">
+        Marcinha Semijoias
+      </h1>
+      <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-1">
+        Catálogo Online
+      </p>
+    </div>
+  </header>
 
-  <script src="app.js"></script>
+  <!-- CONTEÚDO -->
+  <main class="max-w-5xl mx-auto px-4 py-10 grid gap-14">
+
+    <!-- PRODUTOS -->
+    <section>
+      <h2 class="text-sm uppercase tracking-widest text-gray-400 mb-8 text-center">
+        Vitrine
+      </h2>
+
+      <div id="produtos" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+        <!-- Produtos renderizados via JS -->
+      </div>
+    </section>
+
+    <!-- CARRINHO -->
+    <section class="border-t pt-10">
+      <h2 class="text-sm uppercase tracking-widest text-gray-400 mb-6 text-center">
+        Sua Sacola
+      </h2>
+
+      <div id="carrinho" class="space-y-4 text-sm"></div>
+
+      <div class="mt-6 space-y-3">
+        <input
+          id="clienteNome"
+          placeholder="Seu nome"
+          class="w-full border-b py-3 outline-none focus:border-[#A68966]"
+        />
+        <input
+          id="clienteWhats"
+          placeholder="WhatsApp (DDD + número)"
+          class="w-full border-b py-3 outline-none focus:border-[#A68966]"
+        />
+      </div>
+
+      <button
+        onclick="finalizarPedido()"
+        class="mt-8 w-full bg-[#2D2926] text-white py-5 uppercase tracking-[0.3em] text-xs font-bold hover:bg-black transition"
+      >
+        Finalizar Pedido
+      </button>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center py-10 text-[10px] text-gray-400">
+    © <span id="ano"></span> Marcinha Semijoias
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    document.getElementById("ano").innerText = new Date().getFullYear();
+  </script>
+
+  <script src="./app.js"></script>
+
 </body>
 </html>
