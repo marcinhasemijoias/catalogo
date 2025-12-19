@@ -7,29 +7,38 @@ function salvarProduto() {
   const nome = document.getElementById("nome").value;
   const preco = document.getElementById("preco").value;
   const desconto = document.getElementById("desconto").value;
+  const imagemInput = document.getElementById("imagem");
 
-  if (!sku || !nome || !preco) {
-    alert("Preencha os campos obrigatórios");
+  if (!sku || !nome || !preco || imagemInput.files.length === 0) {
+    alert("Preencha todos os campos obrigatórios e selecione uma imagem");
     return;
   }
 
-  const produtos = getProdutos();
+  const reader = new FileReader();
 
-  produtos.push({
-    sku,
-    nome,
-    preco,
-    desconto
-  });
+  reader.onload = function () {
+    const produtos = getProdutos();
 
-  localStorage.setItem("produtos", JSON.stringify(produtos));
+    produtos.push({
+      sku,
+      nome,
+      preco,
+      desconto,
+      imagem: reader.result // Base64
+    });
 
-  document.getElementById("sku").value = "";
-  document.getElementById("nome").value = "";
-  document.getElementById("preco").value = "";
-  document.getElementById("desconto").value = "";
+    localStorage.setItem("produtos", JSON.stringify(produtos));
 
-  listarProdutos();
+    document.getElementById("sku").value = "";
+    document.getElementById("nome").value = "";
+    document.getElementById("preco").value = "";
+    document.getElementById("desconto").value = "";
+    document.getElementById("imagem").value = "";
+
+    listarProdutos();
+  };
+
+  reader.readAsDataURL(imagemInput.files[0]);
 }
 
 function listarProdutos() {
@@ -42,6 +51,7 @@ function listarProdutos() {
     const div = document.createElement("div");
     div.className = "produto";
     div.innerHTML = `
+      <img src="${p.imagem}" style="max-width:100px;display:block;margin-bottom:5px"/>
       <strong>${p.nome}</strong><br>
       SKU: ${p.sku}<br>
       Preço: R$ ${p.preco}<br>
