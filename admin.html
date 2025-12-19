@@ -13,7 +13,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
 body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
 .font-serif { font-family: 'Playfair Display', serif; }
-.product-img { object-fit: contain; width: 100%; height: 100%; }
+.product-img { object-fit: contain; width: 100%; height: 200px; }
 </style>
 </head>
 <body>
@@ -94,16 +94,18 @@ function AdminApp(){
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8">
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
       <h1 className="text-3xl font-serif mb-4">Admin - Abella Joias</h1>
 
       <section className="space-y-4">
         <h2 className="text-xl font-bold">Configurações da Loja</h2>
-        <input className="border p-2 w-full" placeholder="Nome da Loja" value={storeConfig.name} onChange={e=>setStoreConfig({...storeConfig,name:e.target.value})}/>
-        <input className="border p-2 w-full" placeholder="WhatsApp da Loja" value={storeConfig.whatsapp} onChange={e=>setStoreConfig({...storeConfig,whatsapp:e.target.value})}/>
-        <input className="border p-2 w-full" type="number" placeholder="Desconto PIX (0-1)" value={storeConfig.pixDiscount} onChange={e=>setStoreConfig({...storeConfig,pixDiscount:parseFloat(e.target.value)})}/>
-        <input className="border p-2 w-full" type="number" placeholder="Parcelas Cartão" value={storeConfig.cardInstallments} onChange={e=>setStoreConfig({...storeConfig,cardInstallments:parseInt(e.target.value)})}/>
-        <button onClick={saveConfig} className="bg-[#A68966] text-white px-4 py-2 rounded-sm">Salvar Configurações</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input className="border p-2 w-full" placeholder="Nome da Loja" value={storeConfig.name} onChange={e=>setStoreConfig({...storeConfig,name:e.target.value})}/>
+          <input className="border p-2 w-full" placeholder="WhatsApp da Loja" value={storeConfig.whatsapp} onChange={e=>setStoreConfig({...storeConfig,whatsapp:e.target.value})}/>
+          <input className="border p-2 w-full" type="number" placeholder="Desconto PIX (0-1)" value={storeConfig.pixDiscount} onChange={e=>setStoreConfig({...storeConfig,pixDiscount:parseFloat(e.target.value)})}/>
+          <input className="border p-2 w-full" type="number" placeholder="Parcelas Cartão" value={storeConfig.cardInstallments} onChange={e=>setStoreConfig({...storeConfig,cardInstallments:parseInt(e.target.value)})}/>
+        </div>
+        <button onClick={saveConfig} className="bg-[#A68966] text-white px-4 py-2 rounded-sm mt-2">Salvar Configurações</button>
       </section>
 
       <section className="space-y-4">
@@ -111,7 +113,7 @@ function AdminApp(){
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {products.map(p=>(
             <div key={p.id} className="border p-2 rounded-sm relative">
-              <img src={p.image} className="product-img mb-2" alt={p.name}/>
+              {p.image && <img src={p.image} className="product-img mb-2" alt={p.name}/>}
               <p className="font-bold">{p.name}</p>
               <p>R$ {Number(p.price).toFixed(2)}</p>
               <p>Estoque: {p.stock}</p>
