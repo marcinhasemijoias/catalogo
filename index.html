@@ -96,7 +96,6 @@ function App() {
 
     const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
     const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*WhatsApp:* ${order.customer.phone}%0A*Itens:*%0A${itemsList}%0A%0A*Pagamento:* ${order.payment}%0A*Total:* ${formatCurrency(order.total)}`;
-    window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
   };
 
   return(
