@@ -15,6 +15,7 @@
         .font-serif { font-family: 'Playfair Display', serif; }
         .lux-border { border-color: #E5DACE; }
         .lux-gold { color: #A68966; }
+        input:focus { border-bottom-color: #A68966 !important; outline: none; }
     </style>
 </head>
 <body>
@@ -31,7 +32,12 @@
         function AdminPanel() {
             const [products, setProducts] = useState([]);
             const [orders, setOrders] = useState([]);
-            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '5511999999999' });
+            const [storeConfig, setStoreConfig] = useState({ 
+                name: 'Royal Joias', 
+                whatsapp: '5511999999999',
+                pixDiscount: 10,
+                maxInstallments: 12
+            });
             const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '', image: '' });
 
             useEffect(() => {
@@ -43,12 +49,16 @@
                 if (savedOrders) setOrders(JSON.parse(savedOrders));
             }, []);
 
+            const updateConfig = (key, value) => {
+                const updated = { ...storeConfig, [key]: value };
+                setStoreConfig(updated);
+                localStorage.setItem('luxury_config', JSON.stringify(updated));
+            };
+
             const handleImageUpload = (e) => {
                 const file = e.target.files[0];
                 const reader = new FileReader();
-                reader.onloadend = () => {
-                    setNewProduct({ ...newProduct, image: reader.result });
-                };
+                reader.onloadend = () => setNewProduct({ ...newProduct, image: reader.result });
                 if (file) reader.readAsDataURL(file);
             };
 
@@ -69,74 +79,115 @@
             };
 
             return (
-                <div className="min-h-screen pb-24">
-                    <header className="bg-white border-b lux-border py-8 mb-10 shadow-sm text-center">
+                <div className="min-h-screen pb-32">
+                    <header className="bg-white border-b lux-border py-10 mb-10 text-center shadow-sm">
                         <h1 className="text-3xl font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
                     </header>
 
-                    <main className="max-w-2xl mx-auto px-6 space-y-10">
-                        {/* Histórico de Pedidos */}
+                    <main className="max-w-2xl mx-auto px-6 space-y-12">
+                        
+                        {/* 1. HISTÓRICO DE PEDIDOS */}
                         <section className="bg-white border lux-border p-8 rounded-sm shadow-sm">
                             <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-6 border-l-2 border-[#A68966] pl-4 flex items-center gap-3">
                                 <Icon name="history" className="lux-gold" /> Histórico de Pedidos
                             </h2>
-                            <div className="space-y-3">
-                                {orders.length === 0 ? <p className="text-xs italic text-gray-300">Nenhum pedido realizado.</p> : 
+                            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                                {orders.length === 0 ? <p className="text-xs italic text-gray-300 font-light">Nenhum pedido realizado ainda.</p> : 
                                     orders.map(o => (
-                                        <div key={o.id} className="p-3 bg-[#FDFBF7] border lux-border text-[10px] flex justify-between">
-                                            <span><strong>{o.customer?.name}</strong></span>
-                                            <span>R$ {o.total?.toLocaleString('pt-BR')}</span>
+                                        <div key={o.id} className="p-4 bg-[#FDFBF7] border lux-border text-[10px] flex justify-between items-center">
+                                            <div>
+                                                <p className="font-bold uppercase tracking-tighter">{o.customer?.name}</p>
+                                                <p className="text-gray-400 mt-1">{o.date}</p>
+                                            </div>
+                                            <span className="font-bold">R$ {o.total?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
                                         </div>
                                     ))
                                 }
                             </div>
                         </section>
 
-                        {/* Cadastro de Produtos */}
+                        {/* 2. DADOS DA EMPRESA E PAGAMENTOS */}
+                        <section className="bg-white border lux-border p-8 rounded-sm shadow-sm space-y-8">
+                            <div>
+                                <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-8 border-l-2 border-[#A68966] pl-4">Configurações Gerais</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Nome Comercial</label>
+                                        <input className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.name} onChange={(e) => updateConfig('name', e.target.value)} />
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">WhatsApp (Com DDD)</label>
+                                        <input className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.whatsapp} onChange={(e) => updateConfig('whatsapp', e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-6 border-t lux-border">
+                                <h3 className="text-[10px] uppercase font-bold text-gray-400 mb-6 tracking-widest">Meios de Pagamento</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Desconto PIX (%)</label>
+                                        <input type="number" className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.pixDiscount} onChange={(e) => updateConfig('pixDiscount', e.target.value)} />
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Parcelas Máximas (Cartão)</label>
+                                        <input type="number" className="border-b lux-border py-2 text-sm bg-transparent" value={storeConfig.maxInstallments} onChange={(e) => updateConfig('maxInstallments', e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* 3. CATÁLOGO DE PRODUTOS */}
                         <section className="bg-white border lux-border p-8 rounded-sm shadow-sm">
-                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-8 border-l-2 border-[#A68966] pl-4">Catálogo de Peças</h2>
-                            <form onSubmit={addProduct} className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input className="border-b lux-border py-2 text-sm outline-none" placeholder="Nome da Peça" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                                    <input className="border-b lux-border py-2 text-sm outline-none" placeholder="Preço" type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+                            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-8 border-l-2 border-[#A68966] pl-4">Cadastro de Peças</h2>
+                            <form onSubmit={addProduct} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input className="border-b lux-border py-2 text-sm" placeholder="Nome da Peça" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+                                    <input className="border-b lux-border py-2 text-sm" placeholder="SKU (Ex: RJ-101)" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
+                                    <input className="border-b lux-border py-2 text-sm" placeholder="Valor (R$)" type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
                                 </div>
                                 
-                                <div className="flex flex-col gap-2 border-2 border-dashed lux-border p-4 text-center cursor-pointer hover:bg-gray-50 transition-all">
-                                    <label className="text-[10px] uppercase font-bold text-gray-400 cursor-pointer">
-                                        <Icon name="image" size={20} className="mb-2 block mx-auto" />
-                                        {newProduct.image ? "Imagem Carregada ✓" : "Fazer Upload da Foto"}
-                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                                    </label>
-                                    {newProduct.image && <img src={newProduct.image} className="h-20 object-contain mx-auto mt-2" />}
-                                </div>
+                                <label className="flex flex-col items-center justify-center border-2 border-dashed lux-border p-6 cursor-pointer hover:bg-[#FDFBF7] transition-all group">
+                                    <Icon name="image" size={24} className="lux-gold mb-2 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[10px] uppercase font-bold text-gray-400">
+                                        {newProduct.image ? "Imagem Carregada ✓" : "Adicionar Foto de Luxo"}
+                                    </span>
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                    {newProduct.image && <img src={newProduct.image} className="h-24 mt-4 rounded-sm shadow-md" />}
+                                </label>
 
-                                <button className="w-full bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-semibold hover:bg-black">
+                                <button className="w-full bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-colors">
                                     Adicionar à Coleção
                                 </button>
                             </form>
 
-                            {/* Lista de Peças */}
-                            <div className="mt-10 space-y-4 border-t lux-border pt-6">
+                            {/* Listagem com Scroll */}
+                            <div className="mt-12 space-y-4 border-t lux-border pt-8">
                                 {products.map(p => (
-                                    <div key={p.id} className="flex items-center gap-4 p-3 border lux-border rounded-sm">
-                                        <div className="w-12 h-12 bg-gray-100 flex-shrink-0">
-                                            {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full"><Icon name="image" size={12} /></div>}
+                                    <div key={p.id} className="flex items-center gap-5 p-4 border lux-border hover:bg-[#FDFBF7] transition-all">
+                                        <div className="w-14 h-14 bg-gray-50 flex-shrink-0 border lux-border overflow-hidden">
+                                            {p.image ? <img src={p.image} className="w-full h-full object-cover" /> : <div className="flex h-full items-center justify-center text-gray-200"><Icon name="image" size={16} /></div>}
                                         </div>
                                         <div className="flex-grow">
-                                            <p className="text-[11px] font-bold uppercase">{p.name}</p>
-                                            <p className="text-[10px] lux-gold font-bold">R$ {p.price?.toLocaleString('pt-BR')}</p>
+                                            <p className="text-[11px] font-bold uppercase tracking-tight">{p.name}</p>
+                                            <p className="text-[9px] lux-gold font-bold tracking-widest uppercase">SKU: {p.sku || '---'}</p>
                                         </div>
-                                        <button onClick={() => deleteProduct(p.id)} className="text-red-200 hover:text-red-600">
-                                            <Icon name="trash-2" size={16} />
-                                        </button>
+                                        <div className="text-right">
+                                            <p className="text-xs font-bold tracking-tighter">R$ {p.price?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                                            <button onClick={() => deleteProduct(p.id)} className="text-red-200 hover:text-red-500 mt-1 transition-colors">
+                                                <Icon name="trash-2" size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </section>
                     </main>
 
-                    <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-sm border-t lux-border py-4 text-center">
-                        <p className="text-[9px] tracking-[0.5em] uppercase lux-gold font-bold">Autenticidade • Excelência • {storeConfig.name}</p>
+                    <footer className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t lux-border py-4 text-center z-50">
+                        <p className="text-[9px] tracking-[0.6em] uppercase lux-gold font-bold italic">
+                            Autenticidade • Excelência • {storeConfig.name}
+                        </p>
                     </footer>
                 </div>
             );
