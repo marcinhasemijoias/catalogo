@@ -1,12 +1,21 @@
-const App = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1 className="text-3xl font-bold text-pink-600">
-        Marcinha Semijoias – Catálogo Online
-      </h1>
-    </div>
-  );
-};
+function carregarProdutos() {
+  const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+  const container = document.getElementById("produtos");
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  if (produtos.length === 0) {
+    container.innerHTML = "<p>Nenhum produto disponível.</p>";
+    return;
+  }
 
+  produtos.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "produto";
+    div.innerHTML = `
+      <strong>${p.nome}</strong><br>
+      Preço: R$ ${p.desconto || p.preco}
+    `;
+    container.appendChild(div);
+  });
+}
+
+carregarProdutos();
