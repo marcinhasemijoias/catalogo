@@ -2,193 +2,81 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Abella Joias</title>
+<title>Painel | Royal Joias</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
-body{font-family:'Inter',sans-serif;background:#FDFBF7;}
-.font-serif{font-family:'Playfair Display',serif;}
-</style>
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
 <div id="root"></div>
+
 <script type="text/babel">
+
 const { useState, useEffect } = React;
+const { Trash2 } = lucide;
 
-function AdminApp(){
-  const [products,setProducts]=useState([]);
-  const [orders,setOrders]=useState([]);
-  const [storeConfig,setStoreConfig]=useState({name:'Abella Joias',whatsapp:'5511999999999',pixDiscount:0.1,cardInstallments:3});
-  const [newProduct,setNewProduct]=useState({name:'',sku:'',price:'',stock:'',image:''});
-  const [editProduct,setEditProduct]=useState(null);
+function Admin(){
 
-  useEffect(()=>{
-    const savedProducts=JSON.parse(localStorage.getItem('products')||'[]');
-    const savedOrders=JSON.parse(localStorage.getItem('orders')||'[]');
-    const savedConfig=JSON.parse(localStorage.getItem('storeConfig')||'null');
-    if(savedProducts.length)setProducts(savedProducts);
-    if(savedOrders.length)setOrders(savedOrders);
-    if(savedConfig)setStoreConfig(savedConfig);
-  },[]);
+const [products,setProducts]=useState([]);
+const [orders,setOrders]=useState([]);
+const [storeConfig,setStoreConfig]=useState({name:'Royal Joias',whatsapp:'',pixDiscount:0.1});
 
-  const saveProducts=p=>{
-    setProducts(p);
-    localStorage.setItem('products',JSON.stringify(p));
-  }
+useEffect(()=>{
+ setProducts(JSON.parse(localStorage.getItem('luxury_products')||'[]'));
+ setOrders(JSON.parse(localStorage.getItem('luxury_orders')||'[]'));
+ setStoreConfig(JSON.parse(localStorage.getItem('luxury_config')||storeConfig));
+},[]);
 
-  const saveOrders=o=>{
-    setOrders(o);
-    localStorage.setItem('orders',JSON.stringify(o));
-  }
-
-  const handleImageUpload=e=>{
-    const file=e.target.files[0];
-    if(file){
-      const reader=new FileReader();
-      reader.onload=()=>setNewProduct({...newProduct,image:reader.result});
-      reader.readAsDataURL(file);
-    }
-  }
-
-  const addProduct=()=>{
-    if(!newProduct.name||!newProduct.price)return;
-    const p={...newProduct,id:Math.floor(Math.random()*100000)};
-    saveProducts([...products,p]);
-    setNewProduct({name:'',sku:'',price:'',stock:'',image:''});
-  }
-
-  const deleteProduct=id=>saveProducts(products.filter(p=>p.id!==id));
-  const deleteOrder=id=>saveOrders(orders.filter(o=>o.id!==id));
-
-  const generatePDF=order=>{
-    const { jsPDF } = window.jspdf;
-    const doc=new jsPDF({unit:'mm',format:'a4'});
-    doc.setFont('Playfair Display','bold');
-    doc.setFontSize(22);
-    doc.text(storeConfig.name,105,20,{align:'center'});
-    doc.setFontSize(14);
-    doc.setFont('Inter','normal');
-    doc.text(`Pedido #${order.id}`,20,35);
-    doc.text(`Cliente: ${order.customer.name}`,20,45);
-    doc.text(`Telefone: ${order.customer.phone}`,20,52);
-    doc.text(`Pagamento: ${order.payment}`,20,59);
-    doc.text('Itens:',20,69);
-    let y=75;
-    order.items.forEach(i=>{
-      doc.text(`${i.qty}x ${i.name} (SKU: ${i.sku||'-'}) - ${Number(i.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`,20,y);
-      y+=8;
-    });
-    doc.text(`Total: ${Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`,20,y+5);
-    doc.save(`Romaneio_Pedido_${order.id}.pdf`);
-  }
-
-  const sendWhatsApp=order=>{
-    const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name} (SKU: ${i.sku||'-'})`).join('%0A');
-    const msg=`*PEDIDO #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*Itens:*%0A${itemsList}%0A%0A*Total:* ${Number(order.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}%0A*Pagamento:* ${order.payment}`;
-    window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
-  }
-
-  const saveEditProduct=()=>{
-    if(!editProduct.name||!editProduct.price)return;
-    const updated = products.map(p=>p.id===editProduct.id?editProduct:p);
-    setProducts(updated);
-    localStorage.setItem('products',JSON.stringify(updated));
-    setEditProduct(null);
-  }
-
-  return(
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-serif mb-4 text-center">Painel Admin - {storeConfig.name}</h1>
-
-      {/* Cadastro Produto */}
-      <section className="bg-white p-6 rounded shadow space-y-4">
-        <h2 className="text-xl font-semibold mb-2">Cadastrar Produto</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input placeholder="Nome do Produto" className="border p-2" value={newProduct.name} onChange={e=>setNewProduct({...newProduct,name:e.target.value})}/>
-          <input placeholder="SKU" className="border p-2" value={newProduct.sku} onChange={e=>setNewProduct({...newProduct,sku:e.target.value})}/>
-          <input placeholder="Preço (R$)" type="number" className="border p-2" value={newProduct.price} onChange={e=>setNewProduct({...newProduct,price:e.target.value})}/>
-          <input placeholder="Estoque" type="number" className="border p-2" value={newProduct.stock} onChange={e=>setNewProduct({...newProduct,stock:e.target.value})}/>
-          <input type="file" accept="image/*" onChange={handleImageUpload}/>
-        </div>
-        {newProduct.image && <img src={newProduct.image} className="w-32 h-32 object-contain mt-2 border"/>}
-        <button onClick={addProduct} className="bg-[#A68966] text-white py-2 px-4 mt-2 rounded hover:bg-[#8f7a5b]">Adicionar Produto</button>
-      </section>
-
-      {/* Produtos Cadastrados */}
-      <section className="bg-white p-6 rounded shadow space-y-4">
-        <h2 className="text-xl font-semibold">Produtos Cadastrados</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {products.map(p => (
-            <div key={p.id} className="border rounded p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-4">
-                {p.image && <img src={p.image} className="w-24 h-24 object-contain border" alt={p.name} />}
-                <div>
-                  <p className="font-bold">{p.name}</p>
-                  <p className="text-sm">SKU: {p.sku || '-'}</p>
-                  <p className="text-sm">Preço: {Number(p.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p>
-                  <p className="text-sm">Estoque: {p.stock}</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button onClick={()=>setEditProduct({...p})} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Editar</button>
-                <button onClick={()=>deleteProduct(p.id)} className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Modal de Edição */}
-      {editProduct && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow w-96 space-y-4 relative">
-            <h3 className="text-xl font-semibold">Editar Produto</h3>
-            <input placeholder="Nome" className="border p-2 w-full" value={editProduct.name} onChange={e=>setEditProduct({...editProduct,name:e.target.value})}/>
-            <input placeholder="SKU" className="border p-2 w-full" value={editProduct.sku} onChange={e=>setEditProduct({...editProduct,sku:e.target.value})}/>
-            <input placeholder="Preço" type="number" className="border p-2 w-full" value={editProduct.price} onChange={e=>setEditProduct({...editProduct,price:e.target.value})}/>
-            <input placeholder="Estoque" type="number" className="border p-2 w-full" value={editProduct.stock} onChange={e=>setEditProduct({...editProduct,stock:e.target.value})}/>
-            <div className="flex gap-2">
-              <button onClick={saveEditProduct} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Salvar</button>
-              <button onClick={()=>setEditProduct(null)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Relatório de Vendas */}
-      <section className="bg-white p-6 rounded shadow space-y-4">
-        <h2 className="text-xl font-semibold">Relatório de Vendas</h2>
-        {orders.length===0?<p className="italic text-gray-400">Nenhum pedido realizado.</p>:(
-          <div className="space-y-4">
-            {orders.map(o=>(
-              <div key={o.id} className="border rounded p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-bold">Pedido #{o.id} - {o.customer.name}</p>
-                  <p className="text-sm">Telefone: {o.customer.phone}</p>
-                  <p className="text-sm">Pagamento: {o.payment}</p>
-                  <p className="text-sm">Total: {Number(o.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</p>
-                  <p className="text-sm">Itens: {o.items.map(i=>`${i.qty}x ${i.name} (SKU: ${i.sku||'-'})`).join(', ')}</p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <button onClick={()=>generatePDF(o)} className="bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-900">PDF</button>
-                  <button onClick={()=>sendWhatsApp(o)} className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">WhatsApp</button>
-                  <button onClick={()=>deleteOrder(o.id)} className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  )
+function save(){
+ localStorage.setItem('luxury_config',JSON.stringify(storeConfig));
+ alert('Salvo');
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp/>);
+function addProduct(p){
+ const list=[...products,{...p,id:Date.now(),price:+p.price}];
+ setProducts(list);
+ localStorage.setItem('luxury_products',JSON.stringify(list));
+}
+
+return (
+<div className="max-w-4xl mx-auto p-8 space-y-10 font-sans">
+<h1 className="font-serif text-2xl">Painel Administrativo</h1>
+
+<div className="bg-white p-6 border">
+<input className="border-b w-full" value={storeConfig.name} onChange={e=>setStoreConfig({...storeConfig,name:e.target.value})}/>
+<button onClick={save} className="mt-4 bg-black text-white px-4 py-2">Salvar</button>
+</div>
+
+<div className="bg-white p-6 border">
+<h2 className="font-serif mb-4">Produtos</h2>
+{products.map(p=>(
+<div key={p.id} className="flex justify-between border-b py-2">
+<span>{p.name}</span>
+<button onClick={()=>setProducts(products.filter(x=>x.id!==p.id))}><Trash2 size={14}/></button>
+</div>
+))}
+</div>
+
+<div className="bg-white p-6 border">
+<h2 className="font-serif mb-4">Pedidos</h2>
+{orders.map(o=>(
+<div key={o.id} className="border-b py-2">
+{o.customer.name} — {o.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+</div>
+))}
+</div>
+
+</div>
+);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Admin/>);
 </script>
 </body>
 </html>
+
