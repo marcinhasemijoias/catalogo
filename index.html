@@ -32,7 +32,11 @@
 
         function Catalog() {
             const [products, setProducts] = useState([]);
-            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias' });
+            const [storeConfig, setStoreConfig] = useState({ 
+                name: 'Royal Joias', 
+                pixDiscount: 5, 
+                maxInstallments: 6 
+            });
             const [cart, setCart] = useState([]);
 
             useEffect(() => {
@@ -44,62 +48,71 @@
 
             const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+            const calculatePix = (price) => {
+                const discount = price * (storeConfig.pixDiscount / 100);
+                return formatMoney(price - discount);
+            };
+
+            const calculateInstallment = (price) => {
+                const value = price / storeConfig.maxInstallments;
+                return formatMoney(value);
+            };
+
             return (
                 <div className="min-h-screen">
-                    {/* Header */}
-                    <header className="bg-white/90 backdrop-blur-md border-b lux-border py-8 px-6 sticky top-0 z-50 flex justify-between items-center">
-                        <div className="w-10 text-xs lux-gold font-bold uppercase tracking-tighter cursor-pointer" onClick={() => window.location.href='admin.html'}>Adm</div>
+                    {/* Header Centralizado */}
+                    <header className="bg-white/90 backdrop-blur-md border-b lux-border py-10 px-6 sticky top-0 z-50 flex justify-center items-center">
                         <h1 className="text-2xl font-serif tracking-[0.4em] uppercase text-center">{storeConfig.name}</h1>
-                        <button className="relative lux-gold">
-                            <Icon name="shopping-bag" size={24} />
-                            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
-                        </button>
+                        <div className="absolute right-6">
+                            <button className="relative lux-gold">
+                                <Icon name="shopping-bag" size={22} />
+                                {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
+                            </button>
+                        </div>
                     </header>
 
-                    {/* Vitrine */}
+                    {/* Vitrine de Produtos */}
                     <main className="max-w-5xl mx-auto px-6 py-16">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
                             {products.length > 0 ? products.map(product => (
-                                <div key={product.id} className="product-card flex flex-col items-center group">
-                                    <div className="w-full aspect-square bg-[#F5F2EE] overflow-hidden border lux-border mb-6 relative shadow-sm">
+                                <div key={product.id} className="product-card flex flex-col group cursor-pointer" onClick={() => setCart([...cart, product])}>
+                                    <div className="w-full aspect-square bg-[#F5F2EE] overflow-hidden border lux-border mb-6 relative">
                                         {product.image ? (
-                                            <img 
-                                                src={product.image} 
-                                                alt={product.name} 
-                                                className="w-full h-full object-cover" 
-                                            />
+                                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-[#D6C6B5]">
                                                 <Icon name="image" size={48} />
                                             </div>
                                         )}
-                                        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500"></div>
                                     </div>
                                     
-                                    <div className="text-center space-y-2">
-                                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">{product.sku || 'Edição Limitada'}</p>
-                                        <h3 className="font-serif text-xl tracking-wide uppercase">{product.name}</h3>
-                                        <p className="lux-gold font-bold text-lg">{formatMoney(product.price)}</p>
+                                    <div className="text-center space-y-1">
+                                        <p className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-2">SKU: {product.sku || 'N/A'}</p>
+                                        <h3 className="font-serif text-xl tracking-widest uppercase mb-3">{product.name}</h3>
                                         
-                                        <button 
-                                            className="mt-4 px-8 py-3 border border-[#2D2926] text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-[#2D2926] hover:text-white transition-all duration-300"
-                                            onClick={() => alert('Peça selecionada para o checkout.')}
-                                        >
-                                            Ver Detalhes
-                                        </button>
+                                        <div className="space-y-1 pt-2">
+                                            <p className="text-xs text-gray-400 line-through opacity-70">De: {formatMoney(product.price)}</p>
+                                            <p className="lux-gold font-bold text-sm tracking-tighter">
+                                                Pagamento Via PIX - {storeConfig.pixDiscount}% = <span className="text-lg">{calculatePix(product.price)}</span>
+                                            </p>
+                                            <p className="text-[10px] uppercase tracking-widest text-gray-500">
+                                                Ou Cartão {storeConfig.maxInstallments}x de {calculateInstallment(product.price)}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             )) : (
-                                <div className="col-span-full text-center py-20 border-2 border-dashed lux-border">
-                                    <p className="font-serif italic text-gray-400">Nenhuma peça em exibição no momento.</p>
+                                <div className="col-span-full text-center py-24 border lux-border">
+                                    <p className="font-serif italic text-gray-400 tracking-widest">Nenhuma peça disponível no momento.</p>
                                 </div>
                             )}
                         </div>
                     </main>
 
                     {/* Footer */}
-                    <footer className="py-24 border-t lux-border text-center opacity-60">
-                        <p className="text-[9px] tracking-[0.6em] uppercase lux-gold font-bold">
+                    <footer className="py-24 border-t lux-border text-center">
+                        <p className="text-[9px] tracking-[0.6em] uppercase lux-gold font-bold italic">
                             Autenticidade • Excelência • {storeConfig.name}
                         </p>
                     </footer>
