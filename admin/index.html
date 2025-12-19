@@ -36,17 +36,21 @@
 
   <h1>Painel Administrativo</h1>
 
-  <h3>Cadastrar Produto</h3>
+ <h3>Cadastrar Produto</h3>
 
-  <input id="sku" placeholder="SKU" />
-  <input id="nome" placeholder="Nome do produto" />
-  <input id="preco" placeholder="Preço" type="number" />
-  <input id="desconto" placeholder="Preço com desconto" type="number" />
+<input id="sku" placeholder="SKU" />
+<input id="nome" placeholder="Nome do produto" />
+<input id="preco" placeholder="Preço" type="number" />
+<input id="desconto" placeholder="Preço com desconto" type="number" />
 
-  <button onclick="salvarProduto()">Salvar Produto</button>
+<label>Imagem do produto</label>
+<input id="imagem" type="file" accept="image/*" />
 
-  <h3>Produtos cadastrados</h3>
-  <div id="listaProdutos"></div>
+<button onclick="salvarProduto()">Salvar Produto</button>
+
+<h3>Produtos cadastrados</h3>
+<div id="listaProdutos"></div>
+
 
   <script src="admin.js"></script>
 </body>
