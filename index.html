@@ -12,9 +12,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap');
 body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
 .font-serif { font-family: 'Playfair Display', serif; }
-.animate-in { animation: fadeIn 0.4s ease-out; }
-.product-img { object-fit: contain; width: 100%; height: 100%; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.product-img { width: 100%; height: 300px; object-fit: contain; }
 </style>
 </head>
 <body>
@@ -24,18 +22,17 @@ const { useState, useEffect, useMemo } = React;
 
 const Icons = {
   ShoppingCart: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>,
-  ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-  Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
-  CheckCircle2: () => <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+  ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
 };
 
-function App() {
+function App(){
   const [view,setView]=useState('catalog');
   const [products,setProducts]=useState([]);
   const [cart,setCart]=useState([]);
   const [customer,setCustomer]=useState({name:'',phone:'+55'});
-  const [payment,setPayment]=useState('PIX');
-  const [storeConfig,setStoreConfig]=useState({name:'Abella Joias',whatsapp:'5511999999999',pixDiscount:0.10,cardInstallments:3});
+  const [storeConfig,setStoreConfig]=useState({name:'Abella Joias',whatsapp:'5511999999999',pixDiscount:0.1,cardInstallments:3});
+  const [paymentMethod,setPaymentMethod]=useState('PIX');
+  const [cardInstallments,setCardInstallments]=useState(1);
   const [lastOrder,setLastOrder]=useState(null);
 
   useEffect(()=>{
@@ -46,47 +43,39 @@ function App() {
   },[]);
 
   const formatCurrency=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  const subtotal=useMemo(()=>cart.reduce((a,i)=>a+i.price*i.qty,0),[cart]);
-  const total=useMemo(()=>payment==='PIX'?subtotal*(1-storeConfig.pixDiscount):subtotal,[subtotal,payment,storeConfig.pixDiscount]);
+  const subtotal=useMemo(()=>cart.reduce((a,i)=>a+Number(i.price)*i.qty,0),[cart]);
+  const total=useMemo(()=>{
+    if(paymentMethod==='PIX') return subtotal*(1-storeConfig.pixDiscount);
+    return subtotal;
+  },[subtotal,paymentMethod,storeConfig.pixDiscount]);
 
   const addToCart=p=>{
     if(p.stock<=0)return;
     setCart(prev=>{
-      const exists=prev.find(i=>i.id===p.id);
-      if(exists)return prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i);
+      const exists=prev.find(item=>item.id===p.id);
+      if(exists) return prev.map(item=>item.id===p.id?{...item,qty:item.qty+1}:item);
       return [...prev,{...p,qty:1}];
     });
   };
 
-  const finalizeSale=chosenPayment=>{
-    if(!customer.name||customer.phone.length<10)return alert('Preencha nome e WhatsApp corretamente');
-    const order={
-      id:Math.floor(1000+Math.random()*8999),
-      customer,
-      items:cart,
-      total,
-      payment:chosenPayment,
-      date:new Date().toLocaleString()
-    };
+  const finalizeSale=()=>{
+    if(!customer.name||customer.phone.length<10) return alert('Preencha nome e WhatsApp corretamente');
+    const order={id:Math.floor(1000+Math.random()*8999),customer,items:cart,total,payment:paymentMethod+(paymentMethod==='Cartão'?` ${cardInstallments}x`:'')};
     const updatedProducts=products.map(p=>{
       const item=cart.find(ci=>ci.id===p.id);
       return item?{...p,stock:Math.max(0,p.stock-item.qty)}:p;
     });
-    setProducts(updatedProducts);
     localStorage.setItem('products',JSON.stringify(updatedProducts));
-    const orders=JSON.parse(localStorage.getItem('orders')||'[]');
-    orders.push(order);
-    localStorage.setItem('orders',JSON.stringify(orders));
+    localStorage.setItem('orders',JSON.stringify([...(JSON.parse(localStorage.getItem('orders')||'[]')),order]));
+    setProducts(updatedProducts);
     setLastOrder(order);
     setCart([]);
     setView('confirmed');
 
-    // Envio para empresa
+    // Enviar WhatsApp automático para empresa
     const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
-    const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*Itens:*%0A${itemsList}%0A%0A*Total:* ${formatCurrency(order.total)}%0A*Pagamento:* ${order.payment}`;
+    const msg=`*NOVO PEDIDO: #${order.id}*%0ACliente: ${order.customer.name}%0AItens:%0A${itemsList}%0ATotal: ${formatCurrency(order.total)}%0APagamento: ${order.payment}`;
     window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
-
-    alert(`Olá ${order.customer.name}, seu pedido foi confirmado! Aguarde o contato da empresa via WhatsApp.`);
   };
 
   return (
@@ -95,80 +84,116 @@ function App() {
         <div className="w-10"></div>
         <h1 className="text-lg tracking-[0.3em] uppercase font-serif font-light">{storeConfig.name}</h1>
         <button onClick={()=>setView('cart')} className="relative p-2 text-[#A68966] hover:opacity-70 transition-opacity">
-          <Icons.ShoppingCart />
+          <Icons.ShoppingCart/>
           {cart.length>0&&(<span className="absolute top-0 right-0 bg-[#A68966] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold border border-white">{cart.length}</span>)}
         </button>
       </header>
 
       <main className="max-w-xl mx-auto p-4 md:p-8">
-        {view==='catalog' && <div className="grid gap-12 animate-in">
-          {products.length===0?<div className="text-center py-20 text-gray-400 italic">Nenhum produto disponível.</div>:
-          products.map(p=>(
-            <div key={p.id} className="group">
-              <div className="aspect-[4/5] bg-[#F5F2EE] relative rounded-sm overflow-hidden mb-5 shadow-sm">
-                {p.stock<=0 && <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-red-400">Esgotado</div>}
-                {p.image?<img src={p.image} className="product-img group-hover:scale-105 transition-transform duration-700" alt={p.name}/>:<div className="h-full flex items-center justify-center opacity-10 font-serif italic text-5xl text-[#A68966]">AJ</div>}
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-end border-b border-[#F5F2EE] pb-3 font-serif">
-                  <div>
-                    <h3 className="text-xl text-gray-800">{p.name}</h3>
-                    <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">{formatCurrency(p.price*(1-storeConfig.pixDiscount))} no PIX</p>
+        {view==='catalog'&&(
+          <div className="grid gap-12 grid-cols-1 md:grid-cols-2">
+            {products.length===0?<div className="text-center py-20 text-gray-400 italic">Nenhum produto disponível no momento.</div>:(
+              products.map(p=>(
+                <div key={p.id} className="group">
+                  <div className="aspect-[4/5] bg-[#F5F2EE] relative rounded-sm overflow-hidden mb-5 shadow-sm">
+                    {p.stock<=0&&(
+                      <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest text-red-400">
+                        Esgotado
+                      </div>
+                    )}
+                    {p.image?<img src={p.image} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt={p.name}/>:<div className="h-full flex items-center justify-center opacity-10 font-serif italic text-5xl text-[#A68966]">AJ</div>}
                   </div>
-                  <p className="text-lg font-light text-gray-600">{formatCurrency(p.price)}</p>
-                </div>
-                <button disabled={p.stock<=0} onClick={()=>addToCart(p)} className="w-full py-4 bg-[#2D2926] text-white text-[10px] uppercase font-bold tracking-[0.2em] hover:bg-black transition-all disabled:opacity-30 active:scale-95">Adicionar à Sacola</button>
-              </div>
-            </div>
-          ))}
-        </div>}
-
-        {view==='cart' && <div className="space-y-6 animate-in">
-          <button onClick={()=>setView('catalog')} className="flex items-center gap-2 text-[#A68966] text-[10px] font-bold uppercase tracking-widest hover:opacity-70"><Icons.ChevronLeft/> Voltar ao Catálogo</button>
-          <h2 className="text-2xl font-serif italic border-b pb-4">Sua Sacola</h2>
-          {cart.length===0?<div className="text-center py-16 space-y-4"><p className="text-gray-400 italic">Sua sacola está vazia.</p></div>:(
-            <>
-              {cart.map(i=>(
-                <div key={i.id} className="flex gap-4 bg-white p-4 border rounded-sm shadow-sm items-center animate-in">
-                  <div className="w-14 h-18 bg-gray-50 rounded-sm overflow-hidden shrink-0">{i.image && <img src={i.image} className="product-img" alt={i.name}/>}</div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold uppercase text-gray-800">{i.name}</p>
-                    <p className="text-[10px] text-gray-500">{i.qty}x {formatCurrency(i.price)}</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-end border-b border-[#F5F2EE] pb-3 font-serif">
+                      <div>
+                        <h3 className="text-xl text-gray-800">{p.name}</h3>
+                        <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">{formatCurrency(p.price*(1-storeConfig.pixDiscount))} no pix</p>
+                      </div>
+                      <p className="text-lg font-light text-gray-600">{formatCurrency(p.price)}</p>
+                    </div>
+                    <button disabled={p.stock<=0} onClick={()=>addToCart(p)} className="w-full py-4 bg-[#2D2926] text-white text-[10px] uppercase font-bold tracking-[0.2em] hover:bg-black transition-all disabled:opacity-30 active:scale-95">
+                      Adicionar à Sacola
+                    </button>
                   </div>
-                  <button onClick={()=>setCart(cart.filter(x=>x.id!==i.id))} className="text-red-200 hover:text-red-500 transition-colors p-2"><Icons.Trash2/></button>
                 </div>
-              ))}
-              <div className="bg-white p-6 border rounded-sm space-y-5 shadow-sm">
-                <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="Seu Nome Completo" value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/>
-                <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="WhatsApp (com DDD)" value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
+              ))
+            )}
+          </div>
+        )}
 
-                <div className="flex gap-4 pt-4">
-                  <button onClick={()=>finalizeSale('PIX')} className="w-1/2 py-3 bg-green-500 text-white font-bold uppercase tracking-[0.2em] rounded-sm">PIX</button>
-                  <button onClick={()=>finalizeSale('Cartão')} className="w-1/2 py-3 bg-blue-500 text-white font-bold uppercase tracking-[0.2em] rounded-sm">{storeConfig.cardInstallments}x Cartão</button>
+        {view==='cart'&&(
+          <div className="space-y-6 animate-in">
+            <button onClick={()=>setView('catalog')} className="flex items-center gap-2 text-[#A68966] text-[10px] font-bold uppercase tracking-widest hover:opacity-70">
+              <Icons.ChevronLeft/> Voltar ao Catálogo
+            </button>
+            <h2 className="text-2xl font-serif italic border-b pb-4">Sua Sacola</h2>
+            {cart.length===0?<div className="text-center py-16 space-y-4">
+              <p className="text-gray-400 italic">Sua sacola está vazia.</p>
+              <button onClick={()=>setView('catalog')} className="text-[#A68966] text-[10px] font-bold uppercase border-b border-[#A68966] pb-1">Ver Produtos</button>
+            </div>:(
+              <>
+                <div className="space-y-3">
+                  {cart.map(i=>(
+                    <div key={i.id} className="flex gap-4 bg-white p-4 border rounded-sm shadow-sm items-center animate-in">
+                      <div className="w-14 h-18 bg-gray-50 rounded-sm overflow-hidden shrink-0">
+                        {i.image&&<img src={i.image} className="w-full h-full object-contain" alt={i.name}/>}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold uppercase text-gray-800">{i.name}</p>
+                        <p className="text-[10px] text-gray-500">{i.qty}x {formatCurrency(i.price)}</p>
+                      </div>
+                      <button onClick={()=>setCart(cart.filter(x=>x.id!==i.id))} className="text-red-200 hover:text-red-500 transition-colors p-2">X</button>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="flex justify-between text-xl font-serif pt-4 border-t mt-4 text-gray-800">
-                  <span>Total:</span>
-                  <span>{formatCurrency(total)}</span>
+                <div className="bg-white p-6 border rounded-sm space-y-5 shadow-sm">
+                  <h4 className="text-[10px] uppercase tracking-widest text-[#A68966] font-bold border-b pb-2">Detalhes do Pedido</h4>
+                  <div className="space-y-2">
+                    <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="Seu Nome Completo" value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})}/>
+                    <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966] bg-transparent" placeholder="WhatsApp (com DDD)" value={customer.phone} onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
+                  </div>
+
+                  <div className="flex gap-2 items-center mt-4">
+                    <label className="text-[10px] font-bold uppercase">Pagamento:</label>
+                    <select className="border px-2 py-1" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)}>
+                      <option value="PIX">PIX</option>
+                      <option value="Cartão">Cartão</option>
+                    </select>
+                    {paymentMethod==='Cartão'&&(
+                      <select className="border px-2 py-1" value={cardInstallments} onChange={e=>setCardInstallments(parseInt(e.target.value))}>
+                        {Array.from({length:storeConfig.cardInstallments},(_,i)=><option key={i+1} value={i+1}>{i+1}x</option>)}
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between text-xl font-serif pt-4 border-t mt-4 text-gray-800">
+                    <span>Total</span>
+                    <span>{formatCurrency(total)}</span>
+                  </div>
+                  <p className="text-[9px] text-gray-400 text-center italic uppercase tracking-tighter italic">Pagamento e entrega serão combinados via WhatsApp</p>
                 </div>
-              </div>
-            </>
-          )}
-        </div>}
 
-        {view==='confirmed' && <div className="text-center py-20 space-y-8 animate-in">
-          <div className="flex justify-center text-green-500"><Icons.CheckCircle2 /></div>
-          <h2 className="text-3xl font-serif italic text-gray-800">Pedido Confirmado!</h2>
-          <p className="text-gray-500 text-sm max-w-xs mx-auto">Obrigado {lastOrder?.customer.name}, seu pedido foi enviado para a empresa. Aguarde o contato via WhatsApp.</p>
-          <button onClick={()=>setView('catalog')} className="text-[#A68966] uppercase text-[10px] font-bold tracking-widest border-b border-[#A68966] pb-1">Voltar à Loja</button>
-        </div>}
+                <button onClick={finalizeSale} className="w-full bg-[#A68966] text-white py-5 uppercase font-bold tracking-[0.2em] rounded-sm shadow-lg active:scale-95 transition-transform">Finalizar Pedido</button>
+              </>
+            )}
+          </div>
+        )}
 
+        {view==='confirmed'&&(
+          <div className="text-center py-20 space-y-8 animate-in">
+            <h2 className="text-3xl font-serif italic text-gray-800">Pedido Confirmado!</h2>
+            <p className="text-gray-500 text-sm max-w-xs mx-auto">Recebemos seu pedido. Aguarde o contato da empresa via WhatsApp.</p>
+            <button onClick={()=>setView('catalog')} className="text-[#A68966] uppercase text-[10px] font-bold tracking-widest border-b border-[#A68966] pb-1">Voltar à Loja</button>
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
+
