@@ -2,14 +2,40 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin | Marcinha Semijoias</title>
+  <title>Admin – Marcinha Semijoias</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React -->
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
+
 <body class="bg-gray-100">
+
   <div id="root"></div>
-  <script src="./admin.js"></script>
+
+  <!-- ADMIN APP -->
+  <script type="text/babel">
+    const AdminApp = () => {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <h1 className="text-3xl font-bold text-blue-600">
+            Painel Administrativo – Marcinha Semijoias
+          </h1>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(
+      document.getElementById("root")
+    ).render(<AdminApp />);
+  </script>
+
 </body>
 </html>
