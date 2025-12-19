@@ -1,271 +1,210 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Abella Joias | Catálogo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
-body { font-family: 'Inter', sans-serif; background:#FDFBF7; }
-.font-serif { font-family:'Playfair Display', serif; }
-.animate-in { animation: fadeIn .4s ease-out; }
-@keyframes fadeIn {
-  from { opacity:0; transform:translateY(8px); }
-  to { opacity:1; transform:translateY(0); }
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>Catálogo | Abella Joias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 </head>
+<body class="bg-[#FAF9F7] text-[#2D2926]">
 
-<body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo } = React;
+const { useState, useEffect } = React;
 
-function App(){
-
-const [view,setView]=useState('catalog');
-const [products,setProducts]=useState([]);
-const [cart,setCart]=useState([]);
-const [customer,setCustomer]=useState({name:'',phone:''});
-const [paymentMethod,setPaymentMethod]=useState('pix');
-const [installments,setInstallments]=useState(1);
-const [lastOrder,setLastOrder]=useState(null);
-
-const [storeConfig,setStoreConfig]=useState({
-  name:'Abella Joias',
-  pixDiscount:0.1,
-  cardInstallments:6
-});
-
-useEffect(()=>{
-  setProducts(JSON.parse(localStorage.getItem('products')||'[]'));
-  const cfg=JSON.parse(localStorage.getItem('storeConfig'));
-  if(cfg) setStoreConfig(cfg);
-},[]);
-
-const formatCurrency=v=>
-  Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-const subtotal=useMemo(
-  ()=>cart.reduce((a,i)=>a+i.price*i.qty,0),
-  [cart]
-);
-
-const pixTotal=subtotal*(1-storeConfig.pixDiscount);
-
-const addToCart=p=>{
-  setCart(prev=>{
-    const e=prev.find(i=>i.id===p.id);
-    if(e) return prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i);
-    return [...prev,{...p,qty:1}];
-  });
+/* CONFIGURAÇÕES DA LOJA */
+const storeConfig = {
+  company: "Abella Joias",
+  whatsapp: "5599999999999",
+  pixDiscount: 0.1,
+  cardInstallments: 6
 };
 
-const removeItem=id=>setCart(cart.filter(i=>i.id!==id));
-
-const finalizeSale=()=>{
-  if(!customer.name||customer.phone.length<8){
-    alert('Preencha nome e WhatsApp');
-    return;
-  }
-
-  const order={
-    id:Math.floor(1000+Math.random()*9000),
-    date:new Date().toLocaleString('pt-BR'),
-    customer,
-    items:cart,
-    subtotal,
-    total:paymentMethod==='pix'?pixTotal:subtotal,
-    payment:paymentMethod==='pix'
-      ?'PIX'
-      :`Cartão ${installments}x`
-  };
-
-  const orders=JSON.parse(localStorage.getItem('orders')||'[]');
-  orders.push(order);
-  localStorage.setItem('orders',JSON.stringify(orders));
-
-  const updated=products.map(p=>{
-    const i=cart.find(c=>c.id===p.id);
-    return i?{...p,stock:Math.max(0,p.stock-i.qty)}:p;
-  });
-  localStorage.setItem('products',JSON.stringify(updated));
-  setProducts(updated);
-
-  setCart([]);
-  setLastOrder(order);
-  setView('confirmed');
-};
-
-return(
-<div className="min-h-screen pb-24">
-
-<header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b p-5 flex justify-between items-center shadow-sm">
-  <div className="w-10"></div>
-  <h1 className="text-lg tracking-[0.3em] uppercase font-serif font-light">
-    {storeConfig.name}
-  </h1>
-  <button onClick={()=>setView('cart')} className="relative">
-    🛍️
-    {cart.length>0&&(
-      <span className="absolute -top-2 -right-2 bg-[#A68966] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-        {cart.length}
-      </span>
-    )}
-  </button>
-</header>
-
-<main className="max-w-xl mx-auto p-4 md:p-8">
-
-{/* ===== CATÁLOGO (LAYOUT ORIGINAL) ===== */}
-{view==='catalog'&&(
-<div className="grid gap-12 animate-in">
-{products.length===0?(
-  <div className="text-center py-20 text-gray-400 italic">
-    Nenhum produto disponível no momento.
-  </div>
-):(
-products.map(p=>(
-<div key={p.id} className="group">
-  <div className="aspect-[4/5] bg-[#F5F2EE] relative rounded-sm overflow-hidden mb-5 shadow-sm">
-    {p.stock<=0&&(
-      <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-red-400 text-[10px] uppercase tracking-widest font-bold">
-        Esgotado
-      </div>
-    )}
-    {p.image?(
-      <img src={p.image}
-        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"/>
-    ):(
-      <div className="h-full flex items-center justify-center opacity-10 font-serif italic text-5xl text-[#A68966]">
-        AJ
-      </div>
-    )}
-  </div>
-
-  <div className="space-y-3">
-    <div className="flex justify-between items-end border-b border-[#F5F2EE] pb-3 font-serif">
-      <div>
-        <h3 className="text-xl text-gray-800">{p.name}</h3>
-        <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">
-          {formatCurrency(p.price*(1-storeConfig.pixDiscount))} no PIX
-        </p>
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-          ou {storeConfig.cardInstallments}x de {formatCurrency(p.price/storeConfig.cardInstallments)}
-        </p>
-      </div>
-      <p className="text-lg font-light text-gray-600">
-        {formatCurrency(p.price)}
-      </p>
-    </div>
-
-    <button
-      disabled={p.stock<=0}
-      onClick={()=>addToCart(p)}
-      className="w-full py-4 bg-[#2D2926] text-white text-[10px] uppercase font-bold tracking-[0.2em]
-                 hover:bg-black transition-all disabled:opacity-30 active:scale-95">
-      Adicionar à Sacola
-    </button>
-  </div>
-</div>
-))
-)}
-</div>
-)}
-
-{/* ===== CARRINHO ===== */}
-{view==='cart'&&(
-<div className="space-y-6 animate-in">
-<button onClick={()=>setView('catalog')}
-  className="text-[#A68966] text-[10px] font-bold uppercase tracking-widest">
-  ← Voltar ao catálogo
-</button>
-
-{cart.map(i=>(
-<div key={i.id} className="flex justify-between items-center border p-4 bg-white shadow-sm">
-  <div>
-    <p className="font-bold uppercase text-xs">{i.name}</p>
-    <p className="text-[10px]">{i.qty}x {formatCurrency(i.price)}</p>
-  </div>
-  <button onClick={()=>removeItem(i.id)} className="text-red-400 text-xs">
-    Excluir
-  </button>
-</div>
-))}
-
-<div className="bg-white p-6 border shadow-sm space-y-4">
-<input placeholder="Seu nome"
-  className="w-full border-b py-2 outline-none"
-  value={customer.name}
-  onChange={e=>setCustomer({...customer,name:e.target.value})}/>
-
-<input placeholder="WhatsApp"
-  className="w-full border-b py-2 outline-none"
-  value={customer.phone}
-  onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
-
-<div className="flex gap-2">
-<button onClick={()=>setPaymentMethod('pix')}
-  className={`flex-1 py-2 border ${paymentMethod==='pix'?'bg-black text-white':''}`}>
-PIX
-</button>
-<button onClick={()=>setPaymentMethod('card')}
-  className={`flex-1 py-2 border ${paymentMethod==='card'?'bg-black text-white':''}`}>
-Cartão
-</button>
-</div>
-
-{paymentMethod==='card'&&(
-<select className="w-full border p-2"
-  value={installments}
-  onChange={e=>setInstallments(+e.target.value)}>
-{Array.from({length:storeConfig.cardInstallments},(_,i)=>i+1)
-.map(n=>(
-<option key={n} value={n}>
-{n}x de {formatCurrency(subtotal/n)}
-</option>
-))}
-</select>
-)}
-
-<div className="text-right space-y-1 font-serif">
-<p>Total: {formatCurrency(subtotal)}</p>
-<p className="text-[#A68966]">PIX: {formatCurrency(pixTotal)}</p>
-</div>
-</div>
-
-<button onClick={finalizeSale}
-  className="w-full bg-[#A68966] text-white py-5 uppercase tracking-[0.2em] font-bold">
-Finalizar Pedido
-</button>
-</div>
-)}
-
-{/* ===== CONFIRMAÇÃO ===== */}
-{view==='confirmed'&&(
-<div className="text-center py-20 space-y-4 animate-in">
-<h2 className="font-serif text-3xl">Pedido Confirmado</h2>
-<p className="text-gray-500">Aguarde nosso contato via WhatsApp.</p>
-<button onClick={()=>setView('catalog')}
-  className="text-[#A68966] text-xs uppercase tracking-widest underline">
-Voltar à loja
-</button>
-</div>
-)}
-
-</main>
-</div>
-);
+function formatCurrency(v) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+function App() {
+  const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [view, setView] = useState("catalog");
+  const [payment, setPayment] = useState("pix");
+  const [installments, setInstallments] = useState(1);
+
+  useEffect(() => {
+    setProducts(JSON.parse(localStorage.getItem("products") || "[]"));
+  }, []);
+
+  function addToCart(p) {
+    setCart(prev => {
+      const found = prev.find(i => i.id === p.id);
+      if (found) {
+        return prev.map(i =>
+          i.id === p.id ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      return [...prev, { ...p, qty: 1 }];
+    });
+  }
+
+  function removeItem(id) {
+    setCart(prev => prev.filter(i => i.id !== id));
+  }
+
+  function total() {
+    return cart.reduce((s, i) => s + i.price * i.qty, 0);
+  }
+
+  function finalizeSale() {
+    const order = {
+      id: Date.now(),
+      date: new Date().toLocaleString(),
+      items: cart,
+      payment,
+      installments,
+      total: total()
+    };
+
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    orders.push(order);
+    localStorage.setItem("orders", JSON.stringify(orders));
+
+    alert("Pedido confirmado! Aguarde o contato da empresa.");
+
+    setCart([]);
+    setView("catalog");
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      {/* HEADER */}
+      <header className="flex justify-between items-center mb-10">
+        <h1 className="font-serif text-3xl">{storeConfig.company}</h1>
+
+        <button
+          onClick={() => setView("cart")}
+          className="relative text-[#A68966] hover:opacity-70 transition"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="8" cy="21" r="1"/>
+            <circle cx="19" cy="21" r="1"/>
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+          </svg>
+          {cart.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-black text-white text-xs rounded-full px-1">
+              {cart.length}
+            </span>
+          )}
+        </button>
+      </header>
+
+      {/* CATÁLOGO */}
+      {view === "catalog" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {products.map(p => (
+            <div key={p.id}>
+              <div className="aspect-[4/5] bg-[#F5F2EE] mb-4 flex items-center justify-center">
+                {p.image && (
+                  <img src={p.image} className="object-contain h-full" />
+                )}
+              </div>
+
+              <div className="font-serif border-b pb-3 mb-3">
+                <h3 className="text-xl">{p.name}</h3>
+                <p className="text-xs text-[#A68966] uppercase">
+                  {formatCurrency(p.price * (1 - storeConfig.pixDiscount))} no PIX
+                </p>
+                <p className="text-xs text-gray-400">
+                  ou {storeConfig.cardInstallments}x de {formatCurrency(p.price / storeConfig.cardInstallments)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => addToCart(p)}
+                className="w-full bg-[#2D2926] text-white py-4 text-xs uppercase tracking-widest"
+              >
+                Adicionar à Sacola
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CARRINHO */}
+      {view === "cart" && (
+        <div className="space-y-6">
+          {cart.map(i => (
+            <div key={i.id} className="flex gap-4 items-center border p-4 bg-white">
+              <div className="w-16 h-20 bg-gray-100 flex items-center justify-center">
+                {i.image && (
+                  <img src={i.image} className="object-contain h-full" />
+                )}
+              </div>
+
+              <div className="flex-1">
+                <p className="font-bold text-xs uppercase">{i.name}</p>
+                <p className="text-xs">{i.qty}x {formatCurrency(i.price)}</p>
+              </div>
+
+              <button
+                onClick={() => removeItem(i.id)}
+                className="text-red-400 text-xs"
+              >
+                Excluir
+              </button>
+            </div>
+          ))}
+
+          <div className="space-y-3">
+            <button
+              onClick={() => setPayment("pix")}
+              className={`w-full py-3 border ${payment === "pix" ? "bg-black text-white" : ""}`}
+            >
+              Pagar no PIX
+            </button>
+
+            <button
+              onClick={() => setPayment("card")}
+              className={`w-full py-3 border ${payment === "card" ? "bg-black text-white" : ""}`}
+            >
+              Pagar no Cartão
+            </button>
+
+            {payment === "card" && (
+              <select
+                value={installments}
+                onChange={e => setInstallments(+e.target.value)}
+                className="w-full border p-3"
+              >
+                {[...Array(storeConfig.cardInstallments)].map((_, i) => (
+                  <option key={i} value={i + 1}>
+                    {i + 1}x de {formatCurrency(total() / (i + 1))}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <button
+              onClick={finalizeSale}
+              className="w-full bg-[#2D2926] text-white py-4 uppercase tracking-widest"
+            >
+              Finalizar Pedido
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
+
 </body>
 </html>
+
