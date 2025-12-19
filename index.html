@@ -58,30 +58,43 @@ function App() {
     });
   };
 
-  const finalizeSale=()=>{
-    if(!customer.name||customer.phone.length<10){
-      alert("Preencha nome e WhatsApp corretamente.");
-      return;
-    }
-    const order={id:Math.floor(1000+Math.random()*8999),customer,items:cart,total,
-      payment:paymentMethod==='pix'?`PIX com desconto ${storeConfig.pixDiscount*100}%`:`${installments}x no cartão`
-    };
-    // atualizar estoque
-    const updatedProducts=products.map(p=>{
-      const item=cart.find(ci=>ci.id===p.id);
-      return item?{...p,stock:Math.max(0,p.stock-item.qty)}:p;
-    });
-    localStorage.setItem('products',JSON.stringify(updatedProducts));
-    setProducts(updatedProducts);
-    setCart([]);
-    setLastOrder(order);
-    setView('confirmed');
+const finalizeSale = () => {
+  if(!customer.name || customer.phone.length < 10){
+    alert("Preencha nome e WhatsApp corretamente.");
+    return;
+  }
 
-    // envio automático WhatsApp para empresa
-    const itemsList=order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
-    const msg=`*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*WhatsApp:* ${order.customer.phone}%0A*Itens:*%0A${itemsList}%0A%0A*Pagamento:* ${order.payment}%0A*Total:* ${formatCurrency(order.total)}`;
-    window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`,'_blank');
+  const order = {
+    id: Math.floor(1000 + Math.random()*8999),
+    customer,
+    items: cart,
+    total,
+    payment: paymentMethod==='pix' ? `PIX com desconto ${storeConfig.pixDiscount*100}%` : `${installments}x no cartão`,
+    date: new Date().toLocaleString()
   };
+
+  // Atualizar estoque
+  const updatedProducts = products.map(p=>{
+    const item = cart.find(ci => ci.id === p.id);
+    return item ? {...p, stock: Math.max(0, p.stock - item.qty)} : p;
+  });
+  localStorage.setItem('products', JSON.stringify(updatedProducts));
+  setProducts(updatedProducts);
+  setCart([]);
+  setLastOrder(order);
+  setView('confirmed');
+
+  // SALVAR PEDIDO NO LOCALSTORAGE PARA RELATÓRIO
+  const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+  savedOrders.push(order);
+  localStorage.setItem('orders', JSON.stringify(savedOrders));
+
+  // Envio automático WhatsApp para empresa
+  const itemsList = order.items.map(i=>`- ${i.qty}x ${i.name}`).join('%0A');
+  const msg = `*NOVO PEDIDO: #${order.id}*%0A%0A*Cliente:* ${order.customer.name}%0A*WhatsApp:* ${order.customer.phone}%0A*Itens:*%0A${itemsList}%0A%0A*Pagamento:* ${order.payment}%0A*Total:* ${formatCurrency(order.total)}`;
+  window.open(`https://wa.me/${storeConfig.whatsapp}?text=${msg}`, '_blank');
+};
+
 
   return(
     <div className="min-h-screen pb-20">
