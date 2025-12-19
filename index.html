@@ -1,266 +1,161 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Abella Joias | Catálogo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>Royal Joias</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
-body { font-family: 'Inter', sans-serif; background:#FDFBF7; }
-.font-serif { font-family:'Playfair Display', serif; }
-.animate-in { animation: fadeIn .4s ease-out; }
-@keyframes fadeIn {
-  from { opacity:0; transform:translateY(8px); }
-  to { opacity:1; transform:translateY(0); }
-}
-</style>
+<script src="https://unpkg.com/lucide@latest"></script>
+
 </head>
 
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
+
+const {
+ ShoppingCart, Trash2, ChevronLeft,
+ CreditCard, QrCode, CheckCircle2,
+ MessageCircle, Download, Star
+} = lucide;
+
 const { useState, useEffect, useMemo } = React;
 
-function App(){
+function App() {
 
-const [view,setView]=useState('catalog');
-const [products,setProducts]=useState([]);
-const [cart,setCart]=useState([]);
-const [customer,setCustomer]=useState({name:'',phone:''});
-const [paymentMethod,setPaymentMethod]=useState('pix');
-const [installments,setInstallments]=useState(1);
-const [lastOrder,setLastOrder]=useState(null);
+const [view, setView] = useState('catalog');
+const [products, setProducts] = useState([]);
+const [cart, setCart] = useState([]);
+const [customerData, setCustomerData] = useState({ name:'', phone:'' });
+const [paymentMethod, setPaymentMethod] = useState('pix');
+const [installments, setInstallments] = useState(1);
+const [orders, setOrders] = useState([]);
+const [activeOrder, setActiveOrder] = useState(null);
 
-const [storeConfig,setStoreConfig]=useState({
-  name:'Abella Joias',
-  pixDiscount:0.1,
-  cardInstallments:6
+const [storeConfig, setStoreConfig] = useState({
+ name:'Royal Joias',
+ whatsapp:'5511999999999',
+ pixDiscount:0.1,
+ maxInstallments:12
 });
 
 useEffect(()=>{
-  setProducts(JSON.parse(localStorage.getItem('products')||'[]'));
-  const cfg=JSON.parse(localStorage.getItem('storeConfig'));
-  if(cfg) setStoreConfig(cfg);
+ const p = localStorage.getItem('luxury_products');
+ const c = localStorage.getItem('luxury_config');
+ const o = localStorage.getItem('luxury_orders');
+
+ if(p) setProducts(JSON.parse(p));
+ if(c) setStoreConfig(JSON.parse(c));
+ if(o) setOrders(JSON.parse(o));
+
+ const script=document.createElement('script');
+ script.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+ document.body.appendChild(script);
 },[]);
 
-const formatCurrency=v=>
-  Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const subtotal = useMemo(()=>cart.reduce((a,i)=>a+i.price*i.quantity,0),[cart]);
+const discount = paymentMethod==='pix'?subtotal*storeConfig.pixDiscount:0;
+const total = subtotal-discount;
 
-const subtotal=useMemo(
-  ()=>cart.reduce((a,i)=>a+i.price*i.qty,0),
-  [cart]
-);
+const format = v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-const pixTotal=subtotal*(1-storeConfig.pixDiscount);
+function finalizePurchase(){
+ if(!customerData.name) return alert('Informe o nome');
+ const order={
+  id:Date.now(),
+  date:new Date().toLocaleString('pt-BR'),
+  customer:customerData,
+  items:cart,
+  paymentMethod,
+  installments:paymentMethod==='card'?installments:1,
+  subtotal,discount,total
+ };
+ const newOrders=[order,...orders];
+ localStorage.setItem('luxury_orders',JSON.stringify(newOrders));
+ setOrders(newOrders);
+ setActiveOrder(order);
+ setView('success');
+}
 
-const addToCart=p=>{
-  setCart(prev=>{
-    const e=prev.find(i=>i.id===p.id);
-    if(e) return prev.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i);
-    return [...prev,{...p,qty:1}];
-  });
-};
+function sendWhats(order){
+ const msg=`PEDIDO CONFIRMADO - ${storeConfig.name}
+Cliente: ${order.customer.name}
+Total: ${format(order.total)}`;
+ window.open(`https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(msg)}`);
+}
 
-const removeItem=id=>setCart(cart.filter(i=>i.id!==id));
+return (
+<div className="min-h-screen bg-[#FDFBF7] font-serif text-[#2D2926]">
 
-const finalizeSale=()=>{
-  if(!customer.name||customer.phone.length<8){
-    alert('Preencha nome e WhatsApp');
-    return;
-  }
-
-  const order={
-    id:Math.floor(1000+Math.random()*9000),
-    date:new Date().toLocaleString('pt-BR'),
-    customer,
-    items:cart,
-    subtotal,
-    total:paymentMethod==='pix'?pixTotal:subtotal,
-    payment:paymentMethod==='pix'
-      ?'PIX'
-      :`Cartão ${installments}x`
-  };
-
-  const orders=JSON.parse(localStorage.getItem('orders')||'[]');
-  orders.push(order);
-  localStorage.setItem('orders',JSON.stringify(orders));
-
-  const updated=products.map(p=>{
-    const i=cart.find(c=>c.id===p.id);
-    return i?{...p,stock:Math.max(0,p.stock-i.qty)}:p;
-  });
-  localStorage.setItem('products',JSON.stringify(updated));
-  setProducts(updated);
-
-  setCart([]);
-  setLastOrder(order);
-  setView('confirmed');
-};
-
-return(
-<div className="min-h-screen pb-24">
-
-<header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b p-5 flex justify-between items-center shadow-sm">
-  <div className="w-10"></div>
-  <h1 className="text-lg tracking-[0.3em] uppercase font-serif font-light">
-    {storeConfig.name}
-  </h1>
-  <button onClick={()=>setView('cart')} className="relative">
-    🛍️
-    {cart.length>0&&(
-      <span className="absolute -top-2 -right-2 bg-[#A68966] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-        {cart.length}
-      </span>
-    )}
-  </button>
+<header className="sticky top-0 z-50 bg-white border-b border-[#E5DACE] px-6 py-4 flex justify-between items-center shadow-sm">
+<button onClick={()=>location.href='admin.html'} className="text-[#A68966] p-2">⚙️</button>
+<h1 className="text-lg tracking-[0.4em] uppercase">{storeConfig.name}</h1>
+<button onClick={()=>setView('cart')} className="relative p-2">
+<ShoppingCart size={20}/>
+{cart.length>0 && <span className="absolute top-0 right-0 bg-[#A68966] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
+</button>
 </header>
 
-<main className="max-w-xl mx-auto p-4 md:p-8">
+<main className="max-w-2xl mx-auto p-6 pb-32">
 
-{/* ===== CATÁLOGO (LAYOUT ORIGINAL) ===== */}
-{view==='catalog'&&(
-<div className="grid gap-12 animate-in">
-{products.length===0?(
-  <div className="text-center py-20 text-gray-400 italic">
-    Nenhum produto disponível no momento.
-  </div>
-):(
-products.map(p=>(
-<div key={p.id} className="group">
-  <div className="aspect-[4/5] bg-[#F5F2EE] relative rounded-sm overflow-hidden mb-5 shadow-sm">
-    {p.stock<=0&&(
-      <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-red-400 text-[10px] uppercase tracking-widest font-bold">
-        Esgotado
-      </div>
-    )}
-    {p.image?(
-      <img src={p.image}
-        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"/>
-    ):(
-      <div className="h-full flex items-center justify-center opacity-10 font-serif italic text-5xl text-[#A68966]">
-        AJ
-      </div>
-    )}
-  </div>
-
-  <div className="space-y-3">
-    <div className="flex justify-between items-end border-b border-[#F5F2EE] pb-3 font-serif">
-      <div>
-        <h3 className="text-xl text-gray-800">{p.name}</h3>
-        <p className="text-[10px] text-[#A68966] font-bold uppercase tracking-wider">
-          {formatCurrency(p.price*(1-storeConfig.pixDiscount))} no PIX
-        </p>
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-          ou {storeConfig.cardInstallments}x de {formatCurrency(p.price/storeConfig.cardInstallments)}
-        </p>
-      </div>
-      <p className="text-lg font-light text-gray-600">
-        {formatCurrency(p.price)}
-      </p>
-    </div>
-
-    <button
-      disabled={p.stock<=0}
-      onClick={()=>addToCart(p)}
-      className="w-full py-4 bg-[#2D2926] text-white text-[10px] uppercase font-bold tracking-[0.2em]
-                 hover:bg-black transition-all disabled:opacity-30 active:scale-95">
-      Adicionar à Sacola
-    </button>
-  </div>
+{view==='catalog' && (
+<div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+{products.map(p=>(
+<div key={p.id} onClick={()=>{setCart([{...p,quantity:1}]);setView('cart')}} className="text-center cursor-pointer">
+<div className="h-64 bg-[#F5F2EE] flex items-center justify-center mb-4">
+<Star size={40} strokeWidth={0.5} className="text-[#A68966]"/>
 </div>
-))
-)}
-</div>
-)}
-
-{/* ===== CARRINHO ===== */}
-{view==='cart'&&(
-<div className="space-y-6 animate-in">
-<button onClick={()=>setView('catalog')}
-  className="text-[#A68966] text-[10px] font-bold uppercase tracking-widest">
-  ← Voltar ao catálogo
-</button>
-
-{cart.map(i=>(
-<div key={i.id} className="flex justify-between items-center border p-4 bg-white shadow-sm">
-  <div>
-    <p className="font-bold uppercase text-xs">{i.name}</p>
-    <p className="text-[10px]">{i.qty}x {formatCurrency(i.price)}</p>
-  </div>
-  <button onClick={()=>removeItem(i.id)} className="text-red-400 text-xs">
-    Excluir
-  </button>
+<h3 className="text-xs uppercase tracking-widest font-bold">{p.name}</h3>
+<p className="text-sm mt-1 font-sans text-gray-500">{format(p.price)}</p>
 </div>
 ))}
+</div>
+)}
 
-<div className="bg-white p-6 border shadow-sm space-y-4">
-<input placeholder="Seu nome"
-  className="w-full border-b py-2 outline-none"
-  value={customer.name}
-  onChange={e=>setCustomer({...customer,name:e.target.value})}/>
+{view==='cart' && (
+<div className="max-w-md mx-auto font-sans space-y-4">
+<input placeholder="Nome" className="w-full border-b py-2" value={customerData.name} onChange={e=>setCustomerData({...customerData,name:e.target.value})}/>
+<input placeholder="WhatsApp" className="w-full border-b py-2" value={customerData.phone} onChange={e=>setCustomerData({...customerData,phone:e.target.value})}/>
 
-<input placeholder="WhatsApp"
-  className="w-full border-b py-2 outline-none"
-  value={customer.phone}
-  onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
-
-<div className="flex gap-2">
-<button onClick={()=>setPaymentMethod('pix')}
-  className={`flex-1 py-2 border ${paymentMethod==='pix'?'bg-black text-white':''}`}>
-PIX
-</button>
-<button onClick={()=>setPaymentMethod('card')}
-  className={`flex-1 py-2 border ${paymentMethod==='card'?'bg-black text-white':''}`}>
-Cartão
-</button>
+<div className="grid grid-cols-2 gap-2">
+<button onClick={()=>setPaymentMethod('pix')} className={`p-4 border ${paymentMethod==='pix'?'border-[#A68966]':''}`}><QrCode/>PIX</button>
+<button onClick={()=>setPaymentMethod('card')} className={`p-4 border ${paymentMethod==='card'?'border-[#A68966]':''}`}><CreditCard/>Cartão</button>
 </div>
 
-{paymentMethod==='card'&&(
-<select className="w-full border p-2"
-  value={installments}
-  onChange={e=>setInstallments(+e.target.value)}>
-{Array.from({length:storeConfig.cardInstallments},(_,i)=>i+1)
-.map(n=>(
-<option key={n} value={n}>
-{n}x de {formatCurrency(subtotal/n)}
-</option>
+{paymentMethod==='card' &&
+<select className="w-full border p-3" value={installments} onChange={e=>setInstallments(+e.target.value)}>
+{[...Array(storeConfig.maxInstallments)].map((_,i)=>(
+<option key={i}>{i+1}x de {format(total/(i+1))}</option>
 ))}
-</select>
-)}
+</select>}
 
-<div className="text-right space-y-1 font-serif">
-<p>Total: {formatCurrency(subtotal)}</p>
-<p className="text-[#A68966]">PIX: {formatCurrency(pixTotal)}</p>
-</div>
-</div>
-
-<button onClick={finalizeSale}
-  className="w-full bg-[#A68966] text-white py-5 uppercase tracking-[0.2em] font-bold">
-Finalizar Pedido
+<button onClick={finalizePurchase} className="w-full bg-[#2D2926] text-white py-4 uppercase tracking-widest">
+Finalizar
 </button>
 </div>
 )}
 
-{/* ===== CONFIRMAÇÃO ===== */}
-{view==='confirmed'&&(
-<div className="text-center py-20 space-y-4 animate-in">
-<h2 className="font-serif text-3xl">Pedido Confirmado</h2>
-<p className="text-gray-500">Aguarde nosso contato via WhatsApp.</p>
-<button onClick={()=>setView('catalog')}
-  className="text-[#A68966] text-xs uppercase tracking-widest underline">
-Voltar à loja
-</button>
+{view==='success' && activeOrder && (
+<div className="text-center space-y-6">
+<CheckCircle2 size={64} className="mx-auto text-[#A68966]"/>
+<button onClick={()=>sendWhats(activeOrder)} className="bg-[#25D366] text-white py-4 w-full flex justify-center gap-2"><MessageCircle/> WhatsApp</button>
+<button onClick={()=>setView('catalog')} className="text-xs uppercase">Voltar</button>
 </div>
 )}
 
 </main>
+
+<footer className="fixed bottom-0 w-full bg-white/90 border-t py-4 text-center">
+<p className="text-[9px] tracking-[0.6em] uppercase text-[#A68966] font-bold">Royal Joias</p>
+</footer>
+
 </div>
 );
 }
