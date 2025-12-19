@@ -57,7 +57,7 @@ function dashboard() {
       <button onclick="logout()" class="text-xs text-red-400">Sair</button>
     </header>
 
-    <main class="max-w-5xl mx-auto p-6 space-y-12">
+    <main class="max-w-6xl mx-auto p-6 space-y-12">
 
       <!-- CONFIG -->
       <section class="bg-white p-6 shadow space-y-4">
@@ -77,11 +77,12 @@ function dashboard() {
       <!-- PRODUTOS -->
       <section class="bg-white p-6 shadow space-y-4">
         <h3 class="uppercase text-xs tracking-widest text-gray-400">
-          Produtos
+          Produtos / Estoque
         </h3>
 
         <input id="nome" placeholder="Nome" class="w-full border-b py-2">
         <input id="preco" type="number" placeholder="Preço" class="w-full border-b py-2">
+        <input id="estoque" type="number" placeholder="Quantidade em estoque" class="w-full border-b py-2">
         <input id="imagem" type="file" class="w-full">
 
         <button onclick="adicionarProduto()"
@@ -90,10 +91,13 @@ function dashboard() {
         </button>
 
         ${produtos.map((p, i) => `
-          <div class="flex justify-between items-center border p-3">
+          <div class="flex justify-between items-center border p-3 text-sm">
             <div>
               <strong>${p.nome}</strong><br>
-              R$ ${p.preco.toFixed(2)}
+              R$ ${p.preco.toFixed(2)}<br>
+              <span class="${p.estoque === 0 ? 'text-red-500' : 'text-gray-500'}">
+                Estoque: ${p.estoque}
+              </span>
             </div>
             <div class="space-x-2">
               <button onclick="editarProduto(${i})">✏️</button>
@@ -112,14 +116,11 @@ function dashboard() {
         ${pedidos.length === 0
           ? `<p class="text-sm text-gray-400">Nenhum pedido</p>`
           : pedidos.map((p, i) => `
-            <div class="border p-4 space-y-2">
+            <div class="border p-4 space-y-2 text-sm">
               <strong>${p.cliente}</strong><br>
               ${p.data}<br>
               Total: R$ ${p.total.toFixed(2)}
               <div class="flex gap-2 mt-2">
-                <button onclick="pdf(${i})" class="border px-3 py-1 text-xs">
-                  PDF
-                </button>
                 <button onclick="whats(${i})" class="border px-3 py-1 text-xs">
                   WhatsApp
                 </button>
@@ -148,16 +149,17 @@ function salvarConfig() {
 function adicionarProduto() {
   const nome = document.getElementById("nome").value;
   const preco = Number(document.getElementById("preco").value);
+  const estoque = Number(document.getElementById("estoque").value);
   const file = document.getElementById("imagem").files[0];
 
-  if (!nome || !preco || !file) {
+  if (!nome || !preco || !file || estoque < 0) {
     alert("Preencha todos os campos");
     return;
   }
 
   const reader = new FileReader();
   reader.onload = () => {
-    produtos.push({ nome, preco, imagem: reader.result });
+    produtos.push({ nome, preco, estoque, imagem: reader.result });
     salvar();
     dashboard();
   };
@@ -167,9 +169,12 @@ function adicionarProduto() {
 function editarProduto(i) {
   const nome = prompt("Nome", produtos[i].nome);
   const preco = prompt("Preço", produtos[i].preco);
-  if (nome && preco) {
+  const estoque = prompt("Estoque", produtos[i].estoque);
+
+  if (nome && preco && estoque !== null) {
     produtos[i].nome = nome;
     produtos[i].preco = Number(preco);
+    produtos[i].estoque = Number(estoque);
     salvar();
     dashboard();
   }
@@ -181,18 +186,6 @@ function excluirProduto(i) {
     salvar();
     dashboard();
   }
-}
-
-function pdf(i) {
-  const p = pedidos[i];
-  const div = document.createElement("div");
-  div.innerHTML = `
-    <h2>Marcinha Semijoias</h2>
-    Cliente: ${p.cliente}<br>
-    Data: ${p.data}<br><br>
-    Total: R$ ${p.total.toFixed(2)}
-  `;
-  html2pdf().from(div).save(`pedido_${i}.pdf`);
 }
 
 function whats(i) {
@@ -207,16 +200,11 @@ function whats(i) {
     `Olá, *${p.cliente}*! 💖%0A%0A` +
     `📦 *Seu pedido:*%0A${itens}%0A%0A` +
     `💰 *Total:* R$ ${p.total.toFixed(2)}%0A` +
-    (p.descontoPix
-      ? `💸 *PIX:* R$ ${p.totalPix.toFixed(2)}%0A`
-      : "") +
     `%0AObrigada pela preferência ✨`;
 
-  window.open(
-    `https://wa.me/${p.whatsapp}?text=${mensagem}`,
-    "_blank"
-  );
+  window.open(`https://wa.me/${p.whatsapp}?text=${mensagem}`, "_blank");
 }
 
 /* INIT */
 localStorage.getItem("adminLogado") ? dashboard() : telaLogin();
+
