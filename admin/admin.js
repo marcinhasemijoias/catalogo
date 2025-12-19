@@ -1,134 +1,216 @@
-let editIndex = null;
+const SENHA_ADMIN = "eezz0237";
 
-/* ===== CONFIGURAÇÕES DA LOJA ===== */
-function getConfig() {
-  return JSON.parse(localStorage.getItem("configLoja")) || {
-    pixDesconto: 0,
-    parcelas: 1
-  };
+const app = document.getElementById("app");
+
+let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+let pedidos = JSON.parse(localStorage.getItem("pedidos")) || [];
+let config = JSON.parse(localStorage.getItem("configLoja")) || {
+  pixDesconto: 0,
+  parcelas: 1
+};
+
+function salvar() {
+  localStorage.setItem("produtos", JSON.stringify(produtos));
+  localStorage.setItem("pedidos", JSON.stringify(pedidos));
+  localStorage.setItem("configLoja", JSON.stringify(config));
+}
+
+/* ================= LOGIN ================= */
+function telaLogin() {
+  app.innerHTML = `
+    <div class="min-h-screen flex items-center justify-center">
+      <div class="bg-white p-8 shadow-md w-full max-w-sm space-y-6">
+        <h2 class="text-center uppercase tracking-widest text-sm">
+          Admin • Marcinha Semijoias
+        </h2>
+
+        <input id="senha" type="password" placeholder="Senha"
+          class="w-full border-b py-3 outline-none">
+
+        <button onclick="login()"
+          class="w-full bg-[#2D2926] text-white py-3 uppercase text-xs tracking-widest">
+          Entrar
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function login() {
+  const senha = document.getElementById("senha").value;
+  if (senha === SENHA_ADMIN) {
+    localStorage.setItem("adminLogado", "1");
+    dashboard();
+  } else {
+    alert("Senha incorreta");
+  }
+}
+
+/* ================= DASHBOARD ================= */
+function dashboard() {
+  if (!localStorage.getItem("adminLogado")) {
+    telaLogin();
+    return;
+  }
+
+  app.innerHTML = `
+    <header class="bg-white border-b px-6 py-4 flex justify-between">
+      <h1 class="uppercase tracking-widest text-sm">Painel Administrativo</h1>
+      <button onclick="logout()" class="text-xs text-red-400">Sair</button>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-6 space-y-12">
+
+      <!-- CONFIG -->
+      <section class="bg-white p-6 shadow space-y-4">
+        <h3 class="uppercase text-xs tracking-widest text-gray-400">
+          Configurações da Loja
+        </h3>
+
+        <input type="number" id="pix"
+          placeholder="% desconto no PIX"
+          value="${config.pixDesconto}"
+          class="w-full border-b py-2">
+
+        <input type="number" id="parcelas"
+          placeholder="Parcelas no cartão"
+          value="${config.parcelas}"
+          class="w-full border-b py-2">
+
+        <button onclick="salvarConfig()"
+          class="bg-[#A68966] text-white px-6 py-2 text-xs uppercase tracking-widest">
+          Salvar
+        </button>
+      </section>
+
+      <!-- PRODUTOS -->
+      <section class="bg-white p-6 shadow space-y-6">
+        <h3 class="uppercase text-xs tracking-widest text-gray-400">
+          Produtos
+        </h3>
+
+        <input id="nome" placeholder="Nome do produto" class="w-full border-b py-2">
+        <input id="preco" type="number" placeholder="Preço" class="w-full border-b py-2">
+
+        <input id="imagem" type="file" class="w-full">
+
+        <button onclick="adicionarProduto()"
+          class="bg-black text-white py-2 uppercase text-xs tracking-widest">
+          Adicionar Produto
+        </button>
+
+        <div class="space-y-3">
+          ${produtos.map((p, i) => `
+            <div class="flex justify-between items-center border p-3">
+              <div>
+                <strong>${p.nome}</strong><br>
+                R$ ${p.preco.toFixed(2)}
+              </div>
+              <div class="space-x-2">
+                <button onclick="editarProduto(${i})">✏️</button>
+                <button onclick="excluirProduto(${i})">🗑️</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+
+      <!-- PEDIDOS -->
+      <section class="bg-white p-6 shadow space-y-6">
+        <h3 class="uppercase text-xs tracking-widest text-gray-400">
+          Relatório de Vendas
+        </h3>
+
+        ${pedidos.length === 0 ? `<p class="text-sm text-gray-400">Nenhum pedido</p>` :
+          pedidos.map((p, i) => `
+            <div class="border p-4 space-y-2">
+              <strong>${p.cliente}</strong> – ${p.data}<br>
+              Total: R$ ${p.total.toFixed(2)}
+              <div class="flex gap-2 mt-2">
+                <button onclick="pdf(${i})" class="border px-3 py-1 text-xs">PDF</button>
+                <button onclick="whats(${i})" class="border px-3 py-1 text-xs">WhatsApp</button>
+              </div>
+            </div>
+          `).join("")
+        }
+      </section>
+    </main>
+  `;
+}
+
+/* ================= FUNÇÕES ================= */
+function logout() {
+  localStorage.removeItem("adminLogado");
+  telaLogin();
 }
 
 function salvarConfig() {
-  const pixDesconto = Number(document.getElementById("pixDesconto").value || 0);
-  const parcelas = Number(document.getElementById("parcelas").value || 1);
-
-  localStorage.setItem(
-    "configLoja",
-    JSON.stringify({ pixDesconto, parcelas })
-  );
-
-  alert("Configurações salvas!");
+  config.pixDesconto = Number(document.getElementById("pix").value);
+  config.parcelas = Number(document.getElementById("parcelas").value);
+  salvar();
+  alert("Configurações salvas");
 }
 
-function carregarConfig() {
-  const config = getConfig();
-  document.getElementById("pixDesconto").value = config.pixDesconto;
-  document.getElementById("parcelas").value = config.parcelas;
-}
-
-/* ===== PRODUTOS ===== */
-function getProdutos() {
-  return JSON.parse(localStorage.getItem("produtos")) || [];
-}
-
-function salvarProdutos(produtos) {
-  localStorage.setItem("produtos", JSON.stringify(produtos));
-}
-
-function salvarProduto() {
-  const sku = document.getElementById("sku").value;
+function adicionarProduto() {
   const nome = document.getElementById("nome").value;
   const preco = Number(document.getElementById("preco").value);
-  const imagemInput = document.getElementById("imagem");
+  const file = document.getElementById("imagem").files[0];
 
-  if (!sku || !nome || !preco) {
+  if (!nome || !preco || !file) {
     alert("Preencha todos os campos");
-    return;
-  }
-
-  const produtos = getProdutos();
-
-  // ✏️ EDITAR
-  if (editIndex !== null) {
-    produtos[editIndex].sku = sku;
-    produtos[editIndex].nome = nome;
-    produtos[editIndex].preco = preco;
-
-    if (imagemInput.files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        produtos[editIndex].imagem = reader.result;
-        salvarProdutos(produtos);
-        resetForm();
-        listarProdutos();
-      };
-      reader.readAsDataURL(imagemInput.files[0]);
-    } else {
-      salvarProdutos(produtos);
-      resetForm();
-      listarProdutos();
-    }
-    return;
-  }
-
-  // ➕ NOVO
-  if (imagemInput.files.length === 0) {
-    alert("Selecione uma imagem");
     return;
   }
 
   const reader = new FileReader();
   reader.onload = () => {
-    produtos.push({ sku, nome, preco, imagem: reader.result });
-    salvarProdutos(produtos);
-    resetForm();
-    listarProdutos();
+    produtos.push({ nome, preco, imagem: reader.result });
+    salvar();
+    dashboard();
   };
-  reader.readAsDataURL(imagemInput.files[0]);
+  reader.readAsDataURL(file);
 }
 
-function editarProduto(index) {
-  const p = getProdutos()[index];
-  document.getElementById("sku").value = p.sku;
-  document.getElementById("nome").value = p.nome;
-  document.getElementById("preco").value = p.preco;
-  editIndex = index;
+function excluirProduto(i) {
+  if (confirm("Excluir produto?")) {
+    produtos.splice(i, 1);
+    salvar();
+    dashboard();
+  }
 }
 
-function excluirProduto(index) {
-  if (!confirm("Excluir produto?")) return;
-  const produtos = getProdutos();
-  produtos.splice(index, 1);
-  salvarProdutos(produtos);
-  listarProdutos();
+function editarProduto(i) {
+  const p = produtos[i];
+  const nome = prompt("Nome", p.nome);
+  const preco = prompt("Preço", p.preco);
+  if (nome && preco) {
+    produtos[i].nome = nome;
+    produtos[i].preco = Number(preco);
+    salvar();
+    dashboard();
+  }
 }
 
-function resetForm() {
-  document.getElementById("sku").value = "";
-  document.getElementById("nome").value = "";
-  document.getElementById("preco").value = "";
-  document.getElementById("imagem").value = "";
-  editIndex = null;
+function pdf(i) {
+  const pedido = pedidos[i];
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <h2>Marcinha Semijoias</h2>
+    Cliente: ${pedido.cliente}<br>
+    Data: ${pedido.data}<br><br>
+    Total: R$ ${pedido.total.toFixed(2)}
+  `;
+  html2pdf().from(div).save(`pedido_${i}.pdf`);
 }
 
-function listarProdutos() {
-  const lista = document.getElementById("listaProdutos");
-  lista.innerHTML = "";
-
-  getProdutos().forEach((p, i) => {
-    lista.innerHTML += `
-      <div class="produto">
-        <img src="${p.imagem}" style="max-width:100px"/>
-        <strong>${p.nome}</strong><br>
-        Preço: R$ ${p.preco.toFixed(2)}<br><br>
-        <button onclick="editarProduto(${i})">✏️ Editar</button>
-        <button onclick="excluirProduto(${i})">🗑️ Excluir</button>
-      </div>
-    `;
-  });
+function whats(i) {
+  const p = pedidos[i];
+  const msg = `Olá ${p.cliente}, seu pedido foi registrado! Total R$ ${p.total.toFixed(2)}`;
+  window.open(`https://wa.me/${p.whatsapp}?text=${encodeURIComponent(msg)}`);
 }
 
-carregarConfig();
-listarProdutos();
-
-
+/* INIT */
+if (localStorage.getItem("adminLogado")) {
+  dashboard();
+} else {
+  telaLogin();
+}
