@@ -9,84 +9,166 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+    </style>
 </head>
-<body className="bg-gray-50">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const Icon = ({ name, size = 18 }) => {
+        // Componente de Ícone para rodar no navegador
+        const Icon = ({ name, size = 16, className = "" }) => {
             useEffect(() => { lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{width: size, height: size}}></i>;
+            return <i data-lucide={name} style={{width: size, height: size}} className={className}></i>;
         };
 
-        function Admin() {
+        function AdminPanel() {
             const [products, setProducts] = useState([]);
             const [orders, setOrders] = useState([]);
-            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '' });
-            const [newItem, setNewItem] = useState({ name: '', price: '', sku: '' });
+            const [storeConfig, setStoreConfig] = useState({
+                name: 'Royal Joias',
+                whatsapp: '5511999999999',
+                pixDiscount: 0.1,
+                maxInstallments: 12
+            });
+            const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '' });
 
             useEffect(() => {
-                setProducts(JSON.parse(localStorage.getItem('luxury_products') || '[]'));
-                setOrders(JSON.parse(localStorage.getItem('luxury_orders') || '[]'));
-                setStoreConfig(JSON.parse(localStorage.getItem('luxury_config') || '{"name":"Royal Joias"}'));
+                const savedProducts = localStorage.getItem('luxury_products');
+                const savedConfig = localStorage.getItem('luxury_config');
+                const savedOrders = localStorage.getItem('luxury_orders');
+                
+                if (savedProducts) setProducts(JSON.parse(savedProducts));
+                else {
+                    const initial = [{ id: 1, sku: 'RJ-772', name: 'Anel de Diamante 18k', price: 4500 }];
+                    setProducts(initial);
+                    localStorage.setItem('luxury_products', JSON.stringify(initial));
+                }
+
+                if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
+                if (savedOrders) setOrders(JSON.parse(savedOrders));
             }, []);
 
-            const addProduct = () => {
-                const updated = [...products, { ...newItem, id: Date.now(), price: parseFloat(newItem.price) }];
-                setProducts(updated);
-                localStorage.setItem('luxury_products', JSON.stringify(updated));
-                setNewItem({ name: '', price: '', sku: '' });
+            const updateStoreConfig = (newConfig) => {
+                setStoreConfig(newConfig);
+                localStorage.setItem('luxury_config', JSON.stringify(newConfig));
             };
 
-            const removeProduct = (id) => {
+            const handleAddProduct = (e) => {
+                e.preventDefault();
+                if (!newProduct.name || !newProduct.price) return;
+                const updated = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
+                setProducts(updated);
+                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                setNewProduct({ sku: '', name: '', price: '' });
+            };
+
+            const deleteProduct = (id) => {
                 const updated = products.filter(p => p.id !== id);
                 setProducts(updated);
                 localStorage.setItem('luxury_products', JSON.stringify(updated));
             };
 
-            return (
-                <div className="p-6 max-w-2xl mx-auto space-y-8 font-sans">
-                    <h1 className="text-2xl font-bold border-b pb-4 flex items-center gap-2"><Icon name="settings"/> Painel Admin</h1>
-                    
-                    <section className="bg-white p-4 shadow-sm border">
-                        <h2 className="font-bold mb-4 uppercase text-xs">Cadastrar Produto</h2>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <input className="border p-2 text-sm" placeholder="Nome" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
-                            <input className="border p-2 text-sm" placeholder="Preço" type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} />
-                        </div>
-                        <button onClick={addProduct} className="w-full bg-black text-white p-2 text-xs uppercase font-bold">Adicionar</button>
-                    </section>
+            const formatCurrency = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-                    <section className="bg-white p-4 shadow-sm border text-xs">
-                        <h2 className="font-bold mb-4 uppercase">Estoque Atual</h2>
-                        {products.map(p => (
-                            <div key={p.id} className="flex justify-between py-2 border-b">
-                                <span>{p.name}</span>
-                                <div className="flex gap-4 items-center">
-                                    <span>R$ {p.price}</span>
-                                    <button onClick={() => removeProduct(p.id)} className="text-red-500"><Icon name="trash-2" size={14}/></button>
+            return (
+                <div className="min-h-screen pb-32">
+                    {/* Header Simulado */}
+                    <header className="bg-white border-b border-[#E5DACE] px-6 py-4 flex justify-center items-center shadow-sm mb-8">
+                        <h1 className="text-lg tracking-[0.4em] uppercase font-serif">{storeConfig.name}</h1>
+                    </header>
+
+                    <main className="max-w-2xl mx-auto px-6 space-y-8">
+                        <a href="index.html" className="text-[10px] uppercase tracking-widest text-[#A68966] flex items-center gap-1 hover:underline">
+                            <Icon name="chevron-left" size={14}/> Voltar ao Catálogo
+                        </a>
+
+                        {/* Histórico de Pedidos */}
+                        <div className="bg-white border border-[#E5DACE] p-6 rounded-sm shadow-sm">
+                            <h2 className="text-xs font-black uppercase tracking-widest mb-6 border-l-2 border-[#A68966] pl-3 flex items-center gap-2">
+                                <Icon name="history" size={16}/> Histórico de Pedidos
+                            </h2>
+                            <div className="max-h-60 overflow-y-auto space-y-2">
+                                {orders.length === 0 ? (
+                                    <p className="text-xs italic text-gray-400">Nenhum pedido realizado ainda.</p>
+                                ) : (
+                                    orders.map(order => (
+                                        <div key={order.id} className="p-3 border border-gray-100 flex justify-between items-center bg-[#FDFBF7]">
+                                            <div className="text-[10px]">
+                                                <p className="font-bold text-sm uppercase">{order.customer.name}</p>
+                                                <p className="text-gray-400">{order.date} • {formatCurrency(order.total)}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Dados da Empresa */}
+                        <div className="bg-white border border-[#E5DACE] p-6 rounded-sm shadow-sm">
+                            <h2 className="text-xs font-black uppercase tracking-widest mb-6 border-l-2 border-[#A68966] pl-3">Dados da Empresa</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-tighter">Nome Comercial</label>
+                                    <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966]" 
+                                        value={storeConfig.name} 
+                                        onChange={e => updateStoreConfig({...storeConfig, name: e.target.value})} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-tighter">WhatsApp (Apenas Números)</label>
+                                    <input className="w-full border-b py-2 text-sm outline-none focus:border-[#A68966]" 
+                                        value={storeConfig.whatsapp} 
+                                        onChange={e => updateStoreConfig({...storeConfig, whatsapp: e.target.value})} />
                                 </div>
                             </div>
-                        ))}
-                    </section>
+                        </div>
 
-                    <section className="bg-white p-4 shadow-sm border text-xs">
-                        <h2 className="font-bold mb-4 uppercase flex items-center gap-2"><Icon name="history"/> Vendas</h2>
-                        {orders.map(o => (
-                            <div key={o.id} className="py-2 border-b">
-                                <p><strong>{o.customer.name}</strong> - {o.date}</p>
-                                <p className="text-gray-500">Total: R$ {o.total}</p>
+                        {/* Catálogo de Peças */}
+                        <div className="bg-white border border-[#E5DACE] p-6 rounded-sm shadow-sm">
+                            <h2 className="text-xs font-black uppercase tracking-widest mb-6 border-l-2 border-[#A68966] pl-3">Catálogo de Peças</h2>
+                            <form onSubmit={handleAddProduct} className="grid grid-cols-1 gap-4 mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input className="border-b py-2 text-sm outline-none focus:border-[#A68966]" placeholder="Nome da Joia" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+                                    <input className="border-b py-2 text-sm outline-none focus:border-[#A68966]" placeholder="SKU/Referência" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
+                                    <input className="border-b py-2 text-sm outline-none focus:border-[#A68966]" placeholder="Preço" type="number" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+                                </div>
+                                <button className="bg-[#2D2926] text-white py-3 text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-colors">
+                                    <Icon name="plus-circle" size={14}/> Adicionar à Coleção
+                                </button>
+                            </form>
+
+                            <div className="space-y-2 border-t pt-4">
+                                {products.map(p => (
+                                    <div key={p.id} className="flex justify-between items-center p-3 border border-gray-50 text-xs hover:bg-gray-50">
+                                        <span><strong className="uppercase">{p.name}</strong> <span className="text-gray-400 ml-1">#{p.sku}</span></span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold">{formatCurrency(p.price)}</span>
+                                            <button onClick={() => deleteProduct(p.id)} className="text-red-300 hover:text-red-600 transition-colors">
+                                                <Icon name="trash-2" size={14}/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </section>
+                        </div>
+                    </main>
+
+                    <footer className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-[#E5DACE] py-4 text-center z-40">
+                        <p className="text-[9px] tracking-[0.6em] uppercase text-[#A68966] font-bold italic">
+                            Autenticidade • Excelência • {storeConfig.name}
+                        </p>
+                    </footer>
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Admin />);
+        root.render(<AdminPanel />);
     </script>
 </body>
 </html>
