@@ -9,14 +9,14 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 </head>
-<body class="bg-[#FAF9F7] text-[#2D2926]">
 
+<body class="bg-[#FAF9F7] text-[#2D2926]">
 <div id="root"></div>
 
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-/* CONFIGURAÇÕES DA LOJA */
+/* CONFIGURAÇÕES */
 const storeConfig = {
   company: "Abella Joias",
   whatsapp: "5599999999999",
@@ -32,8 +32,15 @@ function App() {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [view, setView] = useState("catalog");
+
   const [payment, setPayment] = useState("pix");
   const [installments, setInstallments] = useState(1);
+
+  const [customer, setCustomer] = useState({
+    name: "",
+    ddi: "+55",
+    phone: ""
+  });
 
   useEffect(() => {
     setProducts(JSON.parse(localStorage.getItem("products") || "[]"));
@@ -60,9 +67,15 @@ function App() {
   }
 
   function finalizeSale() {
+    if (!customer.name || !customer.phone) {
+      alert("Informe nome e telefone para finalizar.");
+      return;
+    }
+
     const order = {
       id: Date.now(),
       date: new Date().toLocaleString(),
+      customer,
       items: cart,
       payment,
       installments,
@@ -76,11 +89,13 @@ function App() {
     alert("Pedido confirmado! Aguarde o contato da empresa.");
 
     setCart([]);
+    setCustomer({ name: "", ddi: "+55", phone: "" });
     setView("catalog");
   }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+
       {/* HEADER */}
       <header className="flex justify-between items-center mb-10">
         <h1 className="font-serif text-3xl">{storeConfig.company}</h1>
@@ -89,8 +104,8 @@ function App() {
           onClick={() => setView("cart")}
           className="relative text-[#A68966] hover:opacity-70 transition"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <circle cx="8" cy="21" r="1"/>
             <circle cx="19" cy="21" r="1"/>
             <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
@@ -109,9 +124,7 @@ function App() {
           {products.map(p => (
             <div key={p.id}>
               <div className="aspect-[4/5] bg-[#F5F2EE] mb-4 flex items-center justify-center">
-                {p.image && (
-                  <img src={p.image} className="object-contain h-full" />
-                )}
+                {p.image && <img src={p.image} className="object-contain h-full" />}
               </div>
 
               <div className="font-serif border-b pb-3 mb-3">
@@ -137,42 +150,76 @@ function App() {
 
       {/* CARRINHO */}
       {view === "cart" && (
-        <div className="space-y-6">
-          {cart.map(i => (
-            <div key={i.id} className="flex gap-4 items-center border p-4 bg-white">
-              <div className="w-16 h-20 bg-gray-100 flex items-center justify-center">
-                {i.image && (
-                  <img src={i.image} className="object-contain h-full" />
-                )}
-              </div>
+        <div className="max-w-3xl mx-auto space-y-10">
 
-              <div className="flex-1">
-                <p className="font-bold text-xs uppercase">{i.name}</p>
-                <p className="text-xs">{i.qty}x {formatCurrency(i.price)}</p>
-              </div>
+          {/* ITENS */}
+          <div className="space-y-4">
+            {cart.map(i => (
+              <div key={i.id} className="flex gap-4 items-center bg-white p-4 shadow-sm">
+                <div className="w-16 h-20 bg-gray-100 flex items-center justify-center">
+                  {i.image && <img src={i.image} className="object-contain h-full" />}
+                </div>
 
-              <button
-                onClick={() => removeItem(i.id)}
-                className="text-red-400 text-xs"
-              >
-                Excluir
-              </button>
+                <div className="flex-1">
+                  <p className="font-serif">{i.name}</p>
+                  <p className="text-xs text-gray-500">{i.qty}x {formatCurrency(i.price)}</p>
+                </div>
+
+                <button
+                  onClick={() => removeItem(i.id)}
+                  className="text-red-400 text-xs"
+                >
+                  Excluir
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* DADOS DO CLIENTE */}
+          <div className="bg-white p-6 shadow-sm space-y-4">
+            <h2 className="font-serif text-xl border-b pb-2">Seus dados</h2>
+
+            <input
+              type="text"
+              placeholder="Nome completo"
+              value={customer.name}
+              onChange={e => setCustomer({ ...customer, name: e.target.value })}
+              className="w-full border p-3"
+            />
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customer.ddi}
+                onChange={e => setCustomer({ ...customer, ddi: e.target.value })}
+                className="w-20 border p-3"
+              />
+              <input
+                type="tel"
+                placeholder="WhatsApp"
+                value={customer.phone}
+                onChange={e => setCustomer({ ...customer, phone: e.target.value })}
+                className="flex-1 border p-3"
+              />
             </div>
-          ))}
+          </div>
 
-          <div className="space-y-3">
+          {/* PAGAMENTO */}
+          <div className="bg-white p-6 shadow-sm space-y-4">
+            <h2 className="font-serif text-xl border-b pb-2">Pagamento</h2>
+
             <button
               onClick={() => setPayment("pix")}
-              className={`w-full py-3 border ${payment === "pix" ? "bg-black text-white" : ""}`}
+              className={`w-full py-3 border ${payment==="pix" ? "bg-black text-white" : ""}`}
             >
-              Pagar no PIX
+              PIX ({formatCurrency(total() * (1 - storeConfig.pixDiscount))})
             </button>
 
             <button
               onClick={() => setPayment("card")}
-              className={`w-full py-3 border ${payment === "card" ? "bg-black text-white" : ""}`}
+              className={`w-full py-3 border ${payment==="card" ? "bg-black text-white" : ""}`}
             >
-              Pagar no Cartão
+              Cartão
             </button>
 
             {payment === "card" && (
@@ -182,8 +229,8 @@ function App() {
                 className="w-full border p-3"
               >
                 {[...Array(storeConfig.cardInstallments)].map((_, i) => (
-                  <option key={i} value={i + 1}>
-                    {i + 1}x de {formatCurrency(total() / (i + 1))}
+                  <option key={i} value={i+1}>
+                    {i+1}x de {formatCurrency(total() / (i+1))}
                   </option>
                 ))}
               </select>
@@ -196,6 +243,7 @@ function App() {
               Finalizar Pedido
             </button>
           </div>
+
         </div>
       )}
     </div>
@@ -204,7 +252,6 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
-
 </body>
 </html>
 
