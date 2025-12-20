@@ -71,15 +71,17 @@
                     return;
                 }
 
+                // ESTRUTURA AJUSTADA PARA O ADMIN RECONHECER O CLIENTE E OS ITENS
                 const pedidoData = {
                     id: `ORD-${Date.now()}`,
-                    data: new Date().toLocaleString('pt-BR'),
-                    cliente: customer.name,
-                    whatsapp: `+55 ${customer.phone}`,
-                    itens: cart.map(i => i.name).join(', '),
-                    pagamento: paymentMethod === 'pix' ? 'PIX' : `${selectedInstallment}x Cartão`,
-                    total: valorFinal,
-                    status: 'Novo'
+                    date: new Date().toLocaleString('pt-BR'),
+                    customer: {
+                        name: customer.name,
+                        phone: customer.phone
+                    },
+                    items: cart, // Salva a lista de objetos para o PDF sair detalhado
+                    paymentMethod: paymentMethod === 'pix' ? 'PIX' : `${selectedInstallment}x Cartão`,
+                    total: valorFinal
                 };
 
                 const pedidosSalvos = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
@@ -88,7 +90,7 @@
                 const msg = `Olá! Gostaria de finalizar meu pedido na *${storeConfig.name}*:\n\n` +
                             `*Nome:* ${customer.name}\n` +
                             `*Itens:* ${cart.map(i => i.name).join(', ')}\n` +
-                            `*Pagamento:* ${pedidoData.pagamento}\n` +
+                            `*Pagamento:* ${pedidoData.paymentMethod}\n` +
                             `*Total:* ${formatMoney(valorFinal)}\n\n` +
                             `Aguardando confirmação!`;
 
@@ -176,7 +178,6 @@
                                                 <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase tracking-widest ${paymentMethod === 'card' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>Cartão</button>
                                             </div>
                                             
-                                            {/* MOSTRAR PARCELAS APENAS SE FOR CARTÃO */}
                                             {paymentMethod === 'card' && (
                                                 <div className="space-y-2 animate-in fade-in duration-300">
                                                     <p className="text-[9px] uppercase text-gray-400">Escolha o parcelamento:</p>
@@ -195,7 +196,6 @@
                                                 <span>{formatMoney(totalBase)}</span>
                                             </div>
                                             
-                                            {/* MOSTRAR DESCONTO APENAS SE FOR PIX */}
                                             {paymentMethod === 'pix' && (
                                                 <div className="flex justify-between text-[10px] uppercase text-green-600 font-bold tracking-widest">
                                                     <span>Desconto PIX ({storeConfig.pixDiscount}%)</span>
