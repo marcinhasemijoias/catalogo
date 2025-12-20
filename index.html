@@ -71,7 +71,6 @@
                     return;
                 }
 
-                // 1. SALVAR NO ADMIN (HISTÓRICO)
                 const pedidoData = {
                     id: `ORD-${Date.now()}`,
                     data: new Date().toLocaleString('pt-BR'),
@@ -86,7 +85,6 @@
                 const pedidosSalvos = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
                 localStorage.setItem('luxury_orders', JSON.stringify([pedidoData, ...pedidosSalvos]));
 
-                // 2. FORMATAR MENSAGEM WHATSAPP
                 const msg = `Olá! Gostaria de finalizar meu pedido na *${storeConfig.name}*:\n\n` +
                             `*Nome:* ${customer.name}\n` +
                             `*Itens:* ${cart.map(i => i.name).join(', ')}\n` +
@@ -96,11 +94,8 @@
 
                 const waUrl = `https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(msg)}`;
 
-                // 3. MUDAR PARA TELA DE SUCESSO E ABRIR WHATSAPP
                 setOrderStep('success');
                 setCart([]);
-                
-                // Abre em nova aba
                 window.open(waUrl, '_blank');
             };
 
@@ -125,7 +120,7 @@
                                     <p className="lux-gold font-bold text-lg tracking-tighter">PIX: {formatMoney(product.price * (1 - storeConfig.pixDiscount/100))}</p>
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest">Ou {storeConfig.maxInstallments}x de {formatMoney(product.price / storeConfig.maxInstallments)}</p>
                                 </div>
-                                <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all">Adicionar à Sacola</button>
+                                <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold">Adicionar à Sacola</button>
                             </div>
                         ))}
                     </main>
@@ -136,7 +131,7 @@
                             <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col z-[60] p-8">
                                 
                                 {orderStep !== 'success' && (
-                                    <div className="flex justify-between items-center mb-10">
+                                    <div className="flex justify-between items-center mb-10 border-b lux-border pb-4">
                                         <h2 className="font-serif text-2xl uppercase tracking-widest">
                                             {orderStep === 'cart' ? 'Sacola' : 'Finalizar'}
                                         </h2>
@@ -156,9 +151,9 @@
                                             ))}
                                         </div>
                                         <div className="mt-6 space-y-3">
-                                            <div className="flex justify-between text-xs text-gray-400 uppercase tracking-widest"><span>Subtotal Itens</span><span>{formatMoney(totalBase)}</span></div>
+                                            <div className="flex justify-between text-xs text-gray-400 uppercase tracking-widest"><span>Subtotal</span><span>{formatMoney(totalBase)}</span></div>
                                             <div className="flex justify-between text-sm lux-gold font-bold uppercase tracking-widest border-t lux-border pt-2"><span>Total via PIX</span><span>{formatMoney(totalPix)}</span></div>
-                                            <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">Prosseguir</button>
+                                            <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">Avançar para Checkout</button>
                                         </div>
                                     </div>
                                 )}
@@ -166,6 +161,7 @@
                                 {orderStep === 'checkout' && (
                                     <div className="flex flex-col h-full space-y-8">
                                         <div className="space-y-4">
+                                            <p className="text-[10px] uppercase text-gray-400 font-bold tracking-[0.1em]">Seus Dados</p>
                                             <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="Nome Completo" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
                                             <div className="flex items-center gap-2 border-b lux-border py-1">
                                                 <span className="text-sm font-bold text-gray-400">+55</span>
@@ -174,25 +170,45 @@
                                         </div>
 
                                         <div className="space-y-4">
+                                            <p className="text-[10px] uppercase text-gray-400 font-bold tracking-[0.1em]">Pagamento</p>
                                             <div className="grid grid-cols-2 gap-2">
-                                                <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'pix' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
-                                                <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'card' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>Cartão</button>
+                                                <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase tracking-widest ${paymentMethod === 'pix' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
+                                                <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase tracking-widest ${paymentMethod === 'card' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>Cartão</button>
                                             </div>
+                                            
+                                            {/* MOSTRAR PARCELAS APENAS SE FOR CARTÃO */}
                                             {paymentMethod === 'card' && (
-                                                <select className="w-full border lux-border bg-transparent py-3 text-[10px] font-bold uppercase px-2" value={selectedInstallment} onChange={e => setSelectedInstallment(e.target.value)}>
-                                                    {[...Array(parseInt(storeConfig.maxInstallments))].map((_, i) => (
-                                                        <option key={i+1} value={i+1}>{i+1}x de {formatMoney(totalBase / (i+1))}</option>
-                                                    ))}
-                                                </select>
+                                                <div className="space-y-2 animate-in fade-in duration-300">
+                                                    <p className="text-[9px] uppercase text-gray-400">Escolha o parcelamento:</p>
+                                                    <select className="w-full border lux-border bg-transparent py-3 text-[10px] font-bold uppercase px-2 focus:ring-1 focus:ring-[#A68966]" value={selectedInstallment} onChange={e => setSelectedInstallment(e.target.value)}>
+                                                        {[...Array(parseInt(storeConfig.maxInstallments))].map((_, i) => (
+                                                            <option key={i+1} value={i+1}>{i+1}x de {formatMoney(totalBase / (i+1))} (Sem Juros)</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             )}
                                         </div>
 
-                                        <div className="mt-auto border-t lux-border pt-6 space-y-4">
-                                            <div className="flex justify-between font-serif text-2xl uppercase">
-                                                <span>A Pagar</span>
-                                                <span className="lux-gold">{formatMoney(valorFinal)}</span>
+                                        <div className="mt-auto border-t lux-border pt-6 space-y-2">
+                                            <div className="flex justify-between text-[10px] uppercase text-gray-400 tracking-widest">
+                                                <span>Subtotal Itens</span>
+                                                <span>{formatMoney(totalBase)}</span>
                                             </div>
-                                            <button onClick={handleFinalizeWhatsApp} className="w-full bg-[#2D2926] text-white py-6 text-[10px] font-bold uppercase tracking-[0.3em] shadow-xl">Finalizar via WhatsApp</button>
+                                            
+                                            {/* MOSTRAR DESCONTO APENAS SE FOR PIX */}
+                                            {paymentMethod === 'pix' && (
+                                                <div className="flex justify-between text-[10px] uppercase text-green-600 font-bold tracking-widest">
+                                                    <span>Desconto PIX ({storeConfig.pixDiscount}%)</span>
+                                                    <span>-{formatMoney(totalBase - totalPix)}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-between font-serif text-2xl uppercase mt-4">
+                                                <span>Total</span>
+                                                <span className="lux-gold font-bold">{formatMoney(valorFinal)}</span>
+                                            </div>
+                                            
+                                            <button onClick={handleFinalizeWhatsApp} className="w-full bg-[#2D2926] text-white py-6 text-[10px] font-bold uppercase tracking-[0.3em] shadow-xl active:scale-[0.98] transition-all mt-4">Finalizar via WhatsApp</button>
                                         </div>
                                     </div>
                                 )}
@@ -202,7 +218,7 @@
                                         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600"><Icon name="check" size={40} /></div>
                                         <h2 className="font-serif text-2xl uppercase tracking-widest">Pedido Enviado!</h2>
                                         <p className="text-[11px] text-gray-400 uppercase tracking-widest leading-loose">
-                                            Sua mensagem foi gerada e enviada para o WhatsApp.<br/>
+                                            Seu pedido foi registrado e a conversa iniciada.<br/>
                                             <strong>Aguarde o nosso retorno em breve.</strong>
                                         </p>
                                         <button onClick={() => setIsCartOpen(false)} className="border border-black px-12 py-4 text-[10px] font-bold uppercase tracking-widest">Voltar à Loja</button>
