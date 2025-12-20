@@ -20,8 +20,6 @@
         input:focus { border-bottom-color: #A68966 !important; outline: none; }
         .custom-scroll::-webkit-scrollbar { width: 3px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #E5DACE; }
-        .success-animate { animation: scaleIn 0.5s ease-out forwards; }
-        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -43,8 +41,7 @@
             const [paymentMethod, setPaymentMethod] = useState('pix'); 
             const [selectedInstallment, setSelectedInstallment] = useState(1);
             const [customer, setCustomer] = useState({ name: '', phone: '' });
-            const [orderStep, setOrderStep] = useState('cart'); // 'cart', 'checkout', 'success'
-            const [isProcessing, setIsProcessing] = useState(false);
+            const [orderStep, setOrderStep] = useState('cart');
 
             useEffect(() => {
                 const savedProducts = localStorage.getItem('luxury_products');
@@ -57,35 +54,44 @@
             const totalBase = cart.reduce((acc, item) => acc + item.price, 0);
             const totalPix = totalBase * (1 - (storeConfig.pixDiscount / 100));
 
+            // Máscara de Telefone (99) 99999-9999
+            const maskPhone = (value) => {
+                let r = value.replace(/\D/g, "");
+                r = r.substring(0, 11);
+                if (r.length > 10) {
+                    r = r.replace(/^(\d{2})(\d{5})(\d{4}).*/, "($1) $2-$3");
+                } else if (r.length > 5) {
+                    r = r.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+                } else if (r.length > 2) {
+                    r = r.replace(/^(\d{2})(\d{0,5})/, "($1) $2");
+                } else if (r.length > 0) {
+                    r = r.replace(/^(\d*)/, "($1");
+                }
+                return r;
+            };
+
             const handleFinalizeOrder = () => {
-                if (!customer.name || !customer.phone) {
-                    alert("Por favor, preencha seus dados de contato.");
+                if (!customer.name || customer.phone.length < 14) {
+                    alert("Por favor, preencha seu nome e um WhatsApp válido.");
                     return;
                 }
 
-                setIsProcessing(true);
-
-                // Criar o Pedido para o Admin
                 const newOrder = {
                     id: `ORD-${Date.now()}`,
                     date: new Date().toLocaleString('pt-BR'),
-                    customer: customer,
+                    customer: { ...customer, phone: `+55 ${customer.phone}` },
                     items: cart,
                     payment: paymentMethod === 'pix' ? 'PIX' : `${selectedInstallment}x no Cartão`,
                     total: paymentMethod === 'pix' ? totalPix : totalBase,
                     status: 'Novo'
                 };
 
-                // Salvar no "Banco de Dados" (LocalStorage) para o Admin ler
                 const currentOrders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
                 localStorage.setItem('luxury_orders', JSON.stringify([newOrder, ...currentOrders]));
 
-                // Simulação de processamento de envio (sem abrir nova aba)
-                setTimeout(() => {
-                    setIsProcessing(false);
-                    setOrderStep('success');
-                    setCart([]);
-                }, 1500);
+                // Finalização INSTANTÂNEA
+                setOrderStep('success');
+                setCart([]);
             };
 
             return (
@@ -102,113 +108,91 @@
                     <main className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
                         {products.map(product => (
                             <div key={product.id} className="flex flex-col text-center">
-                                <div className="aspect-square bg-[#F5F2EE] border lux-border mb-6 overflow-hidden relative shadow-sm">
-                                    {product.image && <img src={product.image} className="w-full h-full object-cover transition-transform hover:scale-105 duration-700" />}
+                                <div className="aspect-square bg-[#F5F2EE] border lux-border mb-6 overflow-hidden shadow-sm">
+                                    <img src={product.image} className="w-full h-full object-cover" />
                                 </div>
-                                <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold italic">Ref: {product.sku}</p>
+                                <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Ref: {product.sku}</p>
                                 <h3 className="font-serif text-xl tracking-widest uppercase my-2">{product.name}</h3>
                                 <div className="space-y-1">
                                     <p className="text-xs text-gray-400 line-through">De {formatMoney(product.price)}</p>
                                     <p className="lux-gold font-bold text-lg tracking-tighter">PIX: {formatMoney(product.price * (1 - storeConfig.pixDiscount/100))}</p>
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest">Ou {storeConfig.maxInstallments}x de {formatMoney(product.price / storeConfig.maxInstallments)}</p>
                                 </div>
-                                <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="w-full mt-6 bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all">Selecionar para Sacola</button>
+                                <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="w-full mt-6 bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold">Selecionar</button>
                             </div>
                         ))}
                     </main>
 
                     {isCartOpen && (
                         <div className="fixed inset-0 z-50 flex justify-end">
-                            <div className="cart-overlay absolute inset-0" onClick={() => !isProcessing && setIsCartOpen(false)}></div>
+                            <div className="cart-overlay absolute inset-0" onClick={() => setOrderStep !== 'success' && setIsCartOpen(false)}></div>
                             <div className="relative w-full max-w-md bg-[#FDFBF7] h-full shadow-2xl flex flex-col p-8 overflow-hidden">
                                 
                                 {orderStep !== 'success' && <button className="absolute top-8 right-8" onClick={() => setIsCartOpen(false)}><Icon name="x" size={24} /></button>}
 
                                 {orderStep === 'cart' && (
                                     <div className="flex flex-col h-full">
-                                        <h2 className="font-serif text-2xl uppercase tracking-widest mb-8 border-b lux-border pb-4">Sua Sacola</h2>
+                                        <h2 className="font-serif text-2xl uppercase tracking-widest mb-8 border-b lux-border pb-4">Sacola</h2>
                                         <div className="flex-grow space-y-6 overflow-y-auto pr-2 custom-scroll">
                                             {cart.map((item, idx) => (
                                                 <div key={idx} className="flex gap-4 border-b lux-border pb-4 items-center">
                                                     <img src={item.image} className="w-14 h-14 object-cover border lux-border" />
                                                     <div className="flex-grow">
-                                                        <p className="text-[10px] font-bold uppercase tracking-tighter">{item.name}</p>
+                                                        <p className="text-[10px] font-bold uppercase">{item.name}</p>
                                                         <p className="text-xs text-gray-400">{formatMoney(item.price)}</p>
                                                     </div>
-                                                    <button onClick={() => setCart(cart.filter((_, i) => i !== idx))}><Icon name="trash-2" size={14} className="text-gray-300 hover:text-red-500" /></button>
                                                 </div>
                                             ))}
                                         </div>
-                                        {cart.length > 0 && (
-                                            <div className="border-t lux-border pt-6 space-y-3">
-                                                <div className="flex justify-between text-xs uppercase tracking-widest text-gray-400"><span>Subtotal</span><span>{formatMoney(totalBase)}</span></div>
-                                                <div className="flex justify-between text-sm lux-gold font-bold uppercase tracking-widest"><span>PIX (-{storeConfig.pixDiscount}%)</span><span>{formatMoney(totalPix)}</span></div>
-                                                <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold mt-4 hover:tracking-[0.4em] transition-all">Prosseguir para Checkout</button>
-                                            </div>
-                                        )}
+                                        <div className="border-t lux-border pt-6 space-y-3">
+                                            <div className="flex justify-between text-sm lux-gold font-bold uppercase tracking-widest"><span>PIX (-{storeConfig.pixDiscount}%)</span><span>{formatMoney(totalPix)}</span></div>
+                                            <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold mt-4">Prosseguir</button>
+                                        </div>
                                     </div>
                                 )}
 
                                 {orderStep === 'checkout' && (
-                                    <div className="flex flex-col h-full space-y-8 overflow-y-auto custom-scroll">
+                                    <div className="flex flex-col h-full space-y-8 overflow-y-auto">
                                         <h2 className="font-serif text-2xl uppercase tracking-widest border-b lux-border pb-4">Checkout</h2>
                                         <div className="space-y-6">
                                             <div className="space-y-3">
-                                                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Seus Dados</p>
+                                                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Identificação</p>
                                                 <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="Nome Completo" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
-                                                <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="WhatsApp" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} />
+                                                <div className="flex items-center gap-2 border-b lux-border">
+                                                    <span className="text-sm font-bold text-gray-400">+55</span>
+                                                    <input className="w-full bg-transparent py-2 text-sm" placeholder="(99) 99999-9999" value={customer.phone} onChange={e => setCustomer({...customer, phone: maskPhone(e.target.value)})} />
+                                                </div>
                                             </div>
                                             <div className="space-y-3">
                                                 <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Pagamento</p>
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'pix' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
+                                                    <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'pix' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>PIX</button>
                                                     <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'card' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>Cartão</button>
                                                 </div>
-                                                {paymentMethod === 'card' && (
-                                                    <select className="w-full border lux-border bg-transparent py-3 text-[10px] font-bold uppercase px-2 focus:ring-1 focus:ring-lux-gold outline-none" value={selectedInstallment} onChange={e => setSelectedInstallment(e.target.value)}>
-                                                        {[...Array(parseInt(storeConfig.maxInstallments))].map((_, i) => (
-                                                            <option key={i+1} value={i+1}>{i+1}x de {formatMoney(totalBase / (i+1))}</option>
-                                                        ))}
-                                                    </select>
-                                                )}
                                             </div>
                                         </div>
                                         <div className="border-t lux-border pt-6 mt-auto">
-                                            <div className="flex justify-between text-[10px] uppercase text-gray-400 font-bold mb-1"><span>Valor Original</span><span>{formatMoney(totalBase)}</span></div>
                                             <div className="flex justify-between font-serif text-2xl uppercase mb-6">
                                                 <span>A Pagar</span>
                                                 <span className="lux-gold">{formatMoney(paymentMethod === 'pix' ? totalPix : totalBase)}</span>
                                             </div>
-                                            <button 
-                                                disabled={isProcessing}
-                                                onClick={handleFinalizeOrder} 
-                                                className={`w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold shadow-2xl flex items-center justify-center gap-2 ${isProcessing ? 'opacity-50' : ''}`}
-                                            >
-                                                {isProcessing ? 'Processando...' : 'Finalizar Pedido'}
-                                            </button>
-                                            <button onClick={() => setOrderStep('cart')} className="w-full text-[9px] uppercase tracking-widest text-gray-300 py-4 text-center font-bold">Revisar Itens</button>
+                                            <button onClick={handleFinalizeOrder} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold shadow-2xl">Finalizar Pedido</button>
                                         </div>
                                     </div>
                                 )}
 
                                 {orderStep === 'success' && (
-                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-8 success-animate">
-                                        <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-2">
-                                            <Icon name="check-circle" size={48} />
-                                        </div>
+                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
+                                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600"><Icon name="check" size={40} /></div>
                                         <div>
-                                            <h2 className="font-serif text-3xl uppercase tracking-widest mb-4">Pedido Confirmado</h2>
-                                            <p className="text-[11px] text-gray-500 uppercase tracking-[0.2em] font-bold">{storeConfig.name}</p>
+                                            <h2 className="font-serif text-2xl uppercase tracking-widest mb-2">Pedido Recebido</h2>
+                                            <p className="text-[11px] text-gray-400 uppercase tracking-widest">{storeConfig.name}</p>
                                         </div>
-                                        <div className="bg-[#F5F2EE] p-6 w-full border lux-border space-y-2">
-                                            <p className="text-[10px] text-gray-400 uppercase">Valor do seu pedido</p>
-                                            <p className="text-xl font-serif lux-gold">{formatMoney(paymentMethod === 'pix' ? totalPix : totalBase)}</p>
-                                        </div>
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest leading-loose px-8">
-                                            Sua solicitação foi enviada para nossa curadoria. <br/>
-                                            <strong>Por favor, aguarde o contato de nossa equipe em seu WhatsApp para os detalhes de entrega.</strong>
+                                        <p className="text-[11px] text-gray-400 uppercase tracking-widest leading-loose px-6">
+                                            Obrigado, <strong>{customer.name.split(' ')[0]}</strong>! <br/>
+                                            Seu pedido no valor de <strong>{formatMoney(paymentMethod === 'pix' ? totalPix : totalBase)}</strong> foi registrado. Aguarde nosso contato via WhatsApp.
                                         </p>
-                                        <button onClick={() => setIsCartOpen(false)} className="border border-[#2D2926] px-12 py-4 text-[10px] uppercase tracking-widest font-bold hover:bg-[#2D2926] hover:text-white transition-all">Voltar à Galeria</button>
+                                        <button onClick={() => setIsCartOpen(false)} className="border border-black px-10 py-3 text-[10px] uppercase tracking-widest font-bold">Fechar</button>
                                     </div>
                                 )}
                             </div>
