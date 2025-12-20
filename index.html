@@ -17,6 +17,7 @@
         .lux-gold { color: #A68966; }
         .cart-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
         .payment-btn-active { border-color: #A68966; background: #FDFBF7; color: #A68966; }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23A68966' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; }
     </style>
 </head>
 <body>
@@ -32,10 +33,11 @@
 
         function App() {
             const [products, setProducts] = useState([]);
-            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 5, maxInstallments: 6 });
+            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 5, maxInstallments: 12 });
             const [cart, setCart] = useState([]);
             const [isCartOpen, setIsCartOpen] = useState(false);
-            const [paymentMethod, setPaymentMethod] = useState('pix'); // 'pix' ou 'card'
+            const [paymentMethod, setPaymentMethod] = useState('pix'); 
+            const [selectedInstallment, setSelectedInstallment] = useState(1);
 
             useEffect(() => {
                 const savedProducts = localStorage.getItem('luxury_products');
@@ -57,10 +59,17 @@
             };
 
             const sendWhatsApp = () => {
-                const methodLabel = paymentMethod === 'pix' ? `PIX (com ${storeConfig.pixDiscount}% de desconto)` : `Cartão em até ${storeConfig.maxInstallments}x`;
+                let paymentDetail = "";
+                if (paymentMethod === 'pix') {
+                    paymentDetail = `PIX (com ${storeConfig.pixDiscount}% de desconto)`;
+                } else {
+                    const instValue = formatMoney(totalBase / selectedInstallment);
+                    paymentDetail = `Cartão em ${selectedInstallment}x de ${instValue}`;
+                }
+
                 const message = `Olá! Gostaria de encomendar:\n\n` + 
                     cart.map(i => `- ${i.name} (SKU: ${i.sku})`).join('\n') +
-                    `\n\n*Forma de Pagamento:* ${methodLabel}` +
+                    `\n\n*Forma de Pagamento:* ${paymentDetail}` +
                     `\n*Total:* ${formatMoney(finalTotal)}`;
                 
                 window.open(`https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
@@ -68,6 +77,7 @@
 
             return (
                 <div className="min-h-screen">
+                    {/* Header */}
                     <header className="bg-white border-b lux-border py-8 px-6 sticky top-0 z-40 flex justify-between items-center shadow-sm">
                         <div className="w-10"></div>
                         <h1 className="text-2xl font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
@@ -77,6 +87,7 @@
                         </button>
                     </header>
 
+                    {/* Vitrine */}
                     <main className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
                         {products.map(product => (
                             <div key={product.id} className="flex flex-col group">
@@ -103,7 +114,7 @@
                                     <button onClick={() => setIsCartOpen(false)}><Icon name="x" size={24} /></button>
                                 </div>
 
-                                <div className="flex-grow overflow-y-auto space-y-6 pr-2 custom-scroll">
+                                <div className="flex-grow overflow-y-auto space-y-6 pr-2">
                                     {cart.length === 0 ? <p className="text-center font-serif italic text-gray-400 py-10">Sacola vazia.</p> : 
                                         cart.map((item, idx) => (
                                             <div key={idx} className="flex gap-4 border-b lux-border pb-4">
@@ -128,20 +139,28 @@
                                         <div className="space-y-3">
                                             <p className="text-[10px] uppercase font-bold text-gray-400 tracking-[0.2em]">Forma de Pagamento</p>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <button 
-                                                    onClick={() => setPaymentMethod('pix')}
-                                                    className={`py-3 border text-[10px] uppercase font-bold tracking-widest transition-all ${paymentMethod === 'pix' ? 'payment-btn-active' : 'border-gray-200 text-gray-400'}`}
-                                                >
-                                                    PIX (-{storeConfig.pixDiscount}%)
-                                                </button>
-                                                <button 
-                                                    onClick={() => setPaymentMethod('card')}
-                                                    className={`py-3 border text-[10px] uppercase font-bold tracking-widest transition-all ${paymentMethod === 'card' ? 'payment-btn-active' : 'border-gray-200 text-gray-400'}`}
-                                                >
-                                                    Cartão ({storeConfig.maxInstallments}x)
-                                                </button>
+                                                <button onClick={() => setPaymentMethod('pix')} className={`py-3 border text-[10px] uppercase font-bold tracking-widest transition-all ${paymentMethod === 'pix' ? 'payment-btn-active' : 'border-gray-200 text-gray-400'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
+                                                <button onClick={() => setPaymentMethod('card')} className={`py-3 border text-[10px] uppercase font-bold tracking-widest transition-all ${paymentMethod === 'card' ? 'payment-btn-active' : 'border-gray-200 text-gray-400'}`}>Cartão de Crédito</button>
                                             </div>
                                         </div>
+
+                                        {/* SELETOR DE PARCELAS (Só aparece se for Cartão) */}
+                                        {paymentMethod === 'card' && (
+                                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-[0.2em]">Parcelamento</p>
+                                                <select 
+                                                    value={selectedInstallment} 
+                                                    onChange={(e) => setSelectedInstallment(parseInt(e.target.value))}
+                                                    className="w-full border lux-border bg-transparent py-3 px-4 text-[11px] uppercase font-bold tracking-widest focus:outline-none"
+                                                >
+                                                    {[...Array(parseInt(storeConfig.maxInstallments))].map((_, i) => (
+                                                        <option key={i+1} value={i+1}>
+                                                            {i+1}x de {formatMoney(totalBase / (i+1))}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
 
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-[10px] uppercase tracking-widest text-gray-400">
