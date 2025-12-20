@@ -12,9 +12,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #FDFBF7; }
-        .lux-card { background: white; border: 1px solid #E5DACE; border-radius: 4px; }
-        input { border-bottom: 1px solid #E5DACE !important; outline: none; transition: all 0.3s; }
+        body { font-family: 'Inter', sans-serif; background: #FDFBF7; color: #2D2926; }
+        .lux-card { background: white; border: 1px solid #E5DACE; border-radius: 2px; }
+        input { border-bottom: 1px solid #E5DACE !important; outline: none; }
         input:focus { border-bottom-color: #A68966 !important; }
     </style>
 </head>
@@ -24,16 +24,18 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // Componente de Ícone para Lucide funcionar no React
         const Icon = ({ name, size = 18, className = "" }) => {
             useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [name]);
             return <i data-lucide={name} style={{width: size, height: size}} className={`inline-block ${className}`}></i>;
         };
 
-        function AdminApp() {
+        function App() {
+            const [view, setView] = useState('admin');
             const [products, setProducts] = useState([]);
             const [orders, setOrders] = useState([]);
-            const [config, setConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 10 });
-            const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '', image: '' });
+            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 0.1, maxInstallments: 12 });
+            const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '' });
 
             useEffect(() => {
                 const savedProducts = localStorage.getItem('luxury_products');
@@ -41,141 +43,165 @@
                 const savedOrders = localStorage.getItem('luxury_orders');
                 
                 if (savedProducts) setProducts(JSON.parse(savedProducts));
-                if (savedConfig) setConfig(JSON.parse(savedConfig));
+                if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
                 if (savedOrders) setOrders(JSON.parse(savedOrders));
             }, []);
 
-            const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const formatCurrency = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-            // AÇÕES DE PRODUTO
+            // FUNÇÕES DE PRODUTOS
             const handleAddProduct = (e) => {
                 e.preventDefault();
                 if (!newProduct.name || !newProduct.price) return;
-                const updated = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
-                setProducts(updated);
-                localStorage.setItem('luxury_products', JSON.stringify(updated));
-                setNewProduct({ sku: '', name: '', price: '', image: '' });
+                const newList = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
+                setProducts(newList);
+                localStorage.setItem('luxury_products', JSON.stringify(newList));
+                setNewProduct({ sku: '', name: '', price: '' });
             };
 
             const deleteProduct = (id) => {
-                const updated = products.filter(p => p.id !== id);
-                setProducts(updated);
-                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                const newList = products.filter(p => p.id !== id);
+                setProducts(newList);
+                localStorage.setItem('luxury_products', JSON.stringify(newList));
             };
 
-            // AÇÕES DE CONFIGURAÇÃO
-            const saveConfig = () => {
-                localStorage.setItem('luxury_config', JSON.stringify(config));
-                alert("Configurações atualizadas!");
-            };
-
-            // AÇÕES DE PEDIDOS
+            // FUNÇÕES DE PEDIDOS
             const deleteOrder = (id) => {
-                if (window.confirm("Deseja excluir este pedido permanentemente?")) {
-                    const updated = orders.filter(o => o.id !== id);
-                    setOrders(updated);
-                    localStorage.setItem('luxury_orders', JSON.stringify(updated));
+                if(window.confirm("Deseja realmente excluir este pedido do histórico?")) {
+                    const newOrders = orders.filter(o => o.id !== id);
+                    setOrders(newOrders);
+                    localStorage.setItem('luxury_orders', JSON.stringify(newOrders));
                 }
             };
 
-            const generatePDF = (order) => {
+            const handleDownloadPdf = (order) => {
                 const element = document.createElement('div');
+                element.style.padding = "40px";
                 element.innerHTML = `
-                    <div style="padding: 40px; font-family: serif; color: #2D2926;">
-                        <h1 style="text-transform: uppercase; letter-spacing: 4px; border-bottom: 1px solid #A68966; padding-bottom: 10px;">${config.name}</h1>
-                        <p><strong>PEDIDO:</strong> #${order.id || order.date}</p>
-                        <p><strong>CLIENTE:</strong> ${order.cliente || order.customer?.name}</p>
-                        <p><strong>DATA:</strong> ${order.data || order.date}</p>
+                    <div style="font-family: serif; border: 1px solid #E5DACE; padding: 30px;">
+                        <h1 style="text-transform: uppercase; letter-spacing: 5px;">${storeConfig.name}</h1>
                         <hr/>
-                        <p><strong>ITENS:</strong> ${order.itens || order.items?.map(i => i.name).join(', ')}</p>
-                        <p><strong>PAGAMENTO:</strong> ${order.pagamento || order.paymentMethod}</p>
-                        <h2 style="color: #A68966;">TOTAL: ${formatMoney(order.total)}</h2>
+                        <p><strong>Cliente:</strong> ${order.customer?.name || order.cliente}</p>
+                        <p><strong>WhatsApp:</strong> ${order.customer?.phone || order.whatsapp}</p>
+                        <p><strong>Data:</strong> ${order.date || order.data}</p>
+                        <p><strong>Itens:</strong> ${Array.isArray(order.items) ? order.items.map(i => i.name).join(', ') : order.itens}</p>
+                        <p><strong>Pagamento:</strong> ${order.paymentMethod || order.pagamento}</p>
+                        <h2 style="color: #A68966;">TOTAL: ${formatCurrency(order.total)}</h2>
                     </div>
                 `;
-                html2pdf().from(element).set({ margin: 10, filename: 'romaneio.pdf' }).save();
+                html2pdf().from(element).set({ margin: 10, filename: `Pedido_${order.id}.pdf` }).save();
             };
 
             return (
-                <div className="max-w-5xl mx-auto p-6 space-y-10 pb-20">
-                    <header className="flex justify-between items-center border-b pb-6">
-                        <h1 className="text-2xl font-serif uppercase tracking-widest">{config.name} - Admin</h1>
-                        <button onClick={() => window.location.href='index.html'} className="text-xs font-bold uppercase border-b-2 border-black">Voltar para a Loja</button>
+                <div className="min-h-screen pb-20">
+                    <header className="sticky top-0 z-50 bg-white border-b border-[#E5DACE] px-6 py-4 flex justify-between items-center shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <Icon name="settings" className="text-[#A68966]" />
+                            <h1 className="text-lg tracking-[0.4em] uppercase font-light">{storeConfig.name} - PAINEL</h1>
+                        </div>
+                        <button onClick={() => window.location.href='index.html'} className="text-[10px] font-bold uppercase border-b border-black">Ver Loja</button>
                     </header>
 
-                    {/* CONFIGURAÇÃO */}
-                    <section className="lux-card p-6">
-                        <h2 className="text-xs font-black uppercase tracking-widest mb-6 flex items-center gap-2 text-[#A68966]">
-                            <Icon name="settings" size={16}/> Configurações Gerais
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div><label className="text-[10px] uppercase text-gray-400 block mb-1">Nome da Loja</label>
-                            <input className="w-full py-2" value={config.name} onChange={e => setConfig({...config, name: e.target.value})} /></div>
-                            
-                            <div><label className="text-[10px] uppercase text-gray-400 block mb-1">WhatsApp (Receber Pedidos)</label>
-                            <input className="w-full py-2" value={config.whatsapp} onChange={e => setConfig({...config, whatsapp: e.target.value})} /></div>
-                            
-                            <div className="flex items-end"><button onClick={saveConfig} className="w-full bg-black text-white text-[10px] uppercase py-3 font-bold tracking-widest">Salvar Dados</button></div>
+                    <main className="max-w-2xl mx-auto p-6 space-y-12">
+                        
+                        {/* Histórico de Pedidos - ATUALIZADO */}
+                        <div className="bg-white border border-[#E5DACE] p-6 rounded-sm shadow-sm">
+                            <h2 className="text-xs font-black uppercase tracking-widest mb-6 border-l-2 border-[#A68966] pl-3 flex items-center gap-2">
+                                <Icon name="history" size={16}/> Histórico de Pedidos
+                            </h2>
+                            <div className="space-y-3">
+                                {orders.length === 0 ? (
+                                    <p className="text-xs italic text-gray-400">Nenhum pedido realizado ainda.</p>
+                                ) : (
+                                    orders.map(order => (
+                                        <div key={order.id} className="p-4 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center bg-[#FDFBF7] hover:border-[#A68966] transition-all gap-4">
+                                            <div className="text-[10px]">
+                                                <p className="font-bold text-sm uppercase text-gray-800">{order.customer?.name || order.cliente}</p>
+                                                <p className="text-gray-400 font-medium">{order.date || order.data}</p>
+                                                <p className="text-[#A68966] font-bold text-sm mt-1">{formatCurrency(order.total)}</p>
+                                            </div>
+                                            <div className="flex gap-2 w-full md:w-auto">
+                                                {/* Botão WhatsApp */}
+                                                <button 
+                                                    onClick={() => window.open(`https://wa.me/${(order.customer?.phone || order.whatsapp || "").replace(/\D/g, "")}`, '_blank')}
+                                                    className="flex-1 md:flex-none p-2 bg-[#25D366] text-white rounded hover:opacity-80 flex justify-center" title="Falar com Cliente">
+                                                    <Icon name="message-circle" size={16}/>
+                                                </button>
+                                                {/* Botão PDF */}
+                                                <button 
+                                                    onClick={() => handleDownloadPdf(order)}
+                                                    className="flex-1 md:flex-none p-2 bg-white border border-[#E5DACE] text-gray-600 rounded hover:bg-gray-50 flex justify-center" title="Gerar Romaneio">
+                                                    <Icon name="file-text" size={16}/>
+                                                </button>
+                                                {/* Botão Excluir */}
+                                                <button 
+                                                    onClick={() => deleteOrder(order.id)}
+                                                    className="flex-1 md:flex-none p-2 bg-red-50 text-red-500 border border-red-100 rounded hover:bg-red-100 flex justify-center" title="Excluir Pedido">
+                                                    <Icon name="trash-2" size={16}/>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </section>
 
-                    {/* CADASTRO PRODUTOS */}
-                    <section className="lux-card p-6">
-                        <h2 className="text-xs font-black uppercase tracking-widest mb-6 flex items-center gap-2 text-[#A68966]">
-                            <Icon name="package" size={16}/> Gerenciar Catálogo
-                        </h2>
-                        <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <input placeholder="Nome da Joia" className="py-2" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                            <input placeholder="Preço" type="number" className="py-2" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
-                            <input placeholder="URL da Imagem" className="py-2" value={newProduct.image} onChange={e => setNewProduct({...newProduct, image: e.target.value})} />
-                            <button className="bg-[#A68966] text-white text-[10px] uppercase font-bold py-2">Adicionar Peça</button>
-                        </form>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {products.map(p => (
-                                <div key={p.id} className="flex justify-between items-center p-3 border border-gray-50 bg-gray-50">
-                                    <span className="text-xs font-bold uppercase">{p.name} - {formatMoney(p.price)}</span>
-                                    <button onClick={() => deleteProduct(p.id)} className="text-red-400 hover:text-red-600"><Icon name="trash-2" size={14}/></button>
+                        {/* Dados da Empresa */}
+                        <div className="bg-white border border-[#E5DACE] p-6 rounded-sm shadow-sm">
+                            <h2 className="text-xs font-black uppercase tracking-widest mb-6 border-l-2 border-[#A68966] pl-3">Dados da Empresa</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-tighter">Nome Comercial</label>
+                                    <input className="w-full py-2 text-sm" value={storeConfig.name} onChange={e => {
+                                        const c = {...storeConfig, name: e.target.value};
+                                        setStoreConfig(c);
+                                        localStorage.setItem('luxury_config', JSON.stringify(c));
+                                    }} />
                                 </div>
-                            ))}
+                                <div className="space-y-1">
+                                    <label className="text-[9px] uppercase font-bold text-gray-400 tracking-tighter">WhatsApp de Recebimento</label>
+                                    <input className="w-full py-2 text-sm" value={storeConfig.whatsapp} onChange={e => {
+                                        const c = {...storeConfig, whatsapp: e.target.value};
+                                        setStoreConfig(c);
+                                        localStorage.setItem('luxury_config', JSON.stringify(c));
+                                    }} />
+                                </div>
+                            </div>
                         </div>
-                    </section>
 
-                    {/* HISTÓRICO DE PEDIDOS */}
-                    <section className="lux-card p-6">
-                        <h2 className="text-xs font-black uppercase tracking-widest mb-6 flex items-center gap-2 text-[#A68966]">
-                            <Icon name="history" size={16}/> Histórico de Vendas
-                        </h2>
-                        <div className="space-y-4">
-                            {orders.length === 0 ? <p className="text-center text-gray-400 py-10 italic">Nenhuma venda registrada.</p> : 
-                             orders.map(order => (
-                                <div key={order.id} className="border p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-[#A68966]">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase">{order.cliente || order.customer?.name}</p>
-                                        <p className="text-[10px] text-gray-400">{order.data || order.date} • <span className="text-[#A68966] font-bold">{formatMoney(order.total)}</span></p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => window.open(`https://wa.me/${(order.whatsapp || order.customer?.phone || "").replace(/\D/g, "")}`, '_blank')} 
-                                                className="p-2 bg-green-500 text-white rounded hover:opacity-80" title="WhatsApp do Cliente">
-                                            <Icon name="message-circle" size={16}/>
-                                        </button>
-                                        <button onClick={() => generatePDF(order)} 
-                                                className="p-2 bg-blue-500 text-white rounded hover:opacity-80" title="Gerar Romaneio PDF">
-                                            <Icon name="file-text" size={16}/>
-                                        </button>
-                                        <button onClick={() => deleteOrder(order.id)} 
-                                                className="p-2 bg-red-100 text-red-500 rounded hover:bg-red-200" title="Excluir">
-                                            <Icon name="trash-2" size={16}/>
-                                        </button>
-                                    </div>
+                        {/* Catálogo de Peças */}
+                        <div className="bg-white border border-[#E5DACE] p-6 rounded-sm shadow-sm font-sans">
+                            <h2 className="text-xs font-black uppercase tracking-widest mb-6 border-l-2 border-[#A68966] pl-3">Adicionar à Coleção</h2>
+                            <form onSubmit={handleAddProduct} className="grid grid-cols-1 gap-4 mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <input className="py-2 text-sm" placeholder="Nome da Joia" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+                                    <input className="py-2 text-sm" placeholder="SKU/Ref" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
+                                    <input className="py-2 text-sm" placeholder="Preço" type="number" step="0.01" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
                                 </div>
-                            ))}
+                                <button className="bg-[#2D2926] text-white py-3 text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-colors">
+                                    <Icon name="plus-circle" size={14}/> Salvar Produto
+                                </button>
+                            </form>
+
+                            <div className="space-y-2 border-t pt-4">
+                                {products.map(p => (
+                                    <div key={p.id} className="flex justify-between items-center p-3 border border-gray-50 text-xs hover:bg-gray-50">
+                                        <span><strong className="uppercase font-bold">{p.name}</strong> <span className="text-gray-400 ml-1">#{p.sku}</span></span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-[#A68966]">{formatCurrency(p.price)}</span>
+                                            <button onClick={() => deleteProduct(p.id)} className="text-red-300 hover:text-red-500"><Icon name="trash-2" size={14}/></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </section>
+                    </main>
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<AdminApp />);
+        root.render(<App />);
     </script>
 </body>
 </html>
