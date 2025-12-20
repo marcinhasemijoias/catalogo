@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Royal Joias - Administrativo</title>
+    <title>Painel Administrativo - Royal Joias</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,14 +11,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8f9fa; }
-        .lux-card { background: white; border: 1px solid #e5dace; border-radius: 8px; shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white; }
-        }
-        .print-only { display: none; }
+        body { font-family: 'Inter', sans-serif; background: #f9fafb; color: #1f2937; }
+        .order-card { background: white; border: 1px solid #e5e7eb; transition: all 0.2s; }
+        .order-card:hover { border-color: #A68966; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -27,6 +22,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // Componente de Ícone para garantir que carreguem sempre
         const Icon = ({ name, size = 18, className = "" }) => {
             useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [name]);
             return <i data-lucide={name} style={{width: size, height: size}} className={`inline-block ${className}`}></i>;
@@ -34,165 +30,117 @@
 
         function AdminApp() {
             const [orders, setOrders] = useState([]);
-            const [config, setConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 5, maxInstallments: 12 });
+            const [config, setConfig] = useState({ name: 'Royal Joias' });
 
             useEffect(() => {
-                loadData();
-            }, []);
-
-            const loadData = () => {
                 const savedOrders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
                 const savedConfig = JSON.parse(localStorage.getItem('luxury_config') || '{"name":"Royal Joias"}');
                 setOrders(savedOrders);
                 setConfig(savedConfig);
-            };
+            }, []);
 
             const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-            const deleteOrder = (id) => {
-                if (window.confirm("Deseja realmente excluir este pedido permanentemente?")) {
-                    const updated = orders.filter(o => o.id !== id);
-                    localStorage.setItem('luxury_orders', JSON.stringify(updated));
-                    setOrders(updated);
+            const handleDelete = (id) => {
+                if (window.confirm("Tem certeza que deseja excluir este pedido definitivamente?")) {
+                    const filtered = orders.filter(o => o.id !== id);
+                    localStorage.setItem('luxury_orders', JSON.stringify(filtered));
+                    setOrders(filtered);
                 }
             };
 
-            const printRomaneio = (order) => {
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
+            const handlePrint = (order) => {
+                const win = window.open('', '_blank');
+                win.document.write(`
                     <html>
-                        <head>
-                            <title>Romaneio - ${order.id}</title>
-                            <style>
-                                body { font-family: sans-serif; padding: 40px; color: #333; }
-                                .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-                                .title { font-size: 24px; font-weight: bold; text-transform: uppercase; }
-                                .row { margin: 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-                                .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #777; }
-                                .label { font-weight: bold; width: 150px; display: inline-block; }
-                            </style>
-                        </head>
+                        <head><title>Romaneio - ${order.cliente}</title></head>
+                        <style>
+                            body { font-family: sans-serif; padding: 40px; line-height: 1.6; }
+                            .header { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+                            .item { border-bottom: 1px solid #eee; padding: 8px 0; }
+                            .total { font-size: 20px; font-weight: bold; margin-top: 20px; }
+                        </style>
                         <body>
-                            <div class="header">
-                                <div class="title">${config.name}</div>
-                                <p>Romaneio de Venda #${order.id}</p>
-                            </div>
-                            <div class="row"><span class="label">Data:</span> ${order.data}</div>
-                            <div class="row"><span class="label">Cliente:</span> ${order.cliente}</div>
-                            <div class="row"><span class="label">WhatsApp:</span> ${order.whatsapp}</div>
-                            <div class="row"><span class="label">Itens:</span> ${order.itens}</div>
-                            <div class="row"><span class="label">Pagamento:</span> ${order.pagamento}</div>
-                            <div class="row" style="font-size: 20px; border-top: 2px solid #333; padding-top: 10px;">
-                                <span class="label">TOTAL:</span> ${formatMoney(order.total)}
-                            </div>
-                            <div class="footer">
-                                Documento gerado em ${new Date().toLocaleString()}<br>
-                                Obrigado pela preferência.
-                            </div>
-                            <script>window.print();</script>
+                            <div class="header"><h1>${config.name}</h1><p>Romaneio de Pedido #${order.id}</p></div>
+                            <p><strong>Data:</strong> ${order.data}</p>
+                            <p><strong>Cliente:</strong> ${order.cliente}</p>
+                            <p><strong>WhatsApp:</strong> ${order.whatsapp}</p>
+                            <div class="item"><strong>Itens:</strong> ${order.itens}</div>
+                            <p><strong>Pagamento:</strong> ${order.pagamento}</p>
+                            <div class="total text-right">VALOR TOTAL: ${formatMoney(order.total)}</div>
+                            <script>window.print();<\/script>
                         </body>
                     </html>
                 `);
-                printWindow.document.close();
+                win.document.close();
             };
 
             return (
-                <div className="min-h-screen p-4 md:p-8">
-                    <header className="max-w-6xl mx-auto flex justify-between items-center mb-10 no-print">
+                <div className="max-w-6xl mx-auto px-4 py-10">
+                    <header className="flex justify-between items-center mb-10">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-800">Painel de Pedidos</h1>
-                            <p className="text-sm text-gray-500">Gestão de vendas da {config.name}</p>
+                            <h1 className="text-3xl font-bold tracking-tight">Gestão de Pedidos</h1>
+                            <p className="text-gray-500">{config.name} - Histórico Administrativo</p>
                         </div>
-                        <div className="flex gap-4">
-                            <button onClick={() => window.location.href='index.html'} className="bg-white border px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-gray-50">
-                                <Icon name="eye" size={16} /> Ver Loja
-                            </button>
-                        </div>
+                        <button onClick={() => window.location.href='index.html'} className="flex items-center gap-2 bg-black text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-800">
+                            <Icon name="layout-template" size={16} /> Ver Loja Online
+                        </button>
                     </header>
 
-                    <main className="max-w-6xl mx-auto no-print">
-                        <div className="lux-card overflow-hidden">
-                            <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
-                                <h2 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <Icon name="history" size={18} /> Histórico de Pedidos ({orders.length})
-                                </h2>
+                    <div className="grid gap-4">
+                        {orders.length > 0 ? (
+                            orders.map(order => (
+                                <div key={order.id} className="order-card p-6 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div className="flex-grow">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <span className="text-[10px] font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-500">{order.id}</span>
+                                            <span className="text-xs text-gray-400">{order.data}</span>
+                                        </div>
+                                        <h2 className="text-lg font-bold text-gray-800 uppercase">{order.cliente}</h2>
+                                        <p className="text-sm text-gray-500 italic mb-2">{order.itens}</p>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{order.pagamento}</span>
+                                            <span className="text-lg font-bold text-[#A68966]">{formatMoney(order.total)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 w-full md:w-auto border-t md:border-0 pt-4 md:pt-0">
+                                        {/* Botão WhatsApp */}
+                                        <button 
+                                            onClick={() => window.open(`https://wa.me/${order.whatsapp.replace(/\D/g, "")}`, '_blank')}
+                                            className="flex-grow md:flex-none p-3 text-green-600 hover:bg-green-50 rounded-lg border border-green-100 flex justify-center items-center"
+                                            title="Chamar no WhatsApp"
+                                        >
+                                            <Icon name="message-circle" size={20} />
+                                        </button>
+
+                                        {/* Botão Romaneio */}
+                                        <button 
+                                            onClick={() => handlePrint(order)}
+                                            className="flex-grow md:flex-none p-3 text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-100 flex justify-center items-center"
+                                            title="Imprimir Romaneio"
+                                        >
+                                            <Icon name="printer" size={20} />
+                                        </button>
+
+                                        {/* Botão Excluir */}
+                                        <button 
+                                            onClick={() => handleDelete(order.id)}
+                                            className="flex-grow md:flex-none p-3 text-red-500 hover:bg-red-50 rounded-lg border border-red-100 flex justify-center items-center"
+                                            title="Remover Pedido"
+                                        >
+                                            <Icon name="trash-2" size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+                                <Icon name="inbox" size={48} className="text-gray-200 mb-4" />
+                                <p className="text-gray-400 italic">Nenhum pedido recebido até o momento.</p>
                             </div>
-                            
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="text-xs uppercase text-gray-400 font-bold bg-white">
-                                            <th className="px-6 py-4">Data/ID</th>
-                                            <th className="px-6 py-4">Cliente</th>
-                                            <th className="px-6 py-4">Itens</th>
-                                            <th className="px-6 py-4">Pagamento</th>
-                                            <th className="px-6 py-4">Valor</th>
-                                            <th className="px-6 py-4 text-right">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {orders.map(order => (
-                                            <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <p className="text-xs font-bold text-gray-800">{order.data}</p>
-                                                    <p className="text-[10px] text-gray-400">ID: {order.id}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm font-semibold">{order.cliente}</p>
-                                                    <p className="text-xs text-blue-500 font-medium">{order.whatsapp}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{order.itens}</p>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-[10px] bg-gray-100 px-2 py-1 rounded-full font-bold uppercase tracking-wider">{order.pagamento}</span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="text-sm font-bold text-gray-900">{formatMoney(order.total)}</p>
-                                                </td>
-                                                <td className="px-6 py-4 text-right space-x-2">
-                                                    {/* WhatsApp Cliente */}
-                                                    <button 
-                                                        onClick={() => window.open(`https://wa.me/${order.whatsapp.replace(/\D/g, "")}`, '_blank')}
-                                                        className="p-2 text-green-600 hover:bg-green-50 rounded-md"
-                                                        title="Falar com Cliente"
-                                                    >
-                                                        <Icon name="message-circle" size={18} />
-                                                    </button>
-
-                                                    {/* Imprimir Romaneio */}
-                                                    <button 
-                                                        onClick={() => printRomaneio(order)}
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md"
-                                                        title="Imprimir Romaneio"
-                                                    >
-                                                        <Icon name="printer" size={18} />
-                                                    </button>
-
-                                                    {/* Excluir Pedido */}
-                                                    <button 
-                                                        onClick={() => deleteOrder(order.id)}
-                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-md"
-                                                        title="Excluir Pedido"
-                                                    >
-                                                        <Icon name="trash-2" size={18} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-
-                                        {orders.length === 0 && (
-                                            <tr>
-                                                <td colSpan="6" className="px-6 py-20 text-center text-gray-400 italic">
-                                                    Nenhum pedido registrado até o momento.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </main>
+                        )}
+                    </div>
                 </div>
             );
         }
