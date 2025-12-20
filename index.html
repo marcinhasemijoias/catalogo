@@ -11,13 +11,12 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #2D2926; }
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #2D2926; overflow-x: hidden; }
         .font-serif { font-family: 'Playfair Display', serif; }
         .lux-border { border-color: #E5DACE; }
         .lux-gold { color: #A68966; }
-        .bg-lux-gold { background-color: #A68966; }
-        .product-card img { transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .product-card:hover img { transform: scale(1.05); }
+        .cart-overlay { background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); }
+        .cart-drawer { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body>
@@ -31,14 +30,11 @@
             return <i data-lucide={name} style={{width: size, height: size}} className={`inline-block ${className}`}></i>;
         };
 
-        function Catalog() {
+        function App() {
             const [products, setProducts] = useState([]);
-            const [storeConfig, setStoreConfig] = useState({ 
-                name: 'Royal Joias', 
-                pixDiscount: 5, 
-                maxInstallments: 6 
-            });
+            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 5, maxInstallments: 6 });
             const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
 
             useEffect(() => {
                 const savedProducts = localStorage.getItem('luxury_products');
@@ -48,93 +44,106 @@
             }, []);
 
             const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            const totalBase = cart.reduce((acc, item) => acc + item.price, 0);
+            const totalPix = totalBase * (1 - (storeConfig.pixDiscount / 100));
 
-            const calculatePix = (price) => {
-                const discount = price * (storeConfig.pixDiscount / 100);
-                return formatMoney(price - discount);
+            const removeFromCart = (index) => {
+                const newCart = [...cart];
+                newCart.splice(index, 1);
+                setCart(newCart);
             };
 
-            const calculateInstallment = (price) => {
-                const value = price / storeConfig.maxInstallments;
-                return formatMoney(value);
-            };
-
-            const addToCart = (product) => {
-                setCart([...cart, product]);
+            const sendWhatsApp = () => {
+                const message = `Olá! Gostaria de encomendar as seguintes peças:\n\n` + 
+                    cart.map(i => `- ${i.name} (SKU: ${i.sku}) - ${formatMoney(i.price)}`).join('\n') +
+                    `\n\nTotal: ${formatMoney(totalBase)}\nTotal no PIX: ${formatMoney(totalPix)}`;
+                
+                const encoded = encodeURIComponent(message);
+                window.open(`https://wa.me/${storeConfig.whatsapp}?text=${encoded}`, '_blank');
             };
 
             return (
                 <div className="min-h-screen">
                     {/* Header */}
-                    <header className="bg-white/90 backdrop-blur-md border-b lux-border py-8 px-6 sticky top-0 z-50 flex justify-between items-center">
+                    <header className="bg-white border-b lux-border py-8 px-6 sticky top-0 z-40 flex justify-between items-center shadow-sm">
                         <div className="w-10"></div>
-                        <h1 className="text-2xl font-serif tracking-[0.4em] uppercase text-center">{storeConfig.name}</h1>
-                        <button className="relative lux-gold p-2">
+                        <h1 className="text-2xl font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
+                        <button onClick={() => setIsCartOpen(true)} className="relative lux-gold p-2">
                             <Icon name="shopping-bag" size={24} />
-                            {cart.length > 0 && (
-                                <span className="absolute top-0 right-0 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                                    {cart.length}
-                                </span>
-                            )}
+                            {cart.length > 0 && <span className="absolute top-0 right-0 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>}
                         </button>
                     </header>
 
                     {/* Vitrine */}
-                    <main className="max-w-5xl mx-auto px-6 py-16">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
-                            {products.length > 0 ? products.map(product => (
-                                <div key={product.id} className="product-card flex flex-col group">
-                                    <div className="w-full aspect-square bg-[#F5F2EE] overflow-hidden border lux-border mb-6 relative shadow-sm">
-                                        {product.image ? (
-                                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-[#D6C6B5]">
-                                                <Icon name="image" size={48} />
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="text-center space-y-2">
-                                        <p className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-bold">SKU: {product.sku || 'N/A'}</p>
-                                        <h3 className="font-serif text-xl tracking-widest uppercase">{product.name}</h3>
-                                        
-                                        <div className="py-2">
-                                            <p className="lux-gold font-bold text-sm tracking-tighter">
-                                                Pagamento Via PIX - {storeConfig.pixDiscount}% = <span className="text-lg">{calculatePix(product.price)}</span>
-                                            </p>
-                                            <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">
-                                                Ou {storeConfig.maxInstallments}x de {calculateInstallment(product.price)} no cartão
-                                            </p>
-                                        </div>
-
-                                        <button 
-                                            onClick={() => addToCart(product)}
-                                            className="w-full mt-4 bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02]"
-                                        >
-                                            <Icon name="shopping-cart" size={14} /> Adicionar à Seleção
-                                        </button>
-                                    </div>
+                    <main className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
+                        {products.map(product => (
+                            <div key={product.id} className="flex flex-col group">
+                                <div className="aspect-square bg-[#F5F2EE] border lux-border mb-6 overflow-hidden relative">
+                                    {product.image ? <img src={product.image} className="w-full h-full object-cover" /> : <div className="h-full flex items-center justify-center text-gray-200"><Icon name="image" size={48} /></div>}
                                 </div>
-                            )) : (
-                                <div className="col-span-full text-center py-24 border-2 border-dashed lux-border">
-                                    <p className="font-serif italic text-gray-400 tracking-widest">Aguardando a nova coleção...</p>
+                                <div className="text-center">
+                                    <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">SKU: {product.sku}</p>
+                                    <h3 className="font-serif text-xl tracking-widest uppercase my-2">{product.name}</h3>
+                                    <p className="lux-gold font-bold text-sm tracking-tighter">PIX {storeConfig.pixDiscount}% OFF: {formatMoney(product.price * (1 - storeConfig.pixDiscount/100))}</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 uppercase">Ou {storeConfig.maxInstallments}x de {formatMoney(product.price/storeConfig.maxInstallments)}</p>
+                                    <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true);}} className="w-full mt-6 bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all">Selecionar Peça</button>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        ))}
                     </main>
 
-                    {/* Footer */}
-                    <footer className="py-24 border-t lux-border text-center opacity-70">
-                        <p className="text-[9px] tracking-[0.6em] uppercase lux-gold font-bold italic">
-                            Autenticidade • Excelência • {storeConfig.name}
-                        </p>
-                    </footer>
+                    {/* CARRINHO (SIDE DRAWER) */}
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-50 flex justify-end">
+                            <div className="cart-overlay absolute inset-0" onClick={() => setIsCartOpen(false)}></div>
+                            <div className="cart-drawer relative w-full max-w-md bg-[#FDFBF7] h-full shadow-2xl flex flex-col p-8">
+                                <div className="flex justify-between items-center border-b lux-border pb-6 mb-6">
+                                    <h2 className="font-serif text-2xl uppercase tracking-widest">Sua Seleção</h2>
+                                    <button onClick={() => setIsCartOpen(false)}><Icon name="x" size={24} /></button>
+                                </div>
+
+                                <div className="flex-grow overflow-y-auto space-y-6 pr-2">
+                                    {cart.length === 0 ? <p className="text-center font-serif italic text-gray-400 py-10">Sua sacola está vazia.</p> : 
+                                        cart.map((item, idx) => (
+                                            <div key={idx} className="flex gap-4 border-b lux-border pb-4">
+                                                <div className="w-16 h-16 bg-white border lux-border flex-shrink-0">
+                                                    {item.image && <img src={item.image} className="w-full h-full object-cover" />}
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <p className="text-[10px] font-bold uppercase tracking-tighter">{item.name}</p>
+                                                    <p className="text-xs lux-gold font-bold mt-1">{formatMoney(item.price)}</p>
+                                                </div>
+                                                <button onClick={() => removeFromCart(idx)} className="text-gray-300 hover:text-red-500"><Icon name="trash-2" size={16} /></button>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+
+                                {cart.length > 0 && (
+                                    <div className="border-t lux-border pt-6 space-y-4">
+                                        <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                                            <span>Subtotal</span>
+                                            <span>{formatMoney(totalBase)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm lux-gold font-bold uppercase tracking-widest">
+                                            <span>Total (PIX -{storeConfig.pixDiscount}%)</span>
+                                            <span>{formatMoney(totalPix)}</span>
+                                        </div>
+                                        <button onClick={sendWhatsApp} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all flex items-center justify-center gap-3">
+                                            <Icon name="message-circle" size={16} /> Finalizar via WhatsApp
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Catalog />);
+        root.render(<App />);
     </script>
 </body>
 </html>
