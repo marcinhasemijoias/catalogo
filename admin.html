@@ -12,9 +12,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
-        .input-line { border-bottom: 1px solid #e2e8f0; width: 100%; padding: 8px 0; outline: none; background: transparent; transition: border-color 0.2s; }
-        .input-line:focus { border-bottom-color: #a68966; }
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        input { border-bottom: 1px solid #cbd5e1; outline: none; width: 100%; padding: 5px 0; }
+        input:focus { border-bottom-color: #a68966; }
     </style>
 </head>
 <body>
@@ -22,11 +22,6 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-
-        const Icon = ({ name, size = 18 }) => {
-            useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{width: size, height: size}} className="inline-block"></i>;
-        };
 
         function App() {
             const [products, setProducts] = useState([]);
@@ -37,7 +32,6 @@
                 pixDiscount: 10,
                 maxInstallments: 12
             });
-
             const [newProd, setNewProd] = useState({ name: '', price: '', sku: '', image: '' });
 
             useEffect(() => {
@@ -47,19 +41,28 @@
                 if(p) setProducts(JSON.parse(p));
                 if(o) setOrders(JSON.parse(o));
                 if(c) setConfig(JSON.parse(c));
+                
+                // Inicializa ícones do Lucide
+                if(window.lucide) window.lucide.createIcons();
             }, []);
 
-            const saveConfig = (newVal) => {
-                setConfig(newVal);
-                localStorage.setItem('luxury_config', JSON.stringify(newVal));
+            // Salva configurações automaticamente ao mudar
+            const updateConfig = (field, value) => {
+                const newConfig = { ...config, [field]: value };
+                setConfig(newConfig);
+                localStorage.setItem('luxury_config', JSON.stringify(newConfig));
             };
 
-            // UPLOAD DE IMAGEM
-            const handleImage = (e) => {
+            // Função de Upload de Imagem (Converte para Base64)
+            const handleImageUpload = (e) => {
                 const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onloadend = () => setNewProd({...newProd, image: reader.result});
-                if(file) reader.readAsDataURL(file);
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setNewProd({ ...newProd, image: reader.result });
+                    };
+                    reader.readAsDataURL(file);
+                }
             };
 
             const addProduct = (e) => {
@@ -68,150 +71,141 @@
                 setProducts(updated);
                 localStorage.setItem('luxury_products', JSON.stringify(updated));
                 setNewProd({ name: '', price: '', sku: '', image: '' });
-                alert("Produto salvo!");
+                alert("Produto salvo com sucesso!");
             };
 
-            // ROMANEIO IGUAL AO MODELO PDF (ABELLA JOIAS)
-            const printOrder = (order) => {
+            // Romaneio Idêntico ao modelo Abella Joias (PDF 2162)
+            const printReceipt = (order) => {
                 const win = window.open('', '_blank');
-                const html = `
-                    <html>
-                    <body style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: auto;">
+                const content = `
+                    <div style="font-family: Arial, sans-serif; max-width: 400px; margin: auto; padding: 20px;">
                         <div style="text-align: center; text-transform: uppercase;">
-                            <h2 style="margin:0; letter-spacing: 2px;">${config.name}</h2>
-                            <div style="font-size: 10px; margin-top: 4px;">ALTA JOALHARIA & DESIGN</div>
-                            <div style="border-top: 1px solid black; border-bottom: 1px solid black; margin: 15px 0; padding: 5px; font-weight: bold;">DOCUMENTO DE VENDA</div>
-                            <div style="font-size: 12px;">Nº do Registro: ${order.id.toString().slice(-4)}</div>
-                            <div style="font-size: 12px;">Data: ${order.date || new Date().toLocaleString()}</div>
+                            <h2 style="margin:0; letter-spacing: 3px;">${config.name}</h2>
+                            <div style="font-size: 10px; margin-top: 5px;">ALTA JOALHARIA & DESIGN</div>
+                            <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; margin: 15px 0; padding: 5px; font-weight: bold; font-size: 14px;">DOCUMENTO DE VENDA</div>
+                            <div style="font-size: 12px; text-align: left;">
+                                Nº do Registro: ${order.id.toString().slice(-4)}<br>
+                                Data: ${order.date || new Date().toLocaleString()}
+                            </div>
                         </div>
                         <div style="margin-top: 20px; font-size: 12px;">
                             <strong>DESTINATARIO</strong><br>
-                            ${order.customer?.name || 'Cliente'}<br>
+                            ${(order.customer?.name || 'Não informado').toUpperCase()}<br>
                             ${order.customer?.phone || ''}
                         </div>
                         <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px;">
                             <thead>
-                                <tr style="border-bottom: 1px solid black; text-align: left;">
-                                    <th>DESCRIÇÃO DA PEÇA</th>
-                                    <th>QTD</th>
-                                    <th style="text-align: right;">SUBTOTAL</th>
+                                <tr style="border-bottom: 1px solid #000; text-align: left;">
+                                    <th style="padding-bottom: 5px;">DESCRIÇÃO DA PEÇA</th>
+                                    <th style="padding-bottom: 5px;">QTD</th>
+                                    <th style="padding-bottom: 5px; text-align: right;">SUBTOTAL</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${order.items?.map(i => `
+                                ${order.items?.map(item => `
                                     <tr>
-                                        <td style="padding: 8px 0;">${i.name}<br><small>SKU: ${i.sku}</small></td>
+                                        <td style="padding: 10px 0;">${item.name.toUpperCase()}<br><small>SKU: ${item.sku}</small></td>
                                         <td>1</td>
-                                        <td style="text-align: right;">R$ ${parseFloat(i.price).toFixed(2)}</td>
+                                        <td style="text-align: right;">R$ ${parseFloat(item.price).toFixed(2)}</td>
                                     </tr>
-                                `).join('') || ''}
+                                `).join('')}
                             </tbody>
                         </table>
-                        <div style="border-top: 1px solid black; margin-top: 10px; padding-top: 10px; text-align: right;">
+                        <div style="border-top: 1px solid #000; margin-top: 10px; padding-top: 10px; text-align: right;">
                             <div style="font-size: 12px;">Subtotal: R$ ${order.total?.toFixed(2)}</div>
-                            <div style="font-size: 18px; font-weight: bold;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
+                            <div style="font-size: 18px; font-weight: bold; margin-top: 5px;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
                         </div>
-                        <div style="margin-top: 15px; font-size: 11px;">
-                            <strong>Forma de pagamento:</strong> ${order.paymentMethod || 'A combinar'}
+                        <div style="margin-top: 20px; font-size: 12px;">
+                            <strong>Forma de pagamento:</strong><br>
+                            ${order.paymentMethod || 'A consultar'}
                         </div>
-                        <div style="margin-top: 30px; font-size: 10px; text-align: center; font-style: italic;">
+                        <div style="margin-top: 40px; text-align: center; font-size: 10px; font-style: italic;">
                             Obrigado por escolher a excelência. Este documento comprova a autenticidade da sua transação.
                         </div>
-                    </body>
-                    </html>
+                    </div>
                 `;
-                win.document.write(html);
+                win.document.write('<html><head><title>Romaneio</title></head><body>' + content + '</body></html>');
                 win.document.close();
-                win.print();
+                setTimeout(() => { win.print(); }, 500);
             };
 
             return (
-                <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-10">
-                    <header className="flex justify-between items-center border-b pb-4">
-                        <h1 className="text-xl font-bold tracking-tighter uppercase italic">Painel Admin</h1>
-                        <a href="index.html" className="text-xs font-bold border-b border-black">VER LOJA</a>
+                <div className="max-w-4xl mx-auto p-6">
+                    <header className="flex justify-between items-center mb-10 border-b pb-4">
+                        <h1 className="text-xl font-bold tracking-widest uppercase">Admin Royal Joias</h1>
+                        <button onClick={() => window.location.href='index.html'} className="text-xs font-bold border-b border-black">VER LOJA</button>
                     </header>
 
-                    {/* CONFIGURAÇÕES DE DESCONTOS E PARCELAMENTO */}
-                    <section className="card">
-                        <h2 className="text-sm font-bold uppercase mb-6 flex items-center gap-2 text-amber-700">
-                            <Icon name="percent" /> Configurações de Pagamento
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* CONFIGURAÇÕES DE VENDA */}
+                    <div className="card">
+                        <h2 className="text-xs font-bold uppercase mb-6 text-gray-400 tracking-widest">Configurações de Pagamento</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Desconto PIX (%)</label>
-                                <input type="number" className="input-line" value={config.pixDiscount} 
-                                    onChange={e => saveConfig({...config, pixDiscount: e.target.value})} />
+                                <label className="text-[10px] uppercase font-bold">Desconto PIX (%)</label>
+                                <input type="number" value={config.pixDiscount} onChange={(e) => updateConfig('pixDiscount', e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Parcelamento Máximo (Vezes)</label>
-                                <input type="number" className="input-line" value={config.maxInstallments} 
-                                    onChange={e => saveConfig({...config, maxInstallments: e.target.value})} />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">WhatsApp para Receber Pedidos</label>
-                                <input type="text" className="input-line" placeholder="5519..." value={config.whatsapp} 
-                                    onChange={e => saveConfig({...config, whatsapp: e.target.value})} />
+                                <label className="text-[10px] uppercase font-bold">Parcelas Máximas</label>
+                                <input type="number" value={config.maxInstallments} onChange={(e) => updateConfig('maxInstallments', e.target.value)} />
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    {/* CADASTRO DE PRODUTO COM UPLOAD */}
-                    <section className="card">
-                        <h2 className="text-sm font-bold uppercase mb-6 flex items-center gap-2 text-amber-700">
-                            <Icon name="package-plus" /> Cadastrar Novo Produto
-                        </h2>
-                        <form onSubmit={addProduct} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <input placeholder="Nome da Peça" className="input-line" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} required />
-                            <input placeholder="Preço (Ex: 199.90)" type="number" step="0.01" className="input-line" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} required />
-                            <input placeholder="SKU (Ex: AJ-001)" className="input-line" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
-                            
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-2">Upload da Foto</label>
-                                <input type="file" accept="image/*" onChange={handleImage} className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" />
+                    {/* CADASTRO DE PRODUTOS COM UPLOAD */}
+                    <div className="card">
+                        <h2 className="text-xs font-bold uppercase mb-6 text-gray-400 tracking-widest">Novo Produto</h2>
+                        <form onSubmit={addProduct} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <input placeholder="Nome da Joia" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} required />
+                                <input placeholder="Preço" type="number" step="0.01" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} required />
+                                <input placeholder="SKU" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
                             </div>
-
-                            <button className="md:col-span-2 bg-slate-900 text-white py-4 rounded font-bold text-xs uppercase tracking-widest hover:bg-black transition-all">
-                                Salvar Produto no Catálogo
-                            </button>
+                            <div className="border-2 border-dashed border-gray-100 p-4 text-center">
+                                <label className="text-xs cursor-pointer block">
+                                    <span className="bg-gray-100 px-4 py-2 rounded">Selecionar Imagem do Produto</span>
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                </label>
+                                {newProd.image && <img src={newProd.image} className="h-20 mx-auto mt-2 rounded" />}
+                            </div>
+                            <button className="w-full bg-black text-white py-3 rounded text-xs font-bold uppercase tracking-widest">Salvar Produto</button>
                         </form>
-                    </section>
+                    </div>
 
                     {/* HISTÓRICO DE PEDIDOS */}
-                    <section className="card">
-                        <h2 className="text-sm font-bold uppercase mb-6 text-amber-700">Histórico de Pedidos</h2>
-                        <div className="overflow-x-auto text-xs">
-                            <table className="w-full text-left">
-                                <thead className="text-gray-400 border-b">
+                    <div className="card">
+                        <h2 className="text-xs font-bold uppercase mb-6 text-gray-400 tracking-widest">Histórico de Pedidos</h2>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left">
+                                <thead className="border-b">
                                     <tr>
-                                        <th className="pb-3">Data/ID</th>
-                                        <th className="pb-3">Cliente</th>
-                                        <th className="pb-3">Total</th>
-                                        <th className="pb-3 text-right">Ações</th>
+                                        <th className="py-2">Data</th>
+                                        <th className="py-2">Cliente</th>
+                                        <th className="py-2">Total</th>
+                                        <th className="py-2 text-right">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y">
                                     {orders.map(order => (
-                                        <tr key={order.id} className="hover:bg-gray-50">
-                                            <td className="py-4 font-mono">{order.date}<br/><span className="text-[10px] text-gray-400">ID: {order.id}</span></td>
-                                            <td className="py-4 uppercase font-bold">{order.customer?.name}</td>
-                                            <td className="py-4 font-bold text-amber-800">R$ {order.total?.toFixed(2)}</td>
-                                            <td className="py-4 text-right flex justify-end gap-2">
-                                                <button onClick={() => window.open(`https://wa.me/${order.customer?.phone?.replace(/\D/g,'')}`)} className="p-2 text-green-600 hover:bg-green-50 rounded" title="WhatsApp"><Icon name="message-circle" size={20}/></button>
-                                                <button onClick={() => printOrder(order)} className="p-2 text-blue-600 hover:bg-blue-50 rounded" title="Imprimir Romaneio"><Icon name="printer" size={20}/></button>
+                                        <tr key={order.id}>
+                                            <td className="py-4">{order.date || '---'}</td>
+                                            <td className="py-4 font-bold">{order.customer?.name?.toUpperCase()}</td>
+                                            <td className="py-4">R$ {order.total?.toFixed(2)}</td>
+                                            <td className="py-4 text-right space-x-2">
+                                                <button onClick={() => window.open(`https://wa.me/${order.customer?.phone?.replace(/\D/g,'')}`)} className="bg-green-500 text-white p-2 rounded">Zap</button>
+                                                <button onClick={() => printReceipt(order)} className="bg-blue-500 text-white p-2 rounded">PDF</button>
                                                 <button onClick={() => {
                                                     const updated = orders.filter(o => o.id !== order.id);
                                                     setOrders(updated);
                                                     localStorage.setItem('luxury_orders', JSON.stringify(updated));
-                                                }} className="p-2 text-red-400 hover:bg-red-50 rounded"><Icon name="trash-2" size={20}/></button>
+                                                }} className="bg-red-500 text-white p-2 rounded">X</button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                            {orders.length === 0 && <div className="text-center py-10 text-gray-400 italic">Nenhum pedido realizado.</div>}
+                            {orders.length === 0 && <p className="text-center py-6 text-gray-400 italic">Nenhum pedido encontrado.</p>}
                         </div>
-                    </section>
+                    </div>
                 </div>
             );
         }
