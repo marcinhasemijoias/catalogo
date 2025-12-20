@@ -15,7 +15,7 @@
         .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e5e7eb; }
         .input-field { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px; width: 100%; outline: none; margin-top: 4px; }
         .input-field:focus { border-color: #a68966; }
-        label { text-[10px] font-bold text-gray-400 uppercase tracking-tight; }
+        label { font-size: 10px; font-bold; color: #9ca3af; text-transform: uppercase; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -29,11 +29,11 @@
             const [orders, setOrders] = useState([]);
             const [config, setConfig] = useState({
                 name: 'ROYAL JOIAS',
-                whatsapp: '',
+                whatsapp: '', // WhatsApp para receber pedidos
                 pixDiscount: 10,
                 maxInstallments: 12,
                 address: '',
-                document: '', // CNPJ ou CPF
+                document: '', 
                 city: ''
             });
 
@@ -148,14 +148,14 @@
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         
-                        {/* CONFIGURAÇÕES E DADOS DA EMPRESA */}
                         <div className="lg:col-span-1 space-y-6">
                             <section className="card">
                                 <h2 className="text-sm font-bold uppercase mb-4 text-amber-800 flex items-center gap-2">
-                                    <i data-lucide="store" size="16"></i> Dados da Empresa
+                                    <i data-lucide="store" size="16"></i> Configurações da Empresa
                                 </h2>
                                 <div className="space-y-3">
                                     <div><label>Nome da Marca</label><input className="input-field" value={config.name} onChange={e => updateConfig('name', e.target.value.toUpperCase())} /></div>
+                                    <div><label>WhatsApp (Receber Pedidos)</label><input className="input-field" placeholder="Ex: 5519999999999" value={config.whatsapp} onChange={e => updateConfig('whatsapp', e.target.value)} /></div>
                                     <div><label>CNPJ / CPF</label><input className="input-field" value={config.document} onChange={e => updateConfig('document', e.target.value)} /></div>
                                     <div><label>Endereço Completo</label><input className="input-field" value={config.address} onChange={e => updateConfig('address', e.target.value)} /></div>
                                     <div className="grid grid-cols-2 gap-2">
@@ -180,7 +180,6 @@
                             </section>
                         </div>
 
-                        {/* LISTAGEM DE PRODUTOS E PEDIDOS */}
                         <div className="lg:col-span-2 space-y-6">
                             <section className="card">
                                 <h2 className="text-sm font-bold uppercase mb-4">Catálogo ({products.length})</h2>
