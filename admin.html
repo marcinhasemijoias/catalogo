@@ -13,8 +13,9 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f4f7f6; color: #333; }
         .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e5e7eb; }
-        .input-field { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px; width: 100%; outline: none; transition: border-color 0.2s; }
-        .input-field:focus { border-color: #a68966; ring: 2px ring #a68966; }
+        .input-field { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px; width: 100%; outline: none; margin-top: 4px; }
+        .input-field:focus { border-color: #a68966; }
+        label { text-[10px] font-bold text-gray-400 uppercase tracking-tight; }
     </style>
 </head>
 <body>
@@ -24,20 +25,20 @@
         const { useState, useEffect } = React;
 
         function AdminPanel() {
-            // Estados principais
             const [products, setProducts] = useState([]);
             const [orders, setOrders] = useState([]);
             const [config, setConfig] = useState({
                 name: 'ROYAL JOIAS',
                 whatsapp: '',
                 pixDiscount: 10,
-                maxInstallments: 12
+                maxInstallments: 12,
+                address: '',
+                document: '', // CNPJ ou CPF
+                city: ''
             });
 
-            // Estado do novo produto
             const [newProd, setNewProd] = useState({ name: '', price: '', sku: '', image: '' });
 
-            // Carregar dados ao abrir
             useEffect(() => {
                 const p = localStorage.getItem('luxury_products');
                 const o = localStorage.getItem('luxury_orders');
@@ -45,23 +46,19 @@
                 if (p) setProducts(JSON.parse(p));
                 if (o) setOrders(JSON.parse(o));
                 if (c) setConfig(JSON.parse(c));
-                
-                if(window.lucide) window.lucide.createIcons();
+                setTimeout(() => { if(window.lucide) window.lucide.createIcons(); }, 500);
             }, []);
 
-            // Salvar produtos no LocalStorage sempre que a lista mudar
             useEffect(() => {
                 localStorage.setItem('luxury_products', JSON.stringify(products));
             }, [products]);
 
-            // Salvar configurações
             const updateConfig = (field, value) => {
                 const updated = { ...config, [field]: value };
                 setConfig(updated);
                 localStorage.setItem('luxury_config', JSON.stringify(updated));
             };
 
-            // Upload de Imagem
             const handleImage = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -71,76 +68,65 @@
                 }
             };
 
-            // Adicionar Produto
             const handleAddProduct = (e) => {
                 e.preventDefault();
                 if (!newProd.name || !newProd.price) return alert("Preencha Nome e Preço!");
-                
-                const productToAdd = {
-                    ...newProd,
-                    id: Date.now().toString(),
-                    price: parseFloat(newProd.price)
-                };
-
+                const productToAdd = { ...newProd, id: Date.now().toString(), price: parseFloat(newProd.price) };
                 setProducts([...products, productToAdd]);
-                setNewProd({ name: '', price: '', sku: '', image: '' }); // Limpa formulário
-                alert("Item adicionado ao catálogo!");
+                setNewProd({ name: '', price: '', sku: '', image: '' });
+                alert("Produto cadastrado!");
             };
 
-            // Excluir Produto do Catálogo
             const deleteProduct = (id) => {
-                if (confirm("Deseja remover este item do catálogo?")) {
-                    const filtered = products.filter(p => p.id !== id);
-                    setProducts(filtered);
+                if (confirm("Excluir este item do catálogo?")) {
+                    setProducts(products.filter(p => p.id !== id));
                 }
             };
 
-            // Romaneio Estilo Abella Joias
             const printOrder = (order) => {
                 const win = window.open('', '_blank');
                 win.document.write(`
                     <html>
-                    <body style="font-family: Arial, sans-serif; padding: 40px; max-width: 500px; margin: auto; border: 1px solid #eee;">
-                        <div style="text-align: center; text-transform: uppercase;">
-                            <h1 style="margin: 0; letter-spacing: 4px; font-size: 24px;">${config.name}</h1>
+                    <body style="font-family: Arial, sans-serif; padding: 30px; max-width: 500px; margin: auto;">
+                        <div style="text-align: center; text-transform: uppercase; margin-bottom: 20px;">
+                            <h1 style="margin: 0; letter-spacing: 5px;">${config.name}</h1>
                             <div style="font-size: 10px; margin-top: 5px;">ALTA JOALHARIA & DESIGN</div>
-                            <div style="border-top: 2px solid #000; border-bottom: 2px solid #000; margin: 20px 0; padding: 8px; font-weight: bold;">DOCUMENTO DE VENDA</div>
+                            <div style="font-size: 9px; color: #555; margin-top: 5px;">
+                                ${config.address} ${config.city ? ' - ' + config.city : ''}<br>
+                                ${config.document ? 'DOC: ' + config.document : ''}
+                            </div>
+                            <div style="border-top: 2px solid #000; border-bottom: 2px solid #000; margin: 15px 0; padding: 8px; font-weight: bold;">DOCUMENTO DE VENDA</div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 30px;">
-                            <div><strong>Nº REGISTRO:</strong> ${order.id.slice(-4)}</div>
-                            <div><strong>DATA:</strong> ${order.date}</div>
+                        <div style="font-size: 12px; margin-bottom: 20px;">
+                            <strong>DESTINATÁRIO:</strong> ${order.customer?.name?.toUpperCase()}<br>
+                            <strong>CONTATO:</strong> ${order.customer?.phone}<br>
+                            <strong>DATA:</strong> ${order.date} | <strong>REGISTRO:</strong> #${order.id.slice(-4)}
                         </div>
-                        <div style="margin-bottom: 30px; font-size: 13px;">
-                            <strong>DESTINATÁRIO:</strong><br>
-                            ${order.customer?.name?.toUpperCase()}<br>
-                            ${order.customer?.phone}
-                        </div>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                             <thead>
-                                <tr style="border-bottom: 1px solid #000; text-align: left;">
-                                    <th style="padding-bottom: 10px;">DESCRIÇÃO DA PEÇA</th>
-                                    <th style="padding-bottom: 10px; text-align: center;">QTD</th>
-                                    <th style="padding-bottom: 10px; text-align: right;">SUBTOTAL</th>
+                                <tr style="border-bottom: 1px solid #000;">
+                                    <th align="left" style="padding: 10px 0;">DESCRIÇÃO</th>
+                                    <th align="center">QTD</th>
+                                    <th align="right">SUBTOTAL</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${order.items?.map(i => `
                                     <tr>
-                                        <td style="padding: 15px 0;">${i.name.toUpperCase()}<br><small>SKU: ${i.sku || 'N/A'}</small></td>
+                                        <td style="padding: 10px 0;">${i.name.toUpperCase()}<br><small>REF: ${i.sku || 'N/A'}</small></td>
                                         <td align="center">1</td>
                                         <td align="right">R$ ${parseFloat(i.price).toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
                         </table>
-                        <div style="border-top: 1px solid #000; margin-top: 20px; padding-top: 15px; text-align: right;">
-                            <div style="font-size: 14px;">SUBTOTAL: R$ ${order.total?.toFixed(2)}</div>
-                            <div style="font-size: 22px; font-weight: bold; margin-top: 5px;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
+                        <div style="border-top: 1px solid #000; margin-top: 15px; padding-top: 10px; text-align: right;">
+                            <div style="font-size: 18px; font-weight: bold;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
                         </div>
-                        <div style="margin-top: 25px; font-size: 12px;">
+                        <div style="margin-top: 20px; font-size: 11px;">
                             <strong>FORMA DE PAGAMENTO:</strong> ${order.paymentMethod || 'A DEFINIR'}
                         </div>
-                        <div style="margin-top: 50px; text-align: center; font-size: 11px; font-style: italic; color: #666;">
+                        <div style="margin-top: 40px; text-align: center; font-size: 9px; font-style: italic; border-top: 1px solid #eee; padding-top: 10px;">
                             Obrigado por escolher a excelência. Este documento comprova a autenticidade da sua transação.
                         </div>
                     </body>
@@ -151,106 +137,82 @@
             };
 
             return (
-                <div className="max-w-5xl mx-auto p-4 md:p-10">
-                    <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                        <div className="text-center md:text-left">
-                            <h1 className="text-3xl font-black tracking-tighter text-gray-800 italic">{config.name}</h1>
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Painel de Controle Administrativo</p>
+                <div className="max-w-6xl mx-auto p-4 md:p-10">
+                    <header className="flex justify-between items-center mb-10 border-b pb-6">
+                        <div>
+                            <h1 className="text-3xl font-black italic text-gray-800 tracking-tighter">{config.name}</h1>
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Administração de Joalharia</p>
                         </div>
-                        <button onClick={() => window.location.href='index.html'} className="bg-white border border-gray-300 px-6 py-2 rounded-full text-xs font-bold hover:bg-gray-50">ACESSAR LOJA</button>
+                        <a href="index.html" className="text-xs font-bold border-b-2 border-black pb-1">LOJA VIRTUAL</a>
                     </header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         
-                        {/* COLUNA ESQUERDA: CONFIGS E CADASTRO */}
+                        {/* CONFIGURAÇÕES E DADOS DA EMPRESA */}
                         <div className="lg:col-span-1 space-y-6">
                             <section className="card">
-                                <h2 className="text-sm font-bold uppercase mb-4 text-amber-700">Configurações</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase">Nome da Empresa</label>
-                                        <input className="input-field" value={config.name} onChange={e => updateConfig('name', e.target.value.toUpperCase())} />
-                                    </div>
+                                <h2 className="text-sm font-bold uppercase mb-4 text-amber-800 flex items-center gap-2">
+                                    <i data-lucide="store" size="16"></i> Dados da Empresa
+                                </h2>
+                                <div className="space-y-3">
+                                    <div><label>Nome da Marca</label><input className="input-field" value={config.name} onChange={e => updateConfig('name', e.target.value.toUpperCase())} /></div>
+                                    <div><label>CNPJ / CPF</label><input className="input-field" value={config.document} onChange={e => updateConfig('document', e.target.value)} /></div>
+                                    <div><label>Endereço Completo</label><input className="input-field" value={config.address} onChange={e => updateConfig('address', e.target.value)} /></div>
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase">Desc. PIX %</label>
-                                            <input type="number" className="input-field" value={config.pixDiscount} onChange={e => updateConfig('pixDiscount', e.target.value)} />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-400 uppercase">Parc. Máx</label>
-                                            <input type="number" className="input-field" value={config.maxInstallments} onChange={e => updateConfig('maxInstallments', e.target.value)} />
-                                        </div>
+                                        <div><label>Desconto PIX %</label><input type="number" className="input-field" value={config.pixDiscount} onChange={e => updateConfig('pixDiscount', e.target.value)} /></div>
+                                        <div><label>Parcelas Máx</label><input type="number" className="input-field" value={config.maxInstallments} onChange={e => updateConfig('maxInstallments', e.target.value)} /></div>
                                     </div>
                                 </div>
                             </section>
 
                             <section className="card">
-                                <h2 className="text-sm font-bold uppercase mb-4 text-amber-700">Cadastrar Produto</h2>
+                                <h2 className="text-sm font-bold uppercase mb-4 text-amber-800">Novo Produto</h2>
                                 <form onSubmit={handleAddProduct} className="space-y-3">
-                                    <input placeholder="Nome da Joia" className="input-field" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} />
-                                    <input placeholder="Preço (0.00)" type="number" step="0.01" className="input-field" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} />
-                                    <input placeholder="SKU / Ref" className="input-field" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
-                                    
-                                    <div className="border-2 border-dashed border-gray-200 p-4 rounded text-center">
+                                    <input placeholder="Nome da Peça" className="input-field" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} />
+                                    <input placeholder="Preço" type="number" step="0.01" className="input-field" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} />
+                                    <input placeholder="SKU" className="input-field" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
+                                    <div className="border-2 border-dashed p-4 rounded text-center bg-gray-50">
                                         <input type="file" accept="image/*" onChange={handleImage} className="text-xs w-full" />
-                                        {newProd.image && <img src={newProd.image} className="mt-2 h-20 mx-auto rounded shadow" />}
+                                        {newProd.image && <img src={newProd.image} className="mt-2 h-16 mx-auto rounded shadow" />}
                                     </div>
-
-                                    <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-black transition-all">
-                                        Salvar no Catálogo
-                                    </button>
+                                    <button className="w-full bg-gray-900 text-white py-3 rounded-lg font-bold text-xs uppercase hover:bg-black transition-all">Salvar Item</button>
                                 </form>
                             </section>
                         </div>
 
-                        {/* COLUNA DIREITA: LISTAGEM E PEDIDOS */}
+                        {/* LISTAGEM DE PRODUTOS E PEDIDOS */}
                         <div className="lg:col-span-2 space-y-6">
-                            
-                            {/* CATÁLOGO DE ITENS */}
                             <section className="card">
-                                <h2 className="text-sm font-bold uppercase mb-4 flex justify-between items-center">
-                                    Catálogo Ativo 
-                                    <span className="text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-500">{products.length} itens</span>
-                                </h2>
-                                <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto pr-2">
+                                <h2 className="text-sm font-bold uppercase mb-4">Catálogo ({products.length})</h2>
+                                <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2">
                                     {products.map(p => (
-                                        <div key={p.id} className="flex items-center justify-between p-3 border rounded-lg hover:border-amber-200 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <img src={p.image || 'https://via.placeholder.com/50'} className="w-12 h-12 object-cover rounded shadow-sm" />
-                                                <div>
-                                                    <p className="text-xs font-bold uppercase">{p.name}</p>
-                                                    <p className="text-[10px] text-gray-400">SKU: {p.sku || '---'} • R$ {parseFloat(p.price).toFixed(2)}</p>
-                                                </div>
+                                        <div key={p.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <img src={p.image || 'https://via.placeholder.com/50'} className="w-10 h-10 object-cover rounded" />
+                                                <div><p className="text-xs font-bold uppercase">{p.name}</p><p className="text-[10px] text-gray-400">R$ {p.price.toFixed(2)}</p></div>
                                             </div>
-                                            <button onClick={() => deleteProduct(p.id)} className="text-red-400 hover:text-red-600 p-2">
-                                                <i data-lucide="trash-2" style={{width: 18}}></i>
-                                            </button>
+                                            <button onClick={() => deleteProduct(p.id)} className="text-red-400 p-2"><i data-lucide="trash-2" size="16"></i></button>
                                         </div>
                                     ))}
-                                    {products.length === 0 && <p className="text-center text-gray-400 text-xs py-4 italic">Nenhum produto cadastrado.</p>}
                                 </div>
                             </section>
 
-                            {/* HISTÓRICO DE PEDIDOS */}
                             <section className="card">
-                                <h2 className="text-sm font-bold uppercase mb-4">Histórico de Pedidos</h2>
+                                <h2 className="text-sm font-bold uppercase mb-4 text-amber-800">Pedidos Recentes</h2>
                                 <div className="space-y-3">
                                     {orders.map(order => (
-                                        <div key={order.id} className="p-4 border rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-gray-50">
+                                        <div key={order.id} className="p-4 border rounded-lg flex justify-between items-center hover:bg-gray-50">
                                             <div>
                                                 <p className="text-xs font-bold uppercase">{order.customer?.name}</p>
-                                                <p className="text-[10px] text-gray-500">{order.date} • Total: <span className="text-amber-700 font-bold font-mono">R$ {order.total?.toFixed(2)}</span></p>
+                                                <p className="text-[10px] text-gray-500">{order.date} • <span className="text-amber-700 font-bold">R$ {order.total?.toFixed(2)}</span></p>
                                             </div>
-                                            <div className="flex gap-2 w-full md:w-auto">
-                                                <button onClick={() => window.open(`https://wa.me/${order.customer?.phone?.replace(/\D/g,'')}`)} className="flex-1 md:flex-none bg-green-500 text-white p-2 rounded text-xs flex items-center justify-center gap-1"><i data-lucide="message-circle" style={{width: 14}}></i> ZAP</button>
-                                                <button onClick={() => printOrder(order)} className="flex-1 md:flex-none bg-blue-500 text-white p-2 rounded text-xs flex items-center justify-center gap-1"><i data-lucide="printer" style={{width: 14}}></i> PDF</button>
-                                                <button onClick={() => {
-                                                    if(confirm("Excluir pedido?")) setOrders(orders.filter(o => o.id !== order.id));
-                                                }} className="flex-1 md:flex-none bg-gray-100 text-red-500 p-2 rounded hover:bg-red-50"><i data-lucide="trash-2" style={{width: 14}}></i></button>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => window.open(`https://wa.me/${order.customer?.phone?.replace(/\D/g,'')}`)} className="bg-green-500 text-white p-2 rounded"><i data-lucide="message-circle" size="14"></i></button>
+                                                <button onClick={() => printOrder(order)} className="bg-blue-500 text-white p-2 rounded"><i data-lucide="printer" size="14"></i></button>
+                                                <button onClick={() => setOrders(orders.filter(o => o.id !== order.id))} className="text-red-400 p-2"><i data-lucide="trash-2" size="14"></i></button>
                                             </div>
                                         </div>
                                     ))}
-                                    {orders.length === 0 && <p className="text-center text-gray-400 text-xs py-4 italic">Sem pedidos no histórico.</p>}
                                 </div>
                             </section>
                         </div>
