@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Administrativo - Royal Joias</title>
+    <title>Painel Royal Joias - Administrativo Completo</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,9 +11,12 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f9fafb; color: #1f2937; }
-        .order-card { background: white; border: 1px solid #e5e7eb; transition: all 0.2s; }
-        .order-card:hover { border-color: #A68966; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        body { font-family: 'Inter', sans-serif; background: #F8F9FA; color: #1F2937; }
+        .lux-card { background: white; border: 1px solid #E5DACE; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        input, select { border: 1px solid #E5DACE !important; border-radius: 6px; padding: 8px 12px; width: 100%; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #A68966 !important; }
+        .btn-gold { background: #A68966; color: white; transition: opacity 0.2s; }
+        .btn-gold:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -22,52 +25,80 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Componente de Ícone para garantir que carreguem sempre
         const Icon = ({ name, size = 18, className = "" }) => {
             useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [name]);
             return <i data-lucide={name} style={{width: size, height: size}} className={`inline-block ${className}`}></i>;
         };
 
         function AdminApp() {
+            // ESTADOS DE CONFIGURAÇÃO
+            const [config, setConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 5, maxInstallments: 12 });
+            const [products, setProducts] = useState([]);
+            const [newProduct, setNewProduct] = useState({ id: '', name: '', price: '', image: '', sku: '' });
+            
+            // ESTADO DE PEDIDOS
             const [orders, setOrders] = useState([]);
-            const [config, setConfig] = useState({ name: 'Royal Joias' });
+            const [tab, setTab] = useState('config'); // 'config' ou 'pedidos'
 
             useEffect(() => {
-                const savedOrders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
-                const savedConfig = JSON.parse(localStorage.getItem('luxury_config') || '{"name":"Royal Joias"}');
-                setOrders(savedOrders);
-                setConfig(savedConfig);
+                const savedConfig = localStorage.getItem('luxury_config');
+                const savedProducts = localStorage.getItem('luxury_products');
+                const savedOrders = localStorage.getItem('luxury_orders');
+
+                if (savedConfig) setConfig(JSON.parse(savedConfig));
+                if (savedProducts) setProducts(JSON.parse(savedProducts));
+                if (savedOrders) setOrders(JSON.parse(savedOrders));
             }, []);
 
-            const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            // PERSISTÊNCIA
+            const saveConfig = () => {
+                localStorage.setItem('luxury_config', JSON.stringify(config));
+                alert("Configurações salvas com sucesso!");
+            };
 
-            const handleDelete = (id) => {
-                if (window.confirm("Tem certeza que deseja excluir este pedido definitivamente?")) {
-                    const filtered = orders.filter(o => o.id !== id);
-                    localStorage.setItem('luxury_orders', JSON.stringify(filtered));
-                    setOrders(filtered);
+            const addProduct = () => {
+                if (!newProduct.name || !newProduct.price) return;
+                const updated = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
+                setProducts(updated);
+                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                setNewProduct({ id: '', name: '', price: '', image: '', sku: '' });
+            };
+
+            const deleteProduct = (id) => {
+                const updated = products.filter(p => p.id !== id);
+                setProducts(updated);
+                localStorage.setItem('luxury_products', JSON.stringify(updated));
+            };
+
+            const deleteOrder = (id) => {
+                if(window.confirm("Excluir este pedido do histórico?")) {
+                    const updated = orders.filter(o => o.id !== id);
+                    setOrders(updated);
+                    localStorage.setItem('luxury_orders', JSON.stringify(updated));
                 }
             };
 
-            const handlePrint = (order) => {
+            const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const printRomaneio = (order) => {
                 const win = window.open('', '_blank');
                 win.document.write(`
                     <html>
                         <head><title>Romaneio - ${order.cliente}</title></head>
                         <style>
-                            body { font-family: sans-serif; padding: 40px; line-height: 1.6; }
-                            .header { border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
-                            .item { border-bottom: 1px solid #eee; padding: 8px 0; }
-                            .total { font-size: 20px; font-weight: bold; margin-top: 20px; }
+                            body { font-family: sans-serif; padding: 30px; line-height: 1.5; color: #333; }
+                            .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                            .row { margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+                            .total { font-size: 1.4em; font-weight: bold; margin-top: 20px; color: #A68966; }
                         </style>
                         <body>
-                            <div class="header"><h1>${config.name}</h1><p>Romaneio de Pedido #${order.id}</p></div>
-                            <p><strong>Data:</strong> ${order.data}</p>
-                            <p><strong>Cliente:</strong> ${order.cliente}</p>
-                            <p><strong>WhatsApp:</strong> ${order.whatsapp}</p>
-                            <div class="item"><strong>Itens:</strong> ${order.itens}</div>
-                            <p><strong>Pagamento:</strong> ${order.pagamento}</p>
-                            <div class="total text-right">VALOR TOTAL: ${formatMoney(order.total)}</div>
+                            <div class="header"><h1>${config.name}</h1><p>RECIBO DE VENDA #${order.id}</p></div>
+                            <div class="row"><strong>Data:</strong> ${order.data}</div>
+                            <div class="row"><strong>Cliente:</strong> ${order.cliente}</div>
+                            <div class="row"><strong>WhatsApp:</strong> ${order.whatsapp}</div>
+                            <div class="row"><strong>Itens:</strong> ${order.itens}</div>
+                            <div class="row"><strong>Pagamento:</strong> ${order.pagamento}</div>
+                            <div class="total">VALOR FINAL: ${formatMoney(order.total)}</div>
                             <script>window.print();<\/script>
                         </body>
                     </html>
@@ -76,71 +107,108 @@
             };
 
             return (
-                <div className="max-w-6xl mx-auto px-4 py-10">
-                    <header className="flex justify-between items-center mb-10">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Gestão de Pedidos</h1>
-                            <p className="text-gray-500">{config.name} - Histórico Administrativo</p>
+                <div className="max-w-6xl mx-auto px-6 py-10">
+                    <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                        <h1 className="text-3xl font-bold text-gray-800 tracking-tight italic">Painel Administrativo</h1>
+                        <div className="flex bg-white border lux-border rounded-full p-1 shadow-sm">
+                            <button onClick={() => setTab('config')} className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${tab === 'config' ? 'bg-[#2D2926] text-white' : 'text-gray-400'}`}>Configurações</button>
+                            <button onClick={() => setTab('pedidos')} className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${tab === 'pedidos' ? 'bg-[#2D2926] text-white' : 'text-gray-400'}`}>Pedidos ({orders.length})</button>
                         </div>
-                        <button onClick={() => window.location.href='index.html'} className="flex items-center gap-2 bg-black text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-800">
-                            <Icon name="layout-template" size={16} /> Ver Loja Online
+                        <button onClick={() => window.location.href='index.html'} className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2 border-b-2 border-black pb-1 hover:text-[#A68966] hover:border-[#A68966]">
+                            <Icon name="external-link" size={14} /> Ver Loja Online
                         </button>
                     </header>
 
-                    <div className="grid gap-4">
-                        {orders.length > 0 ? (
-                            orders.map(order => (
-                                <div key={order.id} className="order-card p-6 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                    <div className="flex-grow">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <span className="text-[10px] font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-500">{order.id}</span>
-                                            <span className="text-xs text-gray-400">{order.data}</span>
-                                        </div>
-                                        <h2 className="text-lg font-bold text-gray-800 uppercase">{order.cliente}</h2>
-                                        <p className="text-sm text-gray-500 italic mb-2">{order.itens}</p>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{order.pagamento}</span>
-                                            <span className="text-lg font-bold text-[#A68966]">{formatMoney(order.total)}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2 w-full md:w-auto border-t md:border-0 pt-4 md:pt-0">
-                                        {/* Botão WhatsApp */}
-                                        <button 
-                                            onClick={() => window.open(`https://wa.me/${order.whatsapp.replace(/\D/g, "")}`, '_blank')}
-                                            className="flex-grow md:flex-none p-3 text-green-600 hover:bg-green-50 rounded-lg border border-green-100 flex justify-center items-center"
-                                            title="Chamar no WhatsApp"
-                                        >
-                                            <Icon name="message-circle" size={20} />
-                                        </button>
-
-                                        {/* Botão Romaneio */}
-                                        <button 
-                                            onClick={() => handlePrint(order)}
-                                            className="flex-grow md:flex-none p-3 text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-100 flex justify-center items-center"
-                                            title="Imprimir Romaneio"
-                                        >
-                                            <Icon name="printer" size={20} />
-                                        </button>
-
-                                        {/* Botão Excluir */}
-                                        <button 
-                                            onClick={() => handleDelete(order.id)}
-                                            className="flex-grow md:flex-none p-3 text-red-500 hover:bg-red-50 rounded-lg border border-red-100 flex justify-center items-center"
-                                            title="Remover Pedido"
-                                        >
-                                            <Icon name="trash-2" size={20} />
-                                        </button>
-                                    </div>
+                    {tab === 'config' && (
+                        <div className="space-y-8 animate-in fade-in duration-500">
+                            {/* CADASTRO DA EMPRESA */}
+                            <section className="lux-card p-8">
+                                <h2 className="text-lg font-bold mb-6 flex items-center gap-2 border-b pb-4"><Icon name="settings" /> Cadastro da Empresa</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <div><label className="text-[10px] font-bold uppercase text-gray-400">Nome da Loja</label>
+                                        <input value={config.name} onChange={e => setConfig({...config, name: e.target.value})} /></div>
+                                    <div><label className="text-[10px] font-bold uppercase text-gray-400">WhatsApp (DDD+Núm)</label>
+                                        <input value={config.whatsapp} onChange={e => setConfig({...config, whatsapp: e.target.value})} /></div>
+                                    <div><label className="text-[10px] font-bold uppercase text-gray-400">% Desconto PIX</label>
+                                        <input type="number" value={config.pixDiscount} onChange={e => setConfig({...config, pixDiscount: e.target.value})} /></div>
+                                    <div><label className="text-[10px] font-bold uppercase text-gray-400">Parcelamento Máx</label>
+                                        <input type="number" value={config.maxInstallments} onChange={e => setConfig({...config, maxInstallments: e.target.value})} /></div>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                                <Icon name="inbox" size={48} className="text-gray-200 mb-4" />
-                                <p className="text-gray-400 italic">Nenhum pedido recebido até o momento.</p>
-                            </div>
-                        )}
-                    </div>
+                                <button onClick={saveConfig} className="mt-8 btn-gold px-10 py-3 rounded-lg font-bold text-xs uppercase tracking-widest shadow-lg">Salvar Alterações</button>
+                            </section>
+
+                            {/* CADASTRO DE PRODUTOS */}
+                            <section className="lux-card p-8">
+                                <h2 className="text-lg font-bold mb-6 flex items-center gap-2 border-b pb-4"><Icon name="package" /> Cadastro de Produtos</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                                    <input placeholder="SKU/Ref" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
+                                    <input placeholder="Nome do Produto" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+                                    <input type="number" placeholder="Preço (Ex: 1200)" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+                                    <input placeholder="URL da Imagem" value={newProduct.image} onChange={e => setNewProduct({...newProduct, image: e.target.value})} />
+                                    <button onClick={addProduct} className="bg-black text-white rounded-lg font-bold text-xs uppercase hover:bg-gray-800">Adicionar</button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                    {products.map(p => (
+                                        <div key={p.id} className="border lux-border p-4 rounded-xl flex items-center gap-4 relative group">
+                                            <img src={p.image} className="w-16 h-16 object-cover rounded-md" />
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase">Ref: {p.sku}</p>
+                                                <p className="text-sm font-bold uppercase truncate w-32">{p.name}</p>
+                                                <p className="text-xs lux-gold font-bold">{formatMoney(p.price)}</p>
+                                            </div>
+                                            <button onClick={() => deleteProduct(p.id)} className="absolute top-2 right-2 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Icon name="trash-2" size={16} /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {tab === 'pedidos' && (
+                        <div className="lux-card overflow-hidden animate-in slide-in-from-bottom duration-500">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50 border-b lux-border text-[10px] font-bold uppercase text-gray-400">
+                                    <tr>
+                                        <th className="px-6 py-4">Data / Cliente</th>
+                                        <th className="px-6 py-4">Itens</th>
+                                        <th className="px-6 py-4">Pagamento</th>
+                                        <th className="px-6 py-4">Valor Final</th>
+                                        <th className="px-6 py-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y lux-border">
+                                    {orders.map(o => (
+                                        <tr key={o.id} className="hover:bg-gray-50 transition-all">
+                                            <td className="px-6 py-4">
+                                                <p className="text-xs text-gray-400 mb-1">{o.data}</p>
+                                                <p className="font-bold text-gray-800 uppercase tracking-tight">{o.cliente}</p>
+                                                <p className="text-[10px] text-blue-500 font-bold">{o.whatsapp}</p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{o.itens}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-xs font-bold uppercase text-gray-400">
+                                                {o.pagamento}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="text-md font-bold text-[#A68966]">{formatMoney(o.total)}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => window.open(`https://wa.me/${o.whatsapp.replace(/\D/g, "")}`, '_blank')} className="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Falar no WhatsApp"><Icon name="message-circle" /></button>
+                                                    <button onClick={() => printRomaneio(o)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Imprimir Romaneio"><Icon name="printer" /></button>
+                                                    <button onClick={() => deleteOrder(o.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir Registro"><Icon name="trash-2" /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {orders.length === 0 && (
+                                        <tr><td colSpan="5" className="px-6 py-20 text-center text-gray-400 italic">Nenhum pedido registrado no sistema.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             );
         }
