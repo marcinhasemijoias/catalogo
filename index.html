@@ -41,7 +41,7 @@
             const [paymentMethod, setPaymentMethod] = useState('pix'); 
             const [selectedInstallment, setSelectedInstallment] = useState(1);
             const [customer, setCustomer] = useState({ name: '', phone: '' });
-            const [orderStep, setOrderStep] = useState('cart'); // 'cart', 'checkout', 'success'
+            const [orderStep, setOrderStep] = useState('cart');
 
             useEffect(() => {
                 const savedProducts = localStorage.getItem('luxury_products');
@@ -52,7 +52,6 @@
 
             const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             
-            // Cálculos Totais
             const totalBase = cart.reduce((acc, item) => acc + item.price, 0);
             const totalPix = totalBase * (1 - (storeConfig.pixDiscount / 100));
 
@@ -61,7 +60,6 @@
                     alert("Por favor, preencha seu nome e contato.");
                     return;
                 }
-
                 const newOrder = {
                     id: Date.now(),
                     date: new Date().toLocaleString('pt-BR'),
@@ -70,23 +68,16 @@
                     payment: paymentMethod === 'pix' ? 'PIX' : `${selectedInstallment}x no Cartão`,
                     total: paymentMethod === 'pix' ? totalPix : totalBase
                 };
-
                 const existingOrders = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
                 localStorage.setItem('luxury_orders', JSON.stringify([newOrder, ...existingOrders]));
-
-                const message = `Novo Pedido - ${storeConfig.name}\n\nCliente: ${customer.name}\nWhatsApp: ${customer.phone}\n\nPeças:\n${cart.map(i => `- ${i.name} (SKU: ${i.sku})`).join('\n')}\n\nPagamento: ${newOrder.payment}\nTotal: ${formatMoney(newOrder.total)}`;
-                
+                const message = `Novo Pedido!\nCliente: ${customer.name}\nTotal: ${formatMoney(newOrder.total)}\nPagamento: ${newOrder.payment}`;
                 setOrderStep('success');
                 setCart([]);
-                
-                setTimeout(() => {
-                    window.open(`https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
-                }, 1000);
+                setTimeout(() => { window.open(`https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(message)}`, '_blank'); }, 1000);
             };
 
             return (
                 <div className="min-h-screen">
-                    {/* Header */}
                     <header className="bg-white border-b lux-border py-8 px-6 sticky top-0 z-40 flex justify-between items-center shadow-sm">
                         <div className="w-10"></div>
                         <h1 className="text-2xl font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
@@ -96,96 +87,77 @@
                         </button>
                     </header>
 
-                    {/* Catálogo com Preços Corrigidos */}
+                    {/* Catálogo */}
                     <main className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
                         {products.map(product => (
-                            <div key={product.id} className="flex flex-col group">
+                            <div key={product.id} className="flex flex-col group text-center">
                                 <div className="aspect-square bg-[#F5F2EE] border lux-border mb-6 overflow-hidden relative shadow-sm">
                                     {product.image && <img src={product.image} className="w-full h-full object-cover" />}
                                 </div>
-                                <div className="text-center space-y-2">
-                                    <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">SKU: {product.sku}</p>
-                                    <h3 className="font-serif text-xl tracking-widest uppercase">{product.name}</h3>
-                                    
-                                    <div className="pt-2">
-                                        <p className="lux-gold font-bold text-base tracking-tighter">
-                                            PIX: {formatMoney(product.price * (1 - storeConfig.pixDiscount/100))}
-                                        </p>
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                                            Ou {storeConfig.maxInstallments}x de {formatMoney(product.price / storeConfig.maxInstallments)}
-                                        </p>
-                                    </div>
-
-                                    <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="w-full mt-4 bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all">Adicionar à Sacola</button>
+                                <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">SKU: {product.sku}</p>
+                                <h3 className="font-serif text-xl tracking-widest uppercase my-2">{product.name}</h3>
+                                
+                                <div className="space-y-1">
+                                    <p className="text-sm text-gray-400 font-medium">Valor: {formatMoney(product.price)}</p>
+                                    <p className="lux-gold font-bold text-lg tracking-tighter">
+                                        No PIX: {formatMoney(product.price * (1 - storeConfig.pixDiscount/100))}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">
+                                        Ou {storeConfig.maxInstallments}x de {formatMoney(product.price / storeConfig.maxInstallments)}
+                                    </p>
                                 </div>
+
+                                <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="w-full mt-6 bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-black transition-all">Adicionar à Sacola</button>
                             </div>
                         ))}
                     </main>
 
-                    {/* Sacola / Checkout Side Drawer */}
+                    {/* Side Drawer (Sacola/Checkout) */}
                     {isCartOpen && (
                         <div className="fixed inset-0 z-50 flex justify-end">
                             <div className="cart-overlay absolute inset-0" onClick={() => setIsCartOpen(false)}></div>
                             <div className="relative w-full max-w-md bg-[#FDFBF7] h-full shadow-2xl flex flex-col p-8 overflow-hidden">
                                 <button className="absolute top-8 right-8" onClick={() => setIsCartOpen(false)}><Icon name="x" size={24} /></button>
 
-                                {/* ETAPA 1: SACOLA */}
                                 {orderStep === 'cart' && (
                                     <div className="flex flex-col h-full">
-                                        <h2 className="font-serif text-2xl uppercase tracking-widest mb-8 border-b lux-border pb-4">Sua Sacola ({cart.length})</h2>
+                                        <h2 className="font-serif text-2xl uppercase tracking-widest mb-8 border-b lux-border pb-4">Sacola ({cart.length})</h2>
                                         <div className="flex-grow space-y-6 overflow-y-auto pr-2 custom-scroll">
-                                            {cart.length === 0 ? <p className="text-center italic text-gray-400 py-10">Sua sacola está vazia.</p> : 
-                                                cart.map((item, idx) => (
-                                                    <div key={idx} className="flex gap-4 border-b lux-border pb-4">
-                                                        <img src={item.image} className="w-16 h-16 object-cover border lux-border" />
-                                                        <div className="flex-grow">
-                                                            <p className="text-[10px] font-bold uppercase">{item.name}</p>
-                                                            <p className="text-xs lux-gold font-bold">{formatMoney(item.price)}</p>
-                                                        </div>
-                                                        <button onClick={() => setCart(cart.filter((_, i) => i !== idx))}><Icon name="trash-2" size={14} className="text-gray-300" /></button>
+                                            {cart.map((item, idx) => (
+                                                <div key={idx} className="flex gap-4 border-b lux-border pb-4 items-center">
+                                                    <img src={item.image} className="w-16 h-16 object-cover border lux-border" />
+                                                    <div className="flex-grow">
+                                                        <p className="text-[10px] font-bold uppercase">{item.name}</p>
+                                                        <p className="text-xs text-gray-400">{formatMoney(item.price)}</p>
                                                     </div>
-                                                ))
-                                            }
+                                                    <button onClick={() => setCart(cart.filter((_, i) => i !== idx))}><Icon name="trash-2" size={14} className="text-gray-300" /></button>
+                                                </div>
+                                            ))}
                                         </div>
-
                                         {cart.length > 0 && (
                                             <div className="border-t lux-border pt-6 space-y-3">
-                                                <div className="flex justify-between text-[10px] uppercase tracking-widest text-gray-500 font-bold">
-                                                    <span>Total Itens</span>
-                                                    <span>{formatMoney(totalBase)}</span>
-                                                </div>
-                                                <div className="flex justify-between text-xs uppercase tracking-widest lux-gold font-bold">
-                                                    <span>Total via PIX (-{storeConfig.pixDiscount}%)</span>
-                                                    <span>{formatMoney(totalPix)}</span>
-                                                </div>
-                                                <div className="flex justify-between text-[10px] uppercase tracking-widest text-gray-400">
-                                                    <span>Cartão</span>
-                                                    <span>{storeConfig.maxInstallments}x de {formatMoney(totalBase/storeConfig.maxInstallments)}</span>
-                                                </div>
-                                                <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold mt-4">Ir para Finalização</button>
+                                                <div className="flex justify-between text-xs font-bold uppercase tracking-widest"><span>Valor Total</span><span>{formatMoney(totalBase)}</span></div>
+                                                <div className="flex justify-between text-sm lux-gold font-bold uppercase tracking-widest"><span>Com Desconto PIX</span><span>{formatMoney(totalPix)}</span></div>
+                                                <div className="flex justify-between text-[10px] text-gray-400 uppercase tracking-widest"><span>Ou {storeConfig.maxInstallments}x no Cartão</span><span>{formatMoney(totalBase/storeConfig.maxInstallments)}/mês</span></div>
+                                                <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold mt-4">Fechar Pedido</button>
                                             </div>
                                         )}
                                     </div>
                                 )}
 
-                                {/* ETAPA 2: CHECKOUT */}
                                 {orderStep === 'checkout' && (
                                     <div className="flex flex-col h-full space-y-8 overflow-y-auto custom-scroll">
                                         <h2 className="font-serif text-2xl uppercase tracking-widest border-b lux-border pb-4">Finalizar</h2>
-                                        
                                         <div className="space-y-4">
-                                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Informações de Contato</p>
-                                            <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="Nome Completo" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
-                                            <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="WhatsApp" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} />
+                                            <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="Seu Nome" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
+                                            <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="Seu WhatsApp" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} />
                                         </div>
-
                                         <div className="space-y-4">
-                                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Escolha o Pagamento</p>
+                                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Forma de Pagamento</p>
                                             <div className="grid grid-cols-2 gap-2">
-                                                <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase transition-all ${paymentMethod === 'pix' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
-                                                <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase transition-all ${paymentMethod === 'card' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>Cartão</button>
+                                                <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'pix' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
+                                                <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase ${paymentMethod === 'card' ? 'payment-btn-active' : 'text-gray-400 border-gray-100'}`}>Cartão</button>
                                             </div>
-                                            
                                             {paymentMethod === 'card' && (
                                                 <select className="w-full border lux-border bg-transparent py-3 text-[10px] font-bold uppercase px-2" value={selectedInstallment} onChange={e => setSelectedInstallment(e.target.value)}>
                                                     {[...Array(parseInt(storeConfig.maxInstallments))].map((_, i) => (
@@ -194,27 +166,24 @@
                                                 </select>
                                             )}
                                         </div>
-
                                         <div className="border-t lux-border pt-6 space-y-2">
-                                            <div className="flex justify-between text-[10px] uppercase text-gray-400 tracking-widest"><span>Subtotal</span><span>{formatMoney(totalBase)}</span></div>
-                                            <div className="flex justify-between text-[10px] uppercase text-gray-400 tracking-widest"><span>Desconto PIX</span><span>-{formatMoney(totalBase - totalPix)}</span></div>
+                                            <div className="flex justify-between text-[10px] uppercase text-gray-400 font-bold"><span>Valor Total</span><span>{formatMoney(totalBase)}</span></div>
                                             <div className="flex justify-between font-serif text-2xl uppercase mt-4">
-                                                <span>Total Final</span>
+                                                <span>A Pagar</span>
                                                 <span className="lux-gold">{formatMoney(paymentMethod === 'pix' ? totalPix : totalBase)}</span>
                                             </div>
-                                            <button onClick={handleFinalize} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold mt-4 shadow-xl">Confirmar Pedido</button>
-                                            <button onClick={() => setOrderStep('cart')} className="w-full text-[9px] uppercase tracking-[0.6em] text-gray-300 py-4 font-bold">Voltar para Sacola</button>
+                                            <button onClick={handleFinalize} className="w-full bg-[#2D2926] text-white py-5 text-[10px] uppercase tracking-[0.3em] font-bold mt-4">Confirmar Pedido</button>
+                                            <button onClick={() => setOrderStep('cart')} className="w-full text-[9px] uppercase tracking-widest text-gray-400 py-4 text-center">Voltar</button>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* ETAPA 3: SUCESSO */}
                                 {orderStep === 'success' && (
                                     <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
                                         <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-4 animate-pulse"><Icon name="check" size={32} /></div>
-                                        <h2 className="font-serif text-2xl uppercase tracking-widest">Solicitação Enviada</h2>
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest leading-loose px-4">Seu pedido foi registrado. <br/>Aguarde o contato de nossa consultoria via WhatsApp.</p>
-                                        <button onClick={() => setIsCartOpen(false)} className="mt-10 border border-[#2D2926] px-8 py-3 text-[10px] uppercase tracking-widest font-bold">Voltar à Loja</button>
+                                        <h2 className="font-serif text-2xl uppercase tracking-widest">Pedido Enviado!</h2>
+                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest leading-loose">Aguarde o contato da Royal Joias.</p>
+                                        <button onClick={() => setIsCartOpen(false)} className="mt-10 border border-[#2D2926] px-8 py-3 text-[10px] uppercase tracking-widest font-bold">Voltar</button>
                                     </div>
                                 )}
                             </div>
