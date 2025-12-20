@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Royal Joias - Administrativo</title>
+    <title>Painel Royal Joias</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
-        .receipt-print { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; color: black; background: white; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
+        .input-line { border-bottom: 1px solid #e2e8f0; width: 100%; padding: 8px 0; outline: none; background: transparent; transition: border-color 0.2s; }
+        .input-line:focus { border-bottom-color: #a68966; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -21,180 +23,201 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const Icon = ({ name, size = 18, className = "" }) => {
+        const Icon = ({ name, size = 18 }) => {
             useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{width: size, height: size}} className={`inline-block ${className}`}></i>;
+            return <i data-lucide={name} style={{width: size, height: size}} className="inline-block"></i>;
         };
 
-        function AdminApp() {
+        function App() {
             const [products, setProducts] = useState([]);
             const [orders, setOrders] = useState([]);
-            const [storeConfig, setStoreConfig] = useState({
+            const [config, setConfig] = useState({
                 name: 'Royal Joias',
-                whatsapp: '5511999999999',
-                pixDiscount: 0.1,
+                whatsapp: '',
+                pixDiscount: 10,
                 maxInstallments: 12
             });
 
-            const [newProduct, setNewProduct] = useState({ sku: '', name: '', price: '', image: '' });
+            const [newProd, setNewProd] = useState({ name: '', price: '', sku: '', image: '' });
 
             useEffect(() => {
-                const savedProducts = localStorage.getItem('luxury_products');
-                const savedConfig = localStorage.getItem('luxury_config');
-                const savedOrders = localStorage.getItem('luxury_orders');
-                if (savedProducts) setProducts(JSON.parse(savedProducts));
-                if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
-                if (savedOrders) setOrders(JSON.parse(savedOrders));
+                const p = localStorage.getItem('luxury_products');
+                const o = localStorage.getItem('luxury_orders');
+                const c = localStorage.getItem('luxury_config');
+                if(p) setProducts(JSON.parse(p));
+                if(o) setOrders(JSON.parse(o));
+                if(c) setConfig(JSON.parse(c));
             }, []);
 
-            const saveToLocal = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+            const saveConfig = (newVal) => {
+                setConfig(newVal);
+                localStorage.setItem('luxury_config', JSON.stringify(newVal));
+            };
 
-            // UPLOAD DE IMAGEM (Base64)
-            const handleImageUpload = (e) => {
+            // UPLOAD DE IMAGEM
+            const handleImage = (e) => {
                 const file = e.target.files[0];
                 const reader = new FileReader();
-                reader.onloadend = () => setNewProduct({ ...newProduct, image: reader.result });
-                if (file) reader.readAsDataURL(file);
+                reader.onloadend = () => setNewProd({...newProd, image: reader.result});
+                if(file) reader.readAsDataURL(file);
             };
 
-            const handleAddProduct = (e) => {
+            const addProduct = (e) => {
                 e.preventDefault();
-                const updated = [...products, { ...newProduct, id: Date.now(), price: parseFloat(newProduct.price) }];
+                const updated = [...products, { ...newProd, id: Date.now(), price: parseFloat(newProd.price) }];
                 setProducts(updated);
-                saveToLocal('luxury_products', updated);
-                setNewProduct({ sku: '', name: '', price: '', image: '' });
+                localStorage.setItem('luxury_products', JSON.stringify(updated));
+                setNewProd({ name: '', price: '', sku: '', image: '' });
+                alert("Produto salvo!");
             };
 
-            // ROMANEIO IDENTICO AO MODELO (ABELLA JOIAS)
-            const printRomaneio = (order) => {
-                const printWindow = window.open('', '_blank', 'width=600,height=800');
-                const content = `
-                    <div style="font-family: Arial, sans-serif; max-width: 400px; margin: auto; padding: 20px; border: 1px solid #eee;">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <h2 style="margin: 0; letter-spacing: 2px;">${storeConfig.name.toUpperCase()}</h2>
-                            <small>ALTA JOALHARIA & DESIGN</small>
-                            <p style="margin: 10px 0; font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0;">DOCUMENTO DE VENDA</p>
-                            <p style="font-size: 12px;">Nº do Registro: ${order.id.toString().slice(-4)}<br>Data: ${order.date}</p>
+            // ROMANEIO IGUAL AO MODELO PDF (ABELLA JOIAS)
+            const printOrder = (order) => {
+                const win = window.open('', '_blank');
+                const html = `
+                    <html>
+                    <body style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: auto;">
+                        <div style="text-align: center; text-transform: uppercase;">
+                            <h2 style="margin:0; letter-spacing: 2px;">${config.name}</h2>
+                            <div style="font-size: 10px; margin-top: 4px;">ALTA JOALHARIA & DESIGN</div>
+                            <div style="border-top: 1px solid black; border-bottom: 1px solid black; margin: 15px 0; padding: 5px; font-weight: bold;">DOCUMENTO DE VENDA</div>
+                            <div style="font-size: 12px;">Nº do Registro: ${order.id.toString().slice(-4)}</div>
+                            <div style="font-size: 12px;">Data: ${order.date || new Date().toLocaleString()}</div>
                         </div>
-                        <div style="font-size: 12px; margin-bottom: 20px;">
+                        <div style="margin-top: 20px; font-size: 12px;">
                             <strong>DESTINATARIO</strong><br>
-                            ${order.customer.name.toUpperCase()}<br>
-                            ${order.customer.phone}
+                            ${order.customer?.name || 'Cliente'}<br>
+                            ${order.customer?.phone || ''}
                         </div>
-                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px;">
                             <thead>
-                                <tr style="border-bottom: 1px solid #000;">
-                                    <th align="left">DESCRIÇÃO DA PEÇA</th>
-                                    <th align="center">QTD</th>
-                                    <th align="right">SUBTOTAL</th>
+                                <tr style="border-bottom: 1px solid black; text-align: left;">
+                                    <th>DESCRIÇÃO DA PEÇA</th>
+                                    <th>QTD</th>
+                                    <th style="text-align: right;">SUBTOTAL</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${order.items.map(item => `
+                                ${order.items?.map(i => `
                                     <tr>
-                                        <td style="padding: 10px 0;">${item.name}<br><small>SKU: ${item.sku}</small></td>
-                                        <td align="center">${item.quantity || 1}</td>
-                                        <td align="right">R$ ${item.price.toFixed(2)}</td>
+                                        <td style="padding: 8px 0;">${i.name}<br><small>SKU: ${i.sku}</small></td>
+                                        <td>1</td>
+                                        <td style="text-align: right;">R$ ${parseFloat(i.price).toFixed(2)}</td>
                                     </tr>
-                                `).join('')}
+                                `).join('') || ''}
                             </tbody>
                         </table>
-                        <div style="border-top: 1px solid #000; padding-top: 10px; font-size: 12px;">
-                            <div style="display: flex; justify-content: space-between;"><span>Subtotal:</span> <span>R$ ${order.subtotal.toFixed(2)}</span></div>
-                            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-top: 5px;">
-                                <span>TOTAL</span> <span>R$ ${order.total.toFixed(2)}</span>
-                            </div>
+                        <div style="border-top: 1px solid black; margin-top: 10px; padding-top: 10px; text-align: right;">
+                            <div style="font-size: 12px;">Subtotal: R$ ${order.total?.toFixed(2)}</div>
+                            <div style="font-size: 18px; font-weight: bold;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
                         </div>
-                        <p style="font-size: 11px; margin-top: 20px;">
-                            <strong>Forma de pagamento:</strong> ${order.paymentMethod === 'pix' ? 'PIX' : `Cartão (${order.installments}x)`}
-                        </p>
-                        <p style="font-size: 10px; text-align: center; margin-top: 30px; font-style: italic;">
+                        <div style="margin-top: 15px; font-size: 11px;">
+                            <strong>Forma de pagamento:</strong> ${order.paymentMethod || 'A combinar'}
+                        </div>
+                        <div style="margin-top: 30px; font-size: 10px; text-align: center; font-style: italic;">
                             Obrigado por escolher a excelência. Este documento comprova a autenticidade da sua transação.
-                        </p>
-                    </div>
+                        </div>
+                    </body>
+                    </html>
                 `;
-                printWindow.document.write(`<html><body onload="window.print();window.close()">${content}</body></html>`);
-                printWindow.document.close();
+                win.document.write(html);
+                win.document.close();
+                win.print();
             };
 
             return (
-                <div className="p-6 max-w-4xl mx-auto space-y-8">
-                    {/* CONFIGURAÇÕES DE DESCONTO E PARCELAMENTO */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Icon name="settings" /> Configurações de Venda</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-10">
+                    <header className="flex justify-between items-center border-b pb-4">
+                        <h1 className="text-xl font-bold tracking-tighter uppercase italic">Painel Admin</h1>
+                        <a href="index.html" className="text-xs font-bold border-b border-black">VER LOJA</a>
+                    </header>
+
+                    {/* CONFIGURAÇÕES DE DESCONTOS E PARCELAMENTO */}
+                    <section className="card">
+                        <h2 className="text-sm font-bold uppercase mb-6 flex items-center gap-2 text-amber-700">
+                            <Icon name="percent" /> Configurações de Pagamento
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase">Desconto PIX (Ex: 0.1 para 10%)</label>
-                                <input type="number" step="0.01" className="w-full border-b py-2" value={storeConfig.pixDiscount} 
-                                    onChange={e => { const c = {...storeConfig, pixDiscount: parseFloat(e.target.value)}; setStoreConfig(c); saveToLocal('luxury_config', c); }} />
+                                <label className="text-[10px] font-bold text-gray-400 uppercase">Desconto PIX (%)</label>
+                                <input type="number" className="input-line" value={config.pixDiscount} 
+                                    onChange={e => saveConfig({...config, pixDiscount: e.target.value})} />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase">Parcelas Máximas (Cartão)</label>
-                                <input type="number" className="w-full border-b py-2" value={storeConfig.maxInstallments} 
-                                    onChange={e => { const c = {...storeConfig, maxInstallments: parseInt(e.target.value)}; setStoreConfig(c); saveToLocal('luxury_config', c); }} />
+                                <label className="text-[10px] font-bold text-gray-400 uppercase">Parcelamento Máximo (Vezes)</label>
+                                <input type="number" className="input-line" value={config.maxInstallments} 
+                                    onChange={e => saveConfig({...config, maxInstallments: e.target.value})} />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase">WhatsApp para Receber Pedidos</label>
+                                <input type="text" className="input-line" placeholder="5519..." value={config.whatsapp} 
+                                    onChange={e => saveConfig({...config, whatsapp: e.target.value})} />
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* CADASTRO COM UPLOAD DE IMAGEM */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Icon name="plus-circle" /> Cadastrar Produto</h2>
-                        <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input placeholder="Nome" className="border-b py-2" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                            <input placeholder="Preço" type="number" className="border-b py-2" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
-                            <input placeholder="SKU" className="border-b py-2" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} />
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] uppercase font-bold text-gray-400">Imagem do Produto</label>
-                                <input type="file" accept="image/*" onChange={handleImageUpload} className="text-xs" />
+                    {/* CADASTRO DE PRODUTO COM UPLOAD */}
+                    <section className="card">
+                        <h2 className="text-sm font-bold uppercase mb-6 flex items-center gap-2 text-amber-700">
+                            <Icon name="package-plus" /> Cadastrar Novo Produto
+                        </h2>
+                        <form onSubmit={addProduct} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <input placeholder="Nome da Peça" className="input-line" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} required />
+                            <input placeholder="Preço (Ex: 199.90)" type="number" step="0.01" className="input-line" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} required />
+                            <input placeholder="SKU (Ex: AJ-001)" className="input-line" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
+                            
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-2">Upload da Foto</label>
+                                <input type="file" accept="image/*" onChange={handleImage} className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" />
                             </div>
-                            <button className="md:col-span-2 bg-black text-white py-3 rounded uppercase text-xs tracking-widest font-bold">Salvar Produto</button>
-                        </form>
-                    </div>
 
-                    {/* HISTÓRICO DE PEDIDOS (Conforme sua imagem) */}
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 className="font-bold mb-6 border-b pb-2">Histórico de Pedidos ({orders.length})</h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs">
-                                <thead>
-                                    <tr className="text-gray-400 uppercase border-b">
+                            <button className="md:col-span-2 bg-slate-900 text-white py-4 rounded font-bold text-xs uppercase tracking-widest hover:bg-black transition-all">
+                                Salvar Produto no Catálogo
+                            </button>
+                        </form>
+                    </section>
+
+                    {/* HISTÓRICO DE PEDIDOS */}
+                    <section className="card">
+                        <h2 className="text-sm font-bold uppercase mb-6 text-amber-700">Histórico de Pedidos</h2>
+                        <div className="overflow-x-auto text-xs">
+                            <table className="w-full text-left">
+                                <thead className="text-gray-400 border-b">
+                                    <tr>
                                         <th className="pb-3">Data/ID</th>
                                         <th className="pb-3">Cliente</th>
-                                        <th className="pb-3">Valor</th>
+                                        <th className="pb-3">Total</th>
                                         <th className="pb-3 text-right">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y">
+                                <tbody className="divide-y divide-gray-50">
                                     {orders.map(order => (
                                         <tr key={order.id} className="hover:bg-gray-50">
-                                            <td className="py-4 font-mono">{order.date}<br/><span className="text-gray-400">ID: {order.id.toString().slice(-6)}</span></td>
-                                            <td className="py-4"><strong>{order.customer.name}</strong><br/>{order.customer.phone}</td>
-                                            <td className="py-4 font-bold">R$ {order.total.toFixed(2)}</td>
-                                            <td className="py-4 text-right space-x-2">
-                                                <button onClick={() => window.open(`https://wa.me/${order.customer.phone.replace(/\D/g, "")}`)} className="p-2 text-green-600 hover:bg-green-50 rounded" title="WhatsApp">
-                                                    <Icon name="message-circle" />
-                                                </button>
-                                                <button onClick={() => printRomaneio(order)} className="p-2 text-blue-600 hover:bg-blue-50 rounded" title="Imprimir Romaneio">
-                                                    <Icon name="printer" />
-                                                </button>
+                                            <td className="py-4 font-mono">{order.date}<br/><span className="text-[10px] text-gray-400">ID: {order.id}</span></td>
+                                            <td className="py-4 uppercase font-bold">{order.customer?.name}</td>
+                                            <td className="py-4 font-bold text-amber-800">R$ {order.total?.toFixed(2)}</td>
+                                            <td className="py-4 text-right flex justify-end gap-2">
+                                                <button onClick={() => window.open(`https://wa.me/${order.customer?.phone?.replace(/\D/g,'')}`)} className="p-2 text-green-600 hover:bg-green-50 rounded" title="WhatsApp"><Icon name="message-circle" size={20}/></button>
+                                                <button onClick={() => printOrder(order)} className="p-2 text-blue-600 hover:bg-blue-50 rounded" title="Imprimir Romaneio"><Icon name="printer" size={20}/></button>
                                                 <button onClick={() => {
                                                     const updated = orders.filter(o => o.id !== order.id);
-                                                    setOrders(updated); saveToLocal('luxury_orders', updated);
-                                                }} className="p-2 text-red-500 hover:bg-red-50 rounded"><Icon name="trash-2" /></button>
+                                                    setOrders(updated);
+                                                    localStorage.setItem('luxury_orders', JSON.stringify(updated));
+                                                }} className="p-2 text-red-400 hover:bg-red-50 rounded"><Icon name="trash-2" size={20}/></button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                            {orders.length === 0 && <p className="text-center py-10 text-gray-400">Nenhum pedido registrado.</p>}
+                            {orders.length === 0 && <div className="text-center py-10 text-gray-400 italic">Nenhum pedido realizado.</div>}
                         </div>
-                    </div>
+                    </section>
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<AdminApp />);
+        root.render(<App />);
     </script>
 </body>
 </html>
