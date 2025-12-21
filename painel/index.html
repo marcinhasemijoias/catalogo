@@ -1,136 +1,174 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Painel Administrativo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin — Catálogo Premium</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css">
+  <style>
+    /* Ajustes finos de tipografia e cores premium */
+    body { background-color: #FDFBF7; color: #111111; font-family: system-ui, sans-serif; }
+    h1, h2, h3 { font-family: serif; letter-spacing: 0.05em; }
+    .price-pix { color: #A68966; font-weight: bold; }
+    .price-parcel { color: #8C857B; }
+    .btn-primary { background-color: #111111; color: #FDFBF7; }
+    .btn-primary:hover { background-color: #A68966; color: #FDFBF7; }
+    .card { background-color: #fff; border: 1px solid #E5E1DB; border-radius: 12px; overflow: hidden; transition: transform 0.2s; }
+    .card:hover { transform: translateY(-5px); }
+    input, select, textarea { border: 1px solid #E5E1DB; padding: 0.5rem; border-radius: 6px; width: 100%; }
+  </style>
 </head>
+<body class="bg-[#FDFBF7] text-[#111111]">
 
-<body class="bg-neutral-100 p-4 max-w-3xl mx-auto">
+  <!-- HEADER -->
+  <header class="text-center py-10 border-b border-[#E5E1DB]">
+    <h1 class="font-serif text-3xl tracking-wide" id="storeName">Catálogo Lux</h1>
+    <p class="text-xs tracking-[0.3em] uppercase text-[#8C857B] mt-2">
+      Joias selecionadas • Painel Administrativo
+    </p>
+  </header>
 
-<h1 class="text-2xl font-serif mb-4">Painel Administrativo</h1>
+  <!-- MAIN -->
+  <main class="max-w-6xl mx-auto px-6 py-12">
 
-<!-- CONFIGURAÇÕES DA LOJA -->
-<section class="bg-white p-4 mb-6 border">
-<h2 class="font-medium mb-2">Configurações da Loja</h2>
-
-<input class="border p-2 w-full mb-2" placeholder="Nome da Loja"
-oninput="save('storeName',this.value)">
-
-<input class="border p-2 w-full mb-2" placeholder="WhatsApp da Loja"
-oninput="save('storePhone',this.value)">
-
-<input class="border p-2 w-full mb-2" placeholder="Desconto PIX (%)"
-oninput="save('pixDiscount',this.value)">
-
-<input class="border p-2 w-full mb-2" placeholder="Parcelas no cartão (ex: 3,6,10)"
-oninput="save('maxInstallments',this.value)">
-</section>
-
-<!-- CADASTRO DE PRODUTO -->
-<section class="bg-white p-4 mb-6 border">
-<h2 class="font-medium mb-2">Cadastrar Produto</h2>
-
-<input id="pName" class="border p-2 w-full mb-2" placeholder="Nome">
-<input id="pPrice" class="border p-2 w-full mb-2" placeholder="Preço">
-<input id="pImage" class="border p-2 w-full mb-2" placeholder="URL da imagem">
-
-<button onclick="addProduct()"
-class="bg-black text-white px-4 py-2">
-Adicionar Produto
-</button>
-</section>
-
-<!-- PRODUTOS CADASTRADOS -->
-<section class="bg-white p-4 mb-6 border">
-<h2 class="font-medium mb-4">Produtos Cadastrados</h2>
-<div id="productList" class="space-y-3"></div>
-</section>
-
-<!-- RELATÓRIOS -->
-<section class="bg-white p-4 border">
-<h2 class="font-medium mb-2">Relatório de Vendas</h2>
-
-<button onclick="printReport()"
-class="bg-black text-white px-4 py-2">
-Gerar / Imprimir PDF
-</button>
-
-<div id="report" class="mt-4 text-sm"></div>
-</section>
-
-<script>
-function save(k,v){ localStorage.setItem(k,v) }
-
-let products = JSON.parse(localStorage.getItem("products")) || [];
-let orders = JSON.parse(localStorage.getItem("orders")) || [];
-
-function addProduct(){
-  products.push({
-    id: Date.now().toString(),
-    name: pName.value,
-    price: Number(pPrice.value),
-    image: pImage.value
-  });
-  localStorage.setItem("products", JSON.stringify(products));
-  location.reload();
-}
-
-function renderProducts(){
-  productList.innerHTML = "";
-  products.forEach((p,i)=>{
-    productList.innerHTML += `
-    <div class="border p-3 flex justify-between">
-      <div>
-        <p class="font-medium">${p.name}</p>
-        <p class="text-sm">R$ ${p.price}</p>
+    <!-- SEÇÃO DE PRODUTOS -->
+    <section class="mb-12">
+      <h2 class="font-serif text-2xl tracking-wide mb-6">Produtos</h2>
+      <div id="productGrid" class="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+        <!-- Cards de produtos serão inseridos via JS -->
       </div>
-      <div class="space-x-2">
-        <button onclick="edit(${i})">✏️</button>
-        <button onclick="del(${i})">🗑️</button>
+
+      <button id="addProductBtn" class="mt-6 btn-primary px-6 py-2 rounded tracking-widest uppercase">
+        Adicionar Produto
+      </button>
+    </section>
+
+    <!-- SEÇÃO DE PEDIDOS -->
+    <section class="mb-12">
+      <h2 class="font-serif text-2xl tracking-wide mb-6">Pedidos</h2>
+      <div id="ordersList" class="space-y-4">
+        <!-- Pedidos aparecerão aqui via JS -->
       </div>
-    </div>`;
-  });
-}
+    </section>
 
-function edit(i){
-  const p = products[i];
-  const n = prompt("Nome", p.name);
-  const pr = prompt("Preço", p.price);
-  if(n && pr){
-    p.name = n;
-    p.price = Number(pr);
-    localStorage.setItem("products", JSON.stringify(products));
+    <!-- FORMULÁRIO MODAL DE PRODUTO (OCULTO) -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+      <div class="bg-[#FDFBF7] rounded-xl p-8 w-full max-w-lg relative">
+        <h3 class="font-serif text-xl mb-4">Adicionar / Editar Produto</h3>
+        <form id="productForm" class="space-y-4">
+          <div>
+            <label class="text-sm font-semibold mb-1 block">Nome do Produto</label>
+            <input type="text" id="productName" required>
+          </div>
+          <div>
+            <label class="text-sm font-semibold mb-1 block">Preço (R$)</label>
+            <input type="number" id="productPrice" step="0.01" required>
+          </div>
+          <div>
+            <label class="text-sm font-semibold mb-1 block">Desconto PIX (R$)</label>
+            <input type="number" id="productPix" step="0.01">
+          </div>
+          <div>
+            <label class="text-sm font-semibold mb-1 block">Parcelamento Cartão</label>
+            <input type="text" id="productParcel">
+          </div>
+          <div>
+            <label class="text-sm font-semibold mb-1 block">Imagem (URL)</label>
+            <input type="text" id="productImage" required>
+          </div>
+          <div class="flex justify-end space-x-3 mt-4">
+            <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded">Cancelar</button>
+            <button type="submit" class="btn-primary px-4 py-2 rounded">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SCRIPT -->
+  <script>
+    // Arrays simulando DB local
+    let products = [];
+    let orders = [];
+
+    const productGrid = document.getElementById('productGrid');
+    const ordersList = document.getElementById('ordersList');
+    const productModal = document.getElementById('productModal');
+    const productForm = document.getElementById('productForm');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    // Abrir modal
+    addProductBtn.addEventListener('click', () => {
+      productModal.classList.remove('hidden');
+    });
+
+    // Fechar modal
+    closeModalBtn.addEventListener('click', () => {
+      productModal.classList.add('hidden');
+      productForm.reset();
+    });
+
+    // Adicionar produto
+    productForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('productName').value;
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const pix = parseFloat(document.getElementById('productPix').value) || null;
+      const parcel = document.getElementById('productParcel').value;
+      const image = document.getElementById('productImage').value;
+
+      const newProduct = { id: Date.now(), name, price, pix, parcel, image };
+      products.push(newProduct);
+      renderProducts();
+      productModal.classList.add('hidden');
+      productForm.reset();
+    });
+
+    // Renderizar produtos
+    function renderProducts() {
+      productGrid.innerHTML = '';
+      products.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'card p-4 flex flex-col items-center text-center';
+        card.innerHTML = `
+          <img src="${p.image}" alt="${p.name}" class="w-full h-48 object-cover mb-4 rounded">
+          <h3 class="font-serif text-lg mb-1">${p.name}</h3>
+          <p class="text-base mb-1">R$ ${p.price.toFixed(2)}</p>
+          ${p.pix ? `<p class="price-pix mb-1">PIX R$ ${p.pix.toFixed(2)}</p>` : ''}
+          ${p.parcel ? `<p class="price-parcel mb-2">${p.parcel}</p>` : ''}
+          <div class="flex gap-2">
+            <button onclick="editProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Editar</button>
+            <button onclick="deleteProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Excluir</button>
+          </div>
+        `;
+        productGrid.appendChild(card);
+      });
+    }
+
+    // Editar produto
+    function editProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('productName').value = p.name;
+      document.getElementById('productPrice').value = p.price;
+      document.getElementById('productPix').value = p.pix || '';
+      document.getElementById('productParcel').value = p.parcel || '';
+      document.getElementById('productImage').value = p.image;
+      productModal.classList.remove('hidden');
+      deleteProduct(id);
+    }
+
+    // Excluir produto
+    function deleteProduct(id) {
+      products = products.filter(p => p.id !== id);
+      renderProducts();
+    }
+
+    // Inicial
     renderProducts();
-  }
-}
-
-function del(i){
-  if(confirm("Excluir produto?")){
-    products.splice(i,1);
-    localStorage.setItem("products", JSON.stringify(products));
-    renderProducts();
-  }
-}
-
-function printReport(){
-  let html = "<h2>Relatório de Vendas</h2>";
-  let total = 0;
-
-  orders.forEach(o=>{
-    html += `<p>${o.date} - R$ ${o.total}</p>`;
-    total += o.total;
-  });
-
-  html += `<strong>Total Geral: R$ ${total}</strong>`;
-  report.innerHTML = html;
-  window.print();
-}
-
-renderProducts();
-</script>
+  </script>
 
 </body>
 </html>
-
