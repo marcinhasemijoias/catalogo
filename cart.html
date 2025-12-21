@@ -13,7 +13,7 @@
 <body>
 
     <header class="text-center py-10 border-b border-[#E5E1DB] bg-white">
-        <a href="loja/index.html" class="text-[10px] tracking-widest uppercase text-[#8C857B] hover:text-[#111111]">← Voltar para a loja</a>
+        <a href="index.html" class="text-[10px] tracking-widest uppercase text-[#8C857B] hover:text-[#111111]">← Voltar para a vitrine</a>
         <h1 class="font-serif text-3xl tracking-wide uppercase mt-4">Meu Carrinho</h1>
     </header>
 
@@ -71,7 +71,7 @@
                 document.getElementById("cartContent").innerHTML = `
                     <div class="col-span-full text-center py-20">
                         <p class="font-serif text-xl text-[#8C857B]">Seu carrinho está vazio.</p>
-                        <a href="loja/index.html" class="mt-4 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2">Explorar Joias</a>
+                        <a href="index.html" class="mt-4 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2">Explorar Joias</a>
                     </div>
                 `;
                 return;
@@ -98,11 +98,11 @@
             }).join('');
 
             const savings = subtotal * (pixDiscount / 100);
-            const total = subtotal - savings;
+            const totalValue = subtotal - savings;
 
             document.getElementById("subtotal").innerText = `R$ ${subtotal.toFixed(2)}`;
             document.getElementById("pixSavings").innerText = `- R$ ${savings.toFixed(2)}`;
-            document.getElementById("total").innerText = `R$ ${total.toFixed(2)}`;
+            document.getElementById("total").innerText = `R$ ${totalValue.toFixed(2)}`;
         }
 
         function updateQty(index, change) {
@@ -130,11 +130,11 @@
             
             if (!whatsapp) return alert("Erro: WhatsApp da loja não configurado no painel.");
 
-            // 1. GERAR RELATÓRIO PARA O PAINEL
             const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
             const savings = subtotal * (pixDiscount / 100);
             const finalTotal = (subtotal - savings).toFixed(2);
 
+            // Registro no Relatório (Painel Admin)
             const newOrder = {
                 customerName: name,
                 date: new Date().toLocaleString('pt-BR'),
@@ -144,10 +144,10 @@
             };
 
             const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-            orders.unshift(newOrder); // Adiciona no topo da lista
+            orders.unshift(newOrder);
             localStorage.setItem("orders", JSON.stringify(orders));
 
-            // 2. DAR BAIXA NO ESTOQUE
+            // Baixa no Estoque
             let products = JSON.parse(localStorage.getItem("products") || "[]");
             cart.forEach(cartItem => {
                 const pIndex = products.findIndex(p => p.id === cartItem.id);
@@ -157,7 +157,7 @@
             });
             localStorage.setItem("products", JSON.stringify(products));
 
-            // 3. MONTAR MENSAGEM WHATSAPP
+            // Mensagem WhatsApp
             let msg = `*Pedido: ${storeName}*\n`;
             msg += `*Cliente:* ${name}\n`;
             msg += `--------------------------\n`;
@@ -169,7 +169,6 @@
 
             const url = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msg)}`;
             
-            // Limpar carrinho e ir para o Whats
             localStorage.removeItem("cart");
             window.location.href = url;
         }
