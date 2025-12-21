@@ -1,127 +1,128 @@
-<!-- ARQUIVO: index.html (UX + Conversão Evoluída) -->
+<!-- ARQUIVO: admin.html (Evoluído: Upload, Editar, PDF base) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Catálogo</title>
+  <title>Painel Administrativo</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-[#FDFBF7] text-[#2D2926]">
-
+<body class="bg-[#FDFBF7]">
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo } = React;
+const { useState, useEffect } = React;
 
-function formatPhone(v) {
-  v = v.replace(/\D/g,'');
-  if (v.length <= 10) return v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1)$2-$3');
-  return v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1)$2-$3');
-}
-
-function App() {
-  const [view,setView]=useState('catalog');
-  const [products,setProducts]=useState([]);
-  const [cart,setCart]=useState([]);
+function Admin(){
   const [store,setStore]=useState({name:'Nome da Loja',whatsapp:'',pixDiscount:0,maxInstallments:12});
-  const [customer,setCustomer]=useState({name:'',phone:''});
-  const [payment,setPayment]=useState('pix');
-  const [installments,setInstallments]=useState(1);
+  const [products,setProducts]=useState([]);
+  const [orders,setOrders]=useState([]);
+  const [editing,setEditing]=useState(null);
+  const empty={name:'',sku:'',price:'',image:''};
+  const [form,setForm]=useState(empty);
 
   useEffect(()=>{
-    const p=localStorage.getItem('products');
     const s=localStorage.getItem('store');
-    if(p) setProducts(JSON.parse(p));
+    const p=localStorage.getItem('products');
+    const o=localStorage.getItem('orders');
     if(s) setStore(JSON.parse(s));
+    if(p) setProducts(JSON.parse(p));
+    if(o) setOrders(JSON.parse(o));
   },[]);
 
-  const subtotal = useMemo(()=>cart.reduce((a,i)=>a+i.price*i.qty,0),[cart]);
-  const discount = payment==='pix'? subtotal*(store.pixDiscount/100):0;
-  const total = subtotal-discount;
+  const saveStore=(d)=>{setStore(d);localStorage.setItem('store',JSON.stringify(d));}
+
+  const uploadImage=(file)=>{
+    const reader=new FileReader();
+    reader.onload=e=>setForm({...form,image:e.target.result});
+    reader.readAsDataURL(file);
+  }
+
+  const saveProduct=()=>{
+    if(!form.name||!form.price) return;
+    let list;
+    if(editing){
+      list=products.map(p=>p.id===editing?{...form,id:editing,price:+form.price}:p);
+    } else {
+      list=[...products,{...form,id:Date.now(),price:+form.price}];
+    }
+    setProducts(list);
+    localStorage.setItem('products',JSON.stringify(list));
+    setForm(empty);setEditing(null);
+  }
+
+  const edit=(p)=>{setForm(p);setEditing(p.id)}
+  const del=(id)=>{const l=products.filter(p=>p.id!==id);setProducts(l);localStorage.setItem('products',JSON.stringify(l));}
 
   const format=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-  const add=(p)=>{
-    const e=cart.find(i=>i.id===p.id);
-    if(e) setCart(cart.map(i=>i.id===p.id?{...i,qty:i.qty+1}:i));
-    else setCart([...cart,{...p,qty:1}]);
+  const printOrder=(o)=>{
+    const w=window.open('','_blank');
+    w.document.write(`<h2>${store.name}</h2><p>Cliente: ${o.customer.name}</p><p>Total: ${format(o.total)}</p>`);
+    w.print();
   }
 
-  const sendWhats=()=>{
-    const msg=`*Pedido - ${store.name}*\nCliente: ${customer.name}\nTotal: ${format(total)}`;
+  const whats=(o)=>{
+    const msg=`Pedido ${store.name} - ${o.customer.name} Total ${format(o.total)}`;
     window.open(`https://wa.me/${store.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank');
   }
 
-  return (
-    <div className="max-w-md mx-auto p-6 pb-32">
+  return(
+    <div className="max-w-3xl mx-auto p-6 space-y-10 text-sm">
+      <h1 className="text-center uppercase tracking-widest">Painel Administrativo</h1>
 
-      <header className="text-center py-6">
-        <h1 className="tracking-[0.4em] uppercase">{store.name}</h1>
-      </header>
-
-      {view==='catalog' && (
-        <div className="space-y-6">
-          {products.map(p=>(
-            <div key={p.id} className="bg-white p-4 text-center border">
-              <img src={p.image||''} className="h-40 mx-auto mb-4 object-contain" />
-              <p className="uppercase text-xs tracking-widest">{p.name}</p>
-              <p className="text-sm mt-1">{format(p.price)}</p>
-              <button onClick={()=>{add(p);setView('cart')}} className="mt-4 bg-black text-white py-3 w-full text-[10px] tracking-widest">Adicionar ao Carrinho</button>
-            </div>
-          ))}
+      <section className="bg-white border p-6 space-y-3">
+        <h2 className="text-xs tracking-widest uppercase">Dados da Loja</h2>
+        <input className="border-b p-2" placeholder="Nome" value={store.name} onChange={e=>saveStore({...store,name:e.target.value})}/>
+        <input className="border-b p-2" placeholder="WhatsApp" value={store.whatsapp} onChange={e=>saveStore({...store,whatsapp:e.target.value})}/>
+        <div className="grid grid-cols-2 gap-4">
+          <input type="number" className="border p-2" placeholder="PIX %" value={store.pixDiscount} onChange={e=>saveStore({...store,pixDiscount:+e.target.value})}/>
+          <input type="number" className="border p-2" placeholder="Parcelas" value={store.maxInstallments} onChange={e=>saveStore({...store,maxInstallments:+e.target.value})}/>
         </div>
-      )}
+      </section>
 
-      {view==='cart' && (
-        <div className="space-y-4">
-          {cart.map(i=>(
-            <div key={i.id} className="flex justify-between items-center border p-3">
-              <span>{i.name}</span>
-              <div className="flex items-center gap-2">
-                <button onClick={()=>setCart(cart.map(c=>c.id===i.id&&c.qty>1?{...c,qty:c.qty-1}:c))}>-</button>
-                <span>{i.qty}</span>
-                <button onClick={()=>setCart(cart.map(c=>c.id===i.id?{...c,qty:c.qty+1}:c))}>+</button>
-              </div>
+      <section className="bg-white border p-6 space-y-3">
+        <h2 className="text-xs tracking-widest uppercase">Produto</h2>
+        <input className="border-b p-2" placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+        <input className="border-b p-2" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/>
+        <input type="number" className="border-b p-2" placeholder="Preço" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/>
+        <input type="file" onChange={e=>uploadImage(e.target.files[0])}/>
+        {form.image && <img src={form.image} className="h-24"/>}
+        <button onClick={saveProduct} className="bg-black text-white py-3 w-full">{editing?'Salvar Alterações':'Adicionar Produto'}</button>
+
+        {products.map(p=>(
+          <div key={p.id} className="flex justify-between items-center border p-3">
+            <span>{p.name}</span>
+            <div className="flex gap-3">
+              <button onClick={()=>edit(p)}>Editar</button>
+              <button onClick={()=>del(p.id)} className="text-red-500">Excluir</button>
             </div>
-          ))}
-
-          <input className="w-full border-b p-2" placeholder="Nome" value={customer.name} onChange={e=>setCustomer({...customer,name:e.target.value})} />
-          <input className="w-full border-b p-2" placeholder="(DD) 00000-0000" value={customer.phone} onChange={e=>setCustomer({...customer,phone:formatPhone(e.target.value)})} />
-
-          <div className="grid grid-cols-2 gap-2 pt-4">
-            <button onClick={()=>setPayment('pix')} className={`border p-3 text-xs ${payment==='pix'&&'border-black'}`}>PIX (-{store.pixDiscount}%)</button>
-            <button onClick={()=>setPayment('card')} className={`border p-3 text-xs ${payment==='card'&&'border-black'}`}>Cartão</button>
           </div>
+        ))}
+      </section>
 
-          {payment==='card' && (
-            <select className="w-full border p-3" value={installments} onChange={e=>setInstallments(+e.target.value)}>
-              {[...Array(store.maxInstallments)].map((_,i)=>(
-                <option key={i} value={i+1}>{i+1}x de {format(total/(i+1))}</option>
-              ))}
-            </select>
-          )}
-
-          <div className="border-t pt-4 text-sm">
-            <div className="flex justify-between"><span>Subtotal</span><span>{format(subtotal)}</span></div>
-            {discount>0 && <div className="flex justify-between text-green-700"><span>PIX</span><span>-{format(discount)}</span></div>}
-            <div className="flex justify-between font-bold"><span>Total</span><span>{format(total)}</span></div>
+      <section className="bg-white border p-6 space-y-3">
+        <h2 className="text-xs tracking-widest uppercase">Pedidos</h2>
+        {orders.length===0 && <p className="text-gray-400">Nenhum pedido</p>}
+        {orders.map(o=>(
+          <div key={o.id} className="border p-3 flex justify-between">
+            <span>{o.customer.name} - {format(o.total)}</span>
+            <div className="flex gap-3">
+              <button onClick={()=>printOrder(o)}>PDF</button>
+              <button onClick={()=>whats(o)} className="text-green-600">WhatsApp</button>
+            </div>
           </div>
-
-          <button onClick={sendWhats} className="w-full bg-black text-white py-4 text-[10px] tracking-[0.3em]">Finalizar no WhatsApp</button>
-        </div>
-      )}
-
+        ))}
+      </section>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<Admin/>);
 </script>
-
 </body>
 </html>
