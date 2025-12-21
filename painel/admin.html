@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="p-4 bg-neutral-100 max-w-xl mx-auto">
+
+<h1 class="text-xl mb-4 font-serif">Painel Administrativo</h1>
+
+<h2 class="font-medium mb-2">Configurações da Loja</h2>
+
+<input placeholder="Nome da Loja"
+  class="border p-2 w-full mb-2"
+  oninput="localStorage.setItem('storeName', this.value)">
+
+<input placeholder="WhatsApp da Loja (somente números)"
+  class="border p-2 w-full mb-2"
+  oninput="localStorage.setItem('storePhone', this.value)">
+
+<input placeholder="Desconto PIX (%)"
+  class="border p-2 w-full mb-2"
+  oninput="localStorage.setItem('pixDiscount', this.value)">
+
+<input placeholder="Máx. parcelas no cartão (ex: 3, 6, 10)"
+  class="border p-2 w-full mb-4"
+  oninput="localStorage.setItem('maxInstallments', this.value)">
+
+<hr class="my-4">
+
+<h2 class="font-medium mb-2">Novo Produto</h2>
+
+<input id="name" placeholder="Nome do Produto"
+  class="border p-2 w-full mb-2">
+
+<input id="price" placeholder="Preço"
+  class="border p-2 w-full mb-2">
+
+<input id="image" placeholder="URL da imagem"
+  class="border p-2 w-full mb-2">
+
+<button onclick="addProduct()"
+  class="bg-black text-white px-4 py-2">
+Adicionar Produto
+</button>
+
+<script>
+function addProduct() {
+  const products = JSON.parse(localStorage.getItem("products")) || [];
+
+  products.push({
+    id: Date.now().toString(),
+    name: name.value,
+    price: Number(price.value),
+    image: image.value
+  });
+
+  localStorage.setItem("products", JSON.stringify(products));
+  alert("Produto cadastrado!");
+}
+</script>
+
+</body>
+</html>
