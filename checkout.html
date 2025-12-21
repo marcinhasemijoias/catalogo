@@ -1,3 +1,33 @@
-let discount = payment==='pix'
-  ? subtotal * (store.pixDiscount || 0) / 100
-  : 0;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Finalizar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#FDFBF7] text-[#2D2926]">
+
+<main class="max-w-md mx-auto px-6 py-10 space-y-4">
+
+<input id="name" class="w-full border p-3" placeholder="Nome">
+<button onclick="send()" class="w-full bg-black text-white py-4 text-xs uppercase">
+Finalizar no WhatsApp
+</button>
+
+</main>
+
+<script>
+const store = JSON.parse(localStorage.getItem('store_config')) || {};
+const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+function send(){
+  let msg = `Pedido - ${store.name}\n`;
+  cart.forEach(p=>msg+=`${p.qty}x ${p.name}\n`);
+  window.open(`https://wa.me/${store.whatsapp}?text=${encodeURIComponent(msg)}`);
+}
+</script>
+
+</body>
+</html>
