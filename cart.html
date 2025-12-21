@@ -19,16 +19,12 @@
 
     <main class="max-w-4xl mx-auto p-6 lg:py-12">
         <div id="cartContent" class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            
             <div class="lg:col-span-2 space-y-6">
-                <div id="cartList" class="space-y-4">
-                    </div>
+                <div id="cartList" class="space-y-4"></div>
             </div>
-
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white border border-[#E5E1DB] p-6 shadow-sm sticky top-6">
                     <h2 class="font-serif text-xl mb-4">Resumo</h2>
-                    
                     <div class="space-y-2 text-sm border-b border-[#FDFBF7] pb-4 mb-4">
                         <div class="flex justify-between">
                             <span class="text-[#8C857B]">Subtotal</span>
@@ -39,23 +35,16 @@
                             <span id="pixSavings">- R$ 0,00</span>
                         </div>
                     </div>
-
                     <div class="flex justify-between items-end mb-6">
                         <span class="text-xs uppercase tracking-widest">Total PIX</span>
                         <span id="total" class="text-2xl font-serif text-[#A68966]">R$ 0,00</span>
                     </div>
-
                     <div class="space-y-4">
                         <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none focus:border-[#A68966] bg-transparent">
-                        
                         <button onclick="checkout()" class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-4 hover:bg-[#333] transition">
                             Finalizar via WhatsApp
                         </button>
                     </div>
-                    
-                    <p class="text-[9px] text-center text-[#8C857B] mt-4 uppercase tracking-tighter">
-                        Você será redirecionado para o atendimento humano.
-                    </p>
                 </div>
             </div>
         </div>
@@ -72,11 +61,9 @@
                     <div class="col-span-full text-center py-20">
                         <p class="font-serif text-xl text-[#8C857B]">Seu carrinho está vazio.</p>
                         <a href="index.html" class="mt-4 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2">Explorar Joias</a>
-                    </div>
-                `;
+                    </div>`;
                 return;
             }
-
             let subtotal = 0;
             list.innerHTML = cart.map((item, index) => {
                 subtotal += item.price * item.qty;
@@ -93,13 +80,10 @@
                             </div>
                         </div>
                         <button onclick="removeItem(${index})" class="text-gray-300 hover:text-red-500 transition">✕</button>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
-
             const savings = subtotal * (pixDiscount / 100);
             const totalValue = subtotal - savings;
-
             document.getElementById("subtotal").innerText = `R$ ${subtotal.toFixed(2)}`;
             document.getElementById("pixSavings").innerText = `- R$ ${savings.toFixed(2)}`;
             document.getElementById("total").innerText = `R$ ${totalValue.toFixed(2)}`;
@@ -123,56 +107,35 @@
 
         function checkout() {
             const name = document.getElementById("customerName").value;
-            if (!name) return alert("Por favor, digite seu nome para o atendimento.");
-
+            if (!name) return alert("Por favor, digite seu nome.");
             const whatsapp = localStorage.getItem("whatsapp");
-            const storeName = localStorage.getItem("storeName") || "Marcinha Semijoias";
+            if (!whatsapp) return alert("Erro: WhatsApp não configurado.");
             
-            if (!whatsapp) return alert("Erro: WhatsApp da loja não configurado no painel.");
-
             const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
             const savings = subtotal * (pixDiscount / 100);
             const finalTotal = (subtotal - savings).toFixed(2);
 
-            // Registro no Relatório (Painel Admin)
-            const newOrder = {
-                customerName: name,
-                date: new Date().toLocaleString('pt-BR'),
-                itemCount: cart.reduce((a, b) => a + b.qty, 0),
-                total: finalTotal,
-                items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price }))
-            };
-
+            // Gerar Pedido para o Admin
             const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-            orders.unshift(newOrder);
+            orders.unshift({ customerName: name, date: new Date().toLocaleString('pt-BR'), itemCount: cart.reduce((a, b) => a + b.qty, 0), total: finalTotal, items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })) });
             localStorage.setItem("orders", JSON.stringify(orders));
 
             // Baixa no Estoque
             let products = JSON.parse(localStorage.getItem("products") || "[]");
-            cart.forEach(cartItem => {
-                const pIndex = products.findIndex(p => p.id === cartItem.id);
-                if (pIndex !== -1) {
-                    products[pIndex].stock = (products[pIndex].stock || 0) - cartItem.qty;
-                }
+            cart.forEach(cItem => {
+                const pIdx = products.findIndex(p => p.id === cItem.id);
+                if (pIdx !== -1) products[pIdx].stock -= cItem.qty;
             });
             localStorage.setItem("products", JSON.stringify(products));
 
-            // Mensagem WhatsApp
-            let msg = `*Pedido: ${storeName}*\n`;
-            msg += `*Cliente:* ${name}\n`;
-            msg += `--------------------------\n`;
-            cart.forEach(i => {
-                msg += `${i.qty}x ${i.name} - R$ ${(i.price * i.qty).toFixed(2)}\n`;
-            });
-            msg += `--------------------------\n`;
-            msg += `*Total com Desconto PIX: R$ ${finalTotal}*`;
-
-            const url = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msg)}`;
+            // WhatsApp
+            let msg = `*Novo Pedido*\n*Cliente:* ${name}\n---\n`;
+            cart.forEach(i => msg += `${i.qty}x ${i.name} - R$ ${(i.price * i.qty).toFixed(2)}\n`);
+            msg += `---\n*Total: R$ ${finalTotal}*`;
             
             localStorage.removeItem("cart");
-            window.location.href = url;
+            window.location.href = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msg)}`;
         }
-
         renderCart();
     </script>
 </body>
