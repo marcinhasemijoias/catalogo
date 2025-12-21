@@ -1,95 +1,87 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Loja</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>Marcinha Semijoias | Catálogo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-[#FDFBF7] text-[#111111] font-sans">
 
-<header class="text-center py-10 border-b border-[#E5E1DB]">
-  <h1 class="font-serif text-3xl tracking-wide" id="storeName">
-    Nome da Loja
-  </h1>
-  <p class="text-xs tracking-[0.3em] uppercase text-[#8C857B] mt-2">
-    Joias selecionadas • Pedido via WhatsApp
-  </p>
+    <header class="text-center py-10 border-b border-[#E5E1DB] bg-white">
+        <h1 class="font-serif text-3xl tracking-wide uppercase" id="displayStoreName">
+            <script>document.write(localStorage.getItem("storeName") || "Minha Loja")</script>
+        </h1>
+        <p class="text-[10px] tracking-[0.3em] uppercase text-[#8C857B] mt-2">
+            Joias selecionadas • Pedido via WhatsApp
+        </p>
 
-  <a href="../cart.html"
-     class="mt-6 inline-block text-xs tracking-widest uppercase border px-6 py-2">
-    Carrinho (<span id="cartCount">0</span>)
-  </a>
-</header>
+        <a href="../cart.html" class="mt-6 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2 hover:bg-[#111111] hover:text-white transition">
+            Carrinho (<span id="cartCount">0</span>)
+        </a>
+    </header>
 
-<main class="max-w-6xl mx-auto px-6 py-16 grid gap-12 sm:grid-cols-2 md:grid-cols-3"
-      id="productGrid">
-</main>
+    <main class="max-w-6xl mx-auto px-6 py-16 grid gap-12 sm:grid-cols-2 md:grid-cols-3" id="productGrid">
+        </main>
 
+    <script>
+        const products = JSON.parse(localStorage.getItem("products")) || [];
+        const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        const pixDiscount = Number(localStorage.getItem("pixDiscount") || 0);
+        const maxInstallments = Number(localStorage.getItem("maxInstallments") || 1);
 
-<header class="p-4 text-center border-b relative">
-  <h1 class="text-2xl font-serif">
-    <script>document.write(localStorage.getItem("storeName") || "Minha Loja")</script>
-  </h1>
+        // Atualiza contador do carrinho
+        document.getElementById("cartCount").innerText = cart.reduce((a, b) => a + b.qty, 0);
 
-  <a href="../cart.html" class="absolute top-4 right-4 text-sm">
-    🛒 Carrinho (<span id="cartCount">0</span>)
-  </a>
-</header>
+        const container = document.getElementById("productGrid");
 
-<main id="products"
-  class="max-w-4xl mx-auto p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-</main>
+        if (products.length === 0) {
+            container.innerHTML = `<p class="col-span-full text-center text-[#8C857B] italic">Nenhum produto cadastrado no momento.</p>`;
+        }
 
-<script>
-const products = JSON.parse(localStorage.getItem("products")) || [];
-const cart = JSON.parse(localStorage.getItem("cart")) || [];
+        products.forEach(p => {
+            const pixPrice = (p.price * (1 - pixDiscount / 100)).toFixed(2);
+            const installment = (p.price / maxInstallments).toFixed(2);
 
-const pixDiscount = Number(localStorage.getItem("pixDiscount") || 0);
-const maxInstallments = Number(localStorage.getItem("maxInstallments") || 1);
+            container.innerHTML += `
+                <div class="bg-white p-6 border border-[#E5E1DB] text-center space-y-4 shadow-sm hover:shadow-md transition">
+                    <img src="${p.image}" class="h-64 w-full object-contain mx-auto">
+                    <div class="space-y-1">
+                        <h3 class="font-serif text-lg uppercase tracking-tight">${p.name}</h3>
+                        <p class="text-[10px] text-[#8C857B] tracking-widest uppercase">SKU: ${p.sku || '---'}</p>
+                    </div>
 
-document.getElementById("cartCount").innerText =
-  cart.reduce((a, b) => a + b.qty, 0);
+                    <div class="py-2">
+                        <p class="text-xs text-gray-400 line-through">R$ ${p.price.toFixed(2)}</p>
+                        <p class="text-[#A68966] font-bold text-xl">PIX R$ ${pixPrice}</p>
+                        <p class="text-[10px] text-[#8C857B] uppercase tracking-wider">
+                            ou ${maxInstallments}x de R$ ${installment}
+                        </p>
+                    </div>
 
-const container = document.getElementById("products");
+                    <button onclick="addToCart('${p.id}')" 
+                            class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-3 hover:bg-[#333] transition">
+                        Adicionar ao Carrinho
+                    </button>
+                </div>
+            `;
+        });
 
-products.forEach(p => {
-  const pixPrice = (p.price * (1 - pixDiscount / 100)).toFixed(2);
-  const installment = (p.price / maxInstallments).toFixed(2);
+        function addToCart(id) {
+            const p = products.find(x => x.id === id);
+            const cartItem = cart.find(x => x.id === id);
 
-  container.innerHTML += `
-    <div class="border bg-white p-4 text-center space-y-2">
-      <img src="${p.image}" class="h-40 mx-auto object-contain">
-      <h3>${p.name}</h3>
+            if (cartItem) {
+                cartItem.qty++;
+            } else {
+                cart.push({ ...p, qty: 1 });
+            }
 
-      <p class="text-sm">R$ ${p.price.toFixed(2)}</p>
-      <p class="text-green-600 text-sm">
-        PIX: R$ ${pixPrice}
-      </p>
-      <p class="text-xs text-gray-500">
-        ou ${maxInstallments}x de R$ ${installment}
-      </p>
-
-      <button onclick="add('${p.id}')"
-        class="bg-black text-white px-4 py-2 text-sm">
-        Adicionar
-      </button>
-    </div>
-  `;
-});
-
-function add(id) {
-  const p = products.find(x => x.id === id);
-  const item = cart.find(x => x.id === id);
-
-  if (item) item.qty++;
-  else cart.push({ ...p, qty: 1 });
-
-  localStorage.setItem("cart", JSON.stringify(cart));
-  location.reload();
-}
-</script>
-
+            localStorage.setItem("cart", JSON.stringify(cart));
+            // Atualiza apenas o contador sem recarregar a página toda (UX melhor)
+            document.getElementById("cartCount").innerText = cart.reduce((a, b) => a + b.qty, 0);
+            alert("Produto adicionado!");
+        }
+    </script>
 </body>
 </html>
