@@ -6,7 +6,6 @@
   <title>Painel Admin — Catálogo Premium</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css">
   <style>
-    /* Ajustes finos de tipografia e cores premium */
     body { background-color: #FDFBF7; color: #111111; font-family: system-ui, sans-serif; }
     h1, h2, h3 { font-family: serif; letter-spacing: 0.05em; }
     .price-pix { color: #A68966; font-weight: bold; }
@@ -73,8 +72,8 @@
             <input type="text" id="productParcel">
           </div>
           <div>
-            <label class="text-sm font-semibold mb-1 block">Imagem (URL)</label>
-            <input type="text" id="productImage" required>
+            <label class="text-sm font-semibold mb-1 block">Imagem do Produto</label>
+            <input type="file" id="productImage" accept="image/*" required>
           </div>
           <div class="flex justify-end space-x-3 mt-4">
             <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded">Cancelar</button>
@@ -88,7 +87,6 @@
 
   <!-- SCRIPT -->
   <script>
-    // Arrays simulando DB local
     let products = [];
     let orders = [];
 
@@ -98,6 +96,7 @@
     const productForm = document.getElementById('productForm');
     const addProductBtn = document.getElementById('addProductBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
+    const productImageInput = document.getElementById('productImage');
 
     // Abrir modal
     addProductBtn.addEventListener('click', () => {
@@ -113,17 +112,29 @@
     // Adicionar produto
     productForm.addEventListener('submit', (e) => {
       e.preventDefault();
+
       const name = document.getElementById('productName').value;
       const price = parseFloat(document.getElementById('productPrice').value);
       const pix = parseFloat(document.getElementById('productPix').value) || null;
       const parcel = document.getElementById('productParcel').value;
-      const image = document.getElementById('productImage').value;
 
-      const newProduct = { id: Date.now(), name, price, pix, parcel, image };
-      products.push(newProduct);
-      renderProducts();
-      productModal.classList.add('hidden');
-      productForm.reset();
+      // Upload da imagem para DataURL
+      const file = productImageInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(event) {
+        const image = event.target.result;
+
+        const newProduct = { id: Date.now(), name, price, pix, parcel, image };
+        products.push(newProduct);
+        renderProducts();
+        productModal.classList.add('hidden');
+        productForm.reset();
+      };
+
+      if (file) {
+        reader.readAsDataURL(file);
+      }
     });
 
     // Renderizar produtos
@@ -155,7 +166,6 @@
       document.getElementById('productPrice').value = p.price;
       document.getElementById('productPix').value = p.pix || '';
       document.getElementById('productParcel').value = p.parcel || '';
-      document.getElementById('productImage').value = p.image;
       productModal.classList.remove('hidden');
       deleteProduct(id);
     }
@@ -166,7 +176,6 @@
       renderProducts();
     }
 
-    // Inicial
     renderProducts();
   </script>
 
