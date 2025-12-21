@@ -2,100 +2,50 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel Administrativo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-[#FDFBF7] text-[#2D2926]">
+<body class="p-4 bg-neutral-100">
 
-<header class="bg-white border-b px-6 py-4 flex justify-between">
-  <h1 class="text-sm tracking-[0.4em] uppercase">Painel Administrativo</h1>
-  <a href="../loja/" class="text-xs text-[#A68966]">Ver Loja</a>
-</header>
+<h1 class="text-xl mb-4 font-serif">Painel Administrativo</h1>
 
-<main class="max-w-3xl mx-auto p-6 space-y-10">
+<input placeholder="Nome da Loja"
+  class="border p-2 w-full mb-2"
+  oninput="localStorage.setItem('storeName', this.value)">
 
-<section class="bg-white border p-6 space-y-4">
-<h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Dados da Loja</h2>
+<input placeholder="WhatsApp da Loja"
+  class="border p-2 w-full mb-4"
+  oninput="localStorage.setItem('storePhone', this.value)">
 
-<input id="storeName" class="w-full border-b p-2" placeholder="Nome da Loja">
-<input id="storeWhatsapp" class="w-full border-b p-2" placeholder="WhatsApp (5511999999999)">
-<input id="pixDiscount" type="number" class="w-full border-b p-2" placeholder="Desconto PIX (%)">
-<input id="maxInstallments" type="number" class="w-full border-b p-2" placeholder="Parcelas no cartão">
+<hr class="my-4">
 
-<button onclick="saveStore()" class="bg-black text-white px-4 py-2 text-xs uppercase">
-Salvar Configurações
+<h2 class="mb-2">Novo Produto</h2>
+
+<input id="name" placeholder="Nome" class="border p-2 w-full mb-2">
+<input id="price" placeholder="Preço" class="border p-2 w-full mb-2">
+<input id="image" placeholder="URL da Imagem" class="border p-2 w-full mb-2">
+
+<button onclick="add()" class="bg-black text-white px-4 py-2">
+Adicionar
 </button>
-</section>
-
-<section class="bg-white border p-6 space-y-4">
-<h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Produto</h2>
-
-<input id="prodName" class="w-full border-b p-2" placeholder="Nome do Produto">
-<input id="prodSku" class="w-full border-b p-2" placeholder="SKU">
-<input id="prodPrice" class="w-full border-b p-2" placeholder="Preço (ex: 12.50)">
-<input id="prodImg" type="file" accept="image/*">
-
-<button onclick="addProduct()" class="bg-black text-white px-4 py-2 text-xs uppercase">
-Adicionar Produto
-</button>
-</section>
-
-<section class="bg-white border p-6">
-<h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Produtos</h2>
-<div id="productList"></div>
-</section>
-
-</main>
 
 <script>
-const STORE_KEY = 'store_config';
-const PRODUCT_KEY = 'store_products';
+function add() {
+  const products = JSON.parse(localStorage.getItem("products")) || [];
 
-function saveStore(){
-  localStorage.setItem(STORE_KEY, JSON.stringify({
-    name: storeName.value,
-    whatsapp: storeWhatsapp.value,
-    pixDiscount: Number(pixDiscount.value)/100,
-    maxInstallments: Number(maxInstallments.value)
-  }));
-  alert('Configurações salvas');
-}
-
-function addProduct(){
-  if(!prodImg.files[0]) return alert('Selecione uma imagem');
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const products = JSON.parse(localStorage.getItem(PRODUCT_KEY) || '[]');
-    products.push({
-      id: Date.now(),
-      name: prodName.value,
-      sku: prodSku.value,
-      price: Number(prodPrice.value),
-      image: reader.result
-    });
-    localStorage.setItem(PRODUCT_KEY, JSON.stringify(products));
-    renderProducts();
-  };
-  reader.readAsDataURL(prodImg.files[0]);
-}
-
-function renderProducts(){
-  const products = JSON.parse(localStorage.getItem(PRODUCT_KEY) || '[]');
-  productList.innerHTML = '';
-  products.forEach(p=>{
-    productList.innerHTML += `
-      <div class="flex justify-between text-xs border-b py-2">
-        <span>${p.name} — R$ ${p.price.toFixed(2)}</span>
-      </div>`;
+  products.push({
+    id: Date.now().toString(),
+    name: name.value,
+    price: Number(price.value),
+    image: image.value
   });
-}
 
-renderProducts();
+  localStorage.setItem("products", JSON.stringify(products));
+  alert("Produto salvo");
+}
 </script>
 
 </body>
 </html>
-
