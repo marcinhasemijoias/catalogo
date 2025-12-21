@@ -1,62 +1,67 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Catálogo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>Loja</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-[#FDFBF7] text-[#2D2926]">
+<body class="bg-neutral-50">
 
-<header class="relative text-center py-8 border-b">
-  <h1 id="storeName" class="text-2xl font-serif">Catálogo</h1>
-  <a href="../cart.html" class="absolute top-8 right-6 text-xs uppercase">
-    Carrinho (<span id="cartCount">0</span>)
+<header class="p-4 text-center border-b relative">
+  <h1 id="storeName" class="text-2xl font-serif">Minha Loja</h1>
+
+  <a href="../cart.html"
+     class="absolute top-4 right-4 text-sm">
+    🛒 Carrinho (<span id="cartCount">0</span>)
   </a>
 </header>
 
-<main id="grid" class="max-w-6xl mx-auto px-6 py-10 grid gap-8 sm:grid-cols-2 md:grid-cols-3"></main>
+<main class="max-w-4xl mx-auto p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+      id="productList"></main>
 
 <script>
-const store = JSON.parse(localStorage.getItem('store_config')) || {};
-const products = JSON.parse(localStorage.getItem('store_products')) || [];
-let cart = JSON.parse(localStorage.getItem('cart')) || [];
+const storeName = localStorage.getItem("storeName") || "Minha Loja";
+document.getElementById("storeName").innerText = storeName;
 
-storeName.innerText = store.name || 'Catálogo';
+const products = JSON.parse(localStorage.getItem("products")) || [];
+const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-function format(v){
-  return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-}
+document.getElementById("cartCount").innerText =
+  cart.reduce((a, b) => a + b.qty, 0);
 
-function addToCart(id){
-  const p = products.find(x=>x.id===id);
-  const item = cart.find(x=>x.id===id);
-  if(item) item.qty++;
-  else cart.push({...p,qty:1});
-  localStorage.setItem('cart',JSON.stringify(cart));
-  updateCart();
-}
+const list = document.getElementById("productList");
 
-function updateCart(){
-  cartCount.innerText = cart.reduce((s,i)=>s+i.qty,0);
-}
+products.forEach(p => {
+  const card = document.createElement("div");
+  card.className = "border bg-white p-4 text-center space-y-2";
 
-products.forEach(p=>{
-  const pixPrice = p.price - (p.price * (store.pixDiscount||0));
-  grid.innerHTML += `
-    <div class="bg-white border p-6 text-center space-y-4">
-      <img src="${p.image}" class="h-40 mx-auto object-contain">
-      <p class="uppercase text-sm">${p.name}</p>
-      <p class="text-gray-400 line-through">${format(p.price)}</p>
-      <p class="text-green-700">PIX ${format(pixPrice)}</p>
-      <button onclick="addToCart(${p.id})" class="bg-black text-white px-4 py-2 text-xs">
-        Adicionar
-      </button>
-    </div>`;
+  card.innerHTML = `
+    <img src="${p.image}" class="w-full h-40 object-contain" />
+    <h3 class="font-medium">${p.name}</h3>
+    <p class="text-sm text-gray-500">R$ ${p.price}</p>
+    <button class="bg-black text-white px-4 py-2 text-sm"
+      onclick="addToCart('${p.id}')">
+      Adicionar
+    </button>
+  `;
+  list.appendChild(card);
 });
 
-updateCart();
+function addToCart(id) {
+  const product = products.find(p => p.id === id);
+  const item = cart.find(i => i.id === id);
+
+  if (item) {
+    item.qty++;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  location.reload();
+}
 </script>
 
 </body>
