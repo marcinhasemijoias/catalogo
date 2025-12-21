@@ -141,40 +141,45 @@
             reader.readAsDataURL(e.target.files[0]);
         };
 
-        function addProduct() {
-            const id = document.getElementById('editId').value;
-            const name = document.getElementById('pName').value;
-            const sku = document.getElementById('pSku').value;
-            const price = document.getElementById('pPrice').value;
-            const stock = document.getElementById('pStock').value;
+       function addProduct() {
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('pName').value;
+    const sku = document.getElementById('pSku').value;
+    const price = document.getElementById('pPrice').value;
+    const stock = document.getElementById('pStock').value;
 
-            if (!name || !price) return alert("Nome e Preço são campos obrigatórios.");
+    if (!name || !price) return alert("Nome e Preço são campos obrigatórios.");
 
-            let products = JSON.parse(localStorage.getItem('products') || '[]');
+    let products = JSON.parse(localStorage.getItem('products') || '[]');
 
-            if (id) {
-                const index = products.findIndex(p => p.id === id);
-                products[index] = { 
-                    ...products[index], 
-                    name, sku, 
-                    price: parseFloat(price), 
-                    stock: parseInt(stock) || 0,
-                    image: currentImgBase64 || products[index].image
-                };
-            } else {
-                if(!currentImgBase64) return alert("Por favor, selecione uma imagem.");
-                products.push({
-                    id: Date.now().toString(),
-                    name, sku,
-                    price: parseFloat(price),
-                    stock: parseInt(stock) || 0,
-                    image: currentImgBase64
-                });
-            }
+    if (id) {
+        // Modo Edição
+        const index = products.findIndex(p => p.id === id);
+        products[index] = { 
+            ...products[index], 
+            name, 
+            sku, 
+            price: parseFloat(price), 
+            stock: parseInt(stock) || 0,
+            image: currentImgBase64 || products[index].image
+        };
+    } else {
+        // Modo Novo
+        if(!currentImgBase64) return alert("Por favor, selecione uma imagem.");
+        products.push({
+            id: Date.now().toString(),
+            name, 
+            sku,
+            price: parseFloat(price),
+            stock: parseInt(stock) || 0,
+            image: currentImgBase64
+        });
+    }
 
-            localStorage.setItem('products', JSON.stringify(products));
-            resetForm();
-            renderProducts();
+    localStorage.setItem('products', JSON.stringify(products));
+    resetForm();
+    renderProducts();
+    alert("Catálogo atualizado!");
         }
 
         function editProduct(id) {
