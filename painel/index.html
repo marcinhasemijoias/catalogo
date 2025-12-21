@@ -1,190 +1,177 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Admin — Catálogo Premium</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css">
-  <style>
-    body { background-color: #FDFBF7; color: #111111; font-family: system-ui, sans-serif; }
-    h1, h2, h3 { font-family: serif; letter-spacing: 0.05em; }
-    .price-pix { color: #A68966; font-weight: bold; }
-    .price-parcel { color: #8C857B; }
-    .btn-primary { background-color: #111111; color: #FDFBF7; }
-    .btn-primary:hover { background-color: #A68966; color: #FDFBF7; }
-    .card { background-color: #fff; border: 1px solid #E5E1DB; border-radius: 12px; overflow: hidden; transition: transform 0.2s; }
-    .card:hover { transform: translateY(-5px); }
-    input, select, textarea { border: 1px solid #E5E1DB; padding: 0.5rem; border-radius: 6px; width: 100%; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin — Catálogo Premium</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css">
+<style>
+  body { background-color: #FDFBF7; color: #111111; font-family: system-ui, sans-serif; }
+  h1, h2, h3 { font-family: serif; letter-spacing: 0.05em; }
+  .price-pix { color: #A68966; font-weight: bold; }
+  .price-parcel { color: #8C857B; }
+  .btn-primary { background-color: #111111; color: #FDFBF7; font-weight: bold; transition: 0.2s; }
+  .btn-primary:hover { background-color: #A68966; color: #FDFBF7; }
+  .card { background-color: #fff; border: 1px solid #E5E1DB; border-radius: 16px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+  input, select, textarea { border: 1px solid #E5E1DB; padding: 0.5rem; border-radius: 6px; width: 100%; background-color: #FDFBF7; }
+  label { font-weight: 600; }
+  .modal-bg { backdrop-filter: blur(4px); }
+</style>
 </head>
 <body class="bg-[#FDFBF7] text-[#111111]">
 
-  <!-- HEADER -->
-  <header class="text-center py-10 border-b border-[#E5E1DB]">
-    <h1 class="font-serif text-3xl tracking-wide" id="storeName">Catálogo Lux</h1>
-    <p class="text-xs tracking-[0.3em] uppercase text-[#8C857B] mt-2">
-      Joias selecionadas • Painel Administrativo
-    </p>
-  </header>
+<!-- HEADER -->
+<header class="text-center py-10 border-b border-[#E5E1DB]">
+  <h1 class="font-serif text-4xl tracking-wide" id="storeName">Catálogo Boutique</h1>
+  <p class="text-xs tracking-[0.3em] uppercase text-[#8C857B] mt-2">
+    Joias selecionadas • Painel Administrativo
+  </p>
+</header>
 
-  <!-- MAIN -->
-  <main class="max-w-6xl mx-auto px-6 py-12">
+<main class="max-w-7xl mx-auto px-6 py-12">
 
-    <!-- SEÇÃO DE PRODUTOS -->
-    <section class="mb-12">
-      <h2 class="font-serif text-2xl tracking-wide mb-6">Produtos</h2>
-      <div id="productGrid" class="grid gap-8 sm:grid-cols-2 md:grid-cols-3"></div>
-
-      <button id="addProductBtn" class="mt-6 btn-primary px-6 py-2 rounded tracking-widest uppercase">
-        Adicionar Produto
-      </button>
-    </section>
-
-    <!-- SEÇÃO DE PEDIDOS / RELATÓRIOS -->
-    <section class="mb-12">
-      <h2 class="font-serif text-2xl tracking-wide mb-6">Pedidos / Relatórios</h2>
-      <div id="ordersList" class="space-y-4"></div>
-    </section>
-
-    <!-- MODAL DE PRODUTO -->
-    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-      <div class="bg-[#FDFBF7] rounded-xl p-8 w-full max-w-lg relative">
-        <h3 class="font-serif text-xl mb-4">Adicionar / Editar Produto</h3>
-        <form id="productForm" class="space-y-4">
-          <div>
-            <label class="text-sm font-semibold mb-1 block">Nome do Produto</label>
-            <input type="text" id="productName" required>
-          </div>
-          <div>
-            <label class="text-sm font-semibold mb-1 block">Preço (R$)</label>
-            <input type="number" id="productPrice" step="0.01" required>
-          </div>
-          <div>
-            <label class="text-sm font-semibold mb-1 block">Desconto PIX (R$)</label>
-            <input type="number" id="productPix" step="0.01">
-          </div>
-          <div>
-            <label class="text-sm font-semibold mb-1 block">Parcelamento Cartão</label>
-            <input type="text" id="productParcel">
-          </div>
-          <div>
-            <label class="text-sm font-semibold mb-1 block">Imagem do Produto</label>
-            <input type="file" id="productImage" accept="image/*">
-          </div>
-          <div class="flex justify-end space-x-3 mt-4">
-            <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded">Cancelar</button>
-            <button type="submit" class="btn-primary px-4 py-2 rounded">Salvar</button>
-          </div>
-        </form>
-      </div>
+  <!-- SEÇÃO DE PRODUTOS -->
+  <section class="mb-16">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="font-serif text-2xl tracking-wide">Produtos</h2>
+      <button id="addProductBtn" class="btn-primary px-6 py-2 rounded tracking-widest uppercase">Adicionar Produto</button>
     </div>
 
-  </main>
+    <div id="productGrid" class="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"></div>
+  </section>
 
-  <script>
-    let products = [];
-    let orders = [];
+  <!-- SEÇÃO DE PEDIDOS -->
+  <section>
+    <h2 class="font-serif text-2xl tracking-wide mb-6">Pedidos / Relatórios</h2>
+    <div id="ordersList" class="space-y-4"></div>
+  </section>
 
-    const productGrid = document.getElementById('productGrid');
-    const ordersList = document.getElementById('ordersList');
-    const productModal = document.getElementById('productModal');
-    const productForm = document.getElementById('productForm');
-    const addProductBtn = document.getElementById('addProductBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const productImageInput = document.getElementById('productImage');
+</main>
 
-    // Abrir modal
-    addProductBtn.addEventListener('click', () => {
-      productModal.classList.remove('hidden');
-    });
+<!-- MODAL DE PRODUTO -->
+<div id="productModal" class="fixed inset-0 hidden items-center justify-center z-50 modal-bg bg-black bg-opacity-30">
+  <div class="bg-[#FDFBF7] rounded-2xl p-8 w-full max-w-lg shadow-lg">
+    <h3 class="font-serif text-2xl mb-6 text-center">Adicionar / Editar Produto</h3>
+    <form id="productForm" class="space-y-4">
+      <div>
+        <label>Nome do Produto</label>
+        <input type="text" id="productName" required>
+      </div>
+      <div>
+        <label>Preço (R$)</label>
+        <input type="number" id="productPrice" step="0.01" required>
+      </div>
+      <div>
+        <label>Desconto PIX (R$)</label>
+        <input type="number" id="productPix" step="0.01">
+      </div>
+      <div>
+        <label>Parcelamento Cartão</label>
+        <input type="text" id="productParcel">
+      </div>
+      <div>
+        <label>Imagem do Produto</label>
+        <input type="file" id="productImage" accept="image/*">
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded tracking-wide">Cancelar</button>
+        <button type="submit" class="btn-primary px-6 py-2 rounded tracking-wide">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-    // Fechar modal
-    closeModalBtn.addEventListener('click', () => {
+<script>
+  let products = [];
+  let orders = [];
+
+  const productGrid = document.getElementById('productGrid');
+  const ordersList = document.getElementById('ordersList');
+  const productModal = document.getElementById('productModal');
+  const productForm = document.getElementById('productForm');
+  const addProductBtn = document.getElementById('addProductBtn');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const productImageInput = document.getElementById('productImage');
+
+  addProductBtn.addEventListener('click', () => productModal.classList.remove('hidden'));
+  closeModalBtn.addEventListener('click', () => { productModal.classList.add('hidden'); productForm.reset(); });
+
+  productForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('productName').value;
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const pix = parseFloat(document.getElementById('productPix').value) || null;
+    const parcel = document.getElementById('productParcel').value;
+
+    const file = productImageInput.files[0];
+
+    const saveProduct = (imageData) => {
+      const newProduct = { id: Date.now(), name, price, pix, parcel, image: imageData || '' };
+      products.push(newProduct);
+      renderProducts();
       productModal.classList.add('hidden');
       productForm.reset();
+    };
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => saveProduct(e.target.result);
+      reader.readAsDataURL(file);
+    } else {
+      saveProduct(null);
+    }
+  });
+
+  function renderProducts() {
+    productGrid.innerHTML = '';
+    products.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card p-4 flex flex-col items-center text-center';
+      card.innerHTML = `
+        <img src="${p.image || 'https://via.placeholder.com/300'}" alt="${p.name}" class="w-full h-48 object-cover mb-4 rounded">
+        <h3 class="font-serif text-lg mb-1">${p.name}</h3>
+        <p class="text-base mb-1">R$ ${p.price.toFixed(2)}</p>
+        ${p.pix ? `<p class="price-pix mb-1">PIX R$ ${p.pix.toFixed(2)}</p>` : ''}
+        ${p.parcel ? `<p class="price-parcel mb-2">${p.parcel}</p>` : ''}
+        <div class="flex gap-2">
+          <button onclick="editProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Editar</button>
+          <button onclick="deleteProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Excluir</button>
+        </div>
+      `;
+      productGrid.appendChild(card);
     });
+  }
 
-    // Adicionar / Editar Produto
-    productForm.addEventListener('submit', (e) => {
-      e.preventDefault();
+  function editProduct(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('productName').value = p.name;
+    document.getElementById('productPrice').value = p.price;
+    document.getElementById('productPix').value = p.pix || '';
+    document.getElementById('productParcel').value = p.parcel || '';
+    productModal.classList.remove('hidden');
+    deleteProduct(id);
+  }
 
-      const name = document.getElementById('productName').value;
-      const price = parseFloat(document.getElementById('productPrice').value);
-      const pix = parseFloat(document.getElementById('productPix').value) || null;
-      const parcel = document.getElementById('productParcel').value;
-
-      const file = productImageInput.files[0];
-
-      const processProduct = (imageData) => {
-        const newProduct = { id: Date.now(), name, price, pix, parcel, image: imageData || '' };
-        products.push(newProduct);
-        renderProducts();
-        productModal.classList.add('hidden');
-        productForm.reset();
-      }
-
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => processProduct(event.target.result);
-        reader.readAsDataURL(file);
-      } else {
-        processProduct(null); // mantém produtos anteriores sem imagem nova
-      }
-    });
-
-    // Renderizar Produtos
-    function renderProducts() {
-      productGrid.innerHTML = '';
-      products.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'card p-4 flex flex-col items-center text-center';
-        card.innerHTML = `
-          <img src="${p.image || 'https://via.placeholder.com/300'}" alt="${p.name}" class="w-full h-48 object-cover mb-4 rounded">
-          <h3 class="font-serif text-lg mb-1">${p.name}</h3>
-          <p class="text-base mb-1">R$ ${p.price.toFixed(2)}</p>
-          ${p.pix ? `<p class="price-pix mb-1">PIX R$ ${p.pix.toFixed(2)}</p>` : ''}
-          ${p.parcel ? `<p class="price-parcel mb-2">${p.parcel}</p>` : ''}
-          <div class="flex gap-2">
-            <button onclick="editProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Editar</button>
-            <button onclick="deleteProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Excluir</button>
-          </div>
-        `;
-        productGrid.appendChild(card);
-      });
-    }
-
-    // Editar Produto
-    function editProduct(id) {
-      const p = products.find(x => x.id === id);
-      if (!p) return;
-      document.getElementById('productName').value = p.name;
-      document.getElementById('productPrice').value = p.price;
-      document.getElementById('productPix').value = p.pix || '';
-      document.getElementById('productParcel').value = p.parcel || '';
-      productModal.classList.remove('hidden');
-      deleteProduct(id);
-    }
-
-    // Excluir Produto
-    function deleteProduct(id) {
-      products = products.filter(p => p.id !== id);
-      renderProducts();
-    }
-
-    // Renderizar Pedidos (simulação)
-    function renderOrders() {
-      ordersList.innerHTML = '';
-      orders.forEach(o => {
-        const div = document.createElement('div');
-        div.className = 'p-4 bg-white border rounded';
-        div.innerHTML = `<strong>Pedido #${o.id}</strong> - Total: R$ ${o.total.toFixed(2)}`;
-        ordersList.appendChild(div);
-      });
-    }
-
+  function deleteProduct(id) {
+    products = products.filter(p => p.id !== id);
     renderProducts();
-    renderOrders();
-  </script>
+  }
+
+  function renderOrders() {
+    ordersList.innerHTML = '';
+    orders.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'p-4 bg-white border rounded';
+      div.innerHTML = `<strong>Pedido #${o.id}</strong> - Total: R$ ${o.total.toFixed(2)}`;
+      ordersList.appendChild(div);
+    });
+  }
+
+  renderProducts();
+  renderOrders();
+</script>
 
 </body>
 </html>
