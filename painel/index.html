@@ -193,7 +193,7 @@
         renderProducts();
     }
 }
-       function renderOrders() {
+      function renderOrders() {
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     const container = document.getElementById('ordersTable');
     
@@ -213,7 +213,6 @@
         </tr>`).join('');
 }
 
-// COLE A FUNÇÃO ABAIXO LOGO DEPOIS DA RENDERORDERS
 function printOrder(index) {
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
     const order = orders[index];
@@ -246,16 +245,27 @@ function printOrder(index) {
                 <div style="text-align:right; font-size:22px; margin-top:20px; border-top:2px solid #111; padding-top:10px">
                     <strong>TOTAL: R$ ${order.total}</strong>
                 </div>
-                <div style="margin-top:60px; text-align:center; font-size:11px; color:#999; border-top:1px dashed #ccc; padding-top:20px">
-                    Obrigado pela preferência!<br>Este é um documento informativo.
-                </div>
-                <script>window.onload = function() { window.print(); window.close(); }</script>
+                <script>window.onload = function() { window.print(); window.close(); }<\/script>
             </body>
         </html>
     `);
     printWindow.document.close();
 }
-        function deleteOrder(i) { let o = JSON.parse(localStorage.getItem('orders')); o.splice(i,1); localStorage.setItem('orders', JSON.stringify(o)); renderOrders(); }
-    </script>
+
+function deleteOrder(i) {
+    if(confirm("Excluir este registro de venda?")) {
+        let o = JSON.parse(localStorage.getItem('orders') || '[]');
+        o.splice(i, 1);
+        localStorage.setItem('orders', JSON.stringify(o));
+        renderOrders();
+    }
+}
+
+// Inicialização ao carregar a página
+window.onload = function() {
+    renderProducts();
+    renderOrders();
+};
+</script>
 </body>
 </html>
