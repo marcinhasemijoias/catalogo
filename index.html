@@ -1,232 +1,238 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Royal Joias - Coleção Exclusiva</title>
-
-  <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Fonts -->
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-    body { font-family: 'Inter', sans-serif; background:#FDFBF7; color:#2D2926; }
-    .font-serif { font-family:'Playfair Display', serif; }
-    .lux-border { border-color:#E5DACE; }
-    .lux-gold { color:#A68966; }
-    .cart-overlay { background:rgba(0,0,0,.5); backdrop-filter:blur(8px); position:fixed; inset:0; z-index:50; }
-    .payment-btn-active { border:2px solid #A68966!important; color:#A68966; font-weight:800; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Joias - Coleção Exclusiva</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #2D2926; overflow-x: hidden; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .lux-border { border-color: #E5DACE; }
+        .lux-gold { color: #A68966; }
+        .cart-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); position: fixed; inset: 0; z-index: 50; }
+        .payment-btn-active { border: 2px solid #A68966 !important; background: #FDFBF7; color: #A68966; font-weight: 800; }
+        input:focus { border-bottom-color: #A68966 !important; outline: none; }
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #E5DACE; }
+    </style>
 </head>
-
 <body>
-<div id="root"></div>
+    <div id="root"></div>
 
-<script type="text/babel">
-const { useState, useEffect } = React;
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-const Icon = ({ name, size=18 }) => {
-  useEffect(() => { window.lucide && window.lucide.createIcons(); }, [name]);
-  return <i data-lucide={name} style={{width:size,height:size}}></i>;
-};
+        const Icon = ({ name, size = 18, className = "" }) => {
+            useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{width: size, height: size}} className={`inline-block ${className}`}></i>;
+        };
 
-function App(){
+        function App() {
+            const [products, setProducts] = useState([]);
+            const [storeConfig, setStoreConfig] = useState({ name: 'Royal Joias', whatsapp: '', pixDiscount: 5, maxInstallments: 12 });
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [paymentMethod, setPaymentMethod] = useState('pix'); 
+            const [selectedInstallment, setSelectedInstallment] = useState(1);
+            const [customer, setCustomer] = useState({ name: '', phone: '' });
+            const [orderStep, setOrderStep] = useState('cart');
 
-  const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('pix');
-  const [installment, setInstallment] = useState(1);
-  const [step, setStep] = useState('cart');
-  const [sending, setSending] = useState(false);
+            useEffect(() => {
+                const savedProducts = localStorage.getItem('luxury_products');
+                const savedConfig = localStorage.getItem('luxury_config');
+                if (savedProducts) setProducts(JSON.parse(savedProducts));
+                if (savedConfig) setStoreConfig(JSON.parse(savedConfig));
+            }, []);
 
-  const [customer, setCustomer] = useState({
-    name:'',
-    phone:'',
-    notes:''
-  });
+            const formatMoney = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            const totalBase = cart.reduce((acc, item) => acc + parseFloat(item.price), 0);
+            const totalPix = totalBase * (1 - (storeConfig.pixDiscount / 100));
+            const valorFinal = paymentMethod === 'pix' ? totalPix : totalBase;
 
-  const storeConfig = {
-    name: 'Royal Joias',
-    whatsapp: '5599999999999',
-    pixDiscount: 5,
-    maxInstallments: 12
-  };
+            const maskPhone = (value) => {
+                let r = value.replace(/\D/g, "").substring(0, 11);
+                if (r.length > 10) r = r.replace(/^(\d{2})(\d{5})(\d{4}).*/, "($1) $2-$3");
+                else if (r.length > 5) r = r.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+                else if (r.length > 2) r = r.replace(/^(\d{2})(\d{0,5})/, "($1) $2");
+                else if (r.length > 0) r = r.replace(/^(\d*)/, "($1");
+                return r;
+            };
 
-  useEffect(() => {
-    const p = JSON.parse(localStorage.getItem('luxury_products') || '[]');
-    const c = JSON.parse(localStorage.getItem('luxury_cart') || '[]');
-    setProducts(p);
-    setCart(c);
-  }, []);
+            const handleFinalizeWhatsApp = () => {
+                if (!customer.name || customer.phone.length < 10) {
+                    alert("Por favor, preencha seu nome e WhatsApp corretamente.");
+                    return;
+                }
 
-  useEffect(() => {
-    localStorage.setItem('luxury_cart', JSON.stringify(cart));
-  }, [cart]);
+                // ESTRUTURA AJUSTADA PARA O ADMIN RECONHECER O CLIENTE E OS ITENS
+                const pedidoData = {
+                    id: `ORD-${Date.now()}`,
+                    date: new Date().toLocaleString('pt-BR'),
+                    customer: {
+                        name: customer.name,
+                        phone: customer.phone
+                    },
+                    items: cart, // Salva a lista de objetos para o PDF sair detalhado
+                    paymentMethod: paymentMethod === 'pix' ? 'PIX' : `${selectedInstallment}x Cartão`,
+                    total: valorFinal
+                };
 
-  const money = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+                const pedidosSalvos = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
+                localStorage.setItem('luxury_orders', JSON.stringify([pedidoData, ...pedidosSalvos]));
 
-  const totalBase = cart.reduce((a,i)=>a + i.price * i.quantity,0);
-  const totalPix = totalBase * (1 - storeConfig.pixDiscount/100);
-  const totalFinal = paymentMethod === 'pix' ? totalPix : totalBase;
+                const msg = `Olá! Gostaria de finalizar meu pedido na *${storeConfig.name}*:\n\n` +
+                            `*Nome:* ${customer.name}\n` +
+                            `*Itens:* ${cart.map(i => i.name).join(', ')}\n` +
+                            `*Pagamento:* ${pedidoData.paymentMethod}\n` +
+                            `*Total:* ${formatMoney(valorFinal)}\n\n` +
+                            `Aguardando confirmação!`;
 
-  const addToCart = (p) => {
-    const exists = cart.find(i => i.id === p.id);
-    if(exists){
-      setCart(cart.map(i => i.id === p.id ? {...i, quantity:i.quantity+1} : i));
-    } else {
-      setCart([...cart,{...p, quantity:1}]);
-    }
-    setIsCartOpen(true);
-  };
+                const waUrl = `https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(msg)}`;
 
-  const updateQty = (id, delta) => {
-    setCart(cart.map(i =>
-      i.id === id ? {...i, quantity: Math.max(1, i.quantity + delta)} : i
-    ));
-  };
+                setOrderStep('success');
+                setCart([]);
+                window.open(waUrl, '_blank');
+            };
 
-  const removeItem = id => setCart(cart.filter(i=>i.id!==id));
+            return (
+                <div className="min-h-screen">
+                    <header className="bg-white border-b lux-border py-8 px-6 sticky top-0 z-40 flex justify-between items-center shadow-sm">
+                        <div className="w-10"></div>
+                        <h1 className="text-2xl font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
+                        <button onClick={() => { setIsCartOpen(true); setOrderStep('cart'); }} className="lux-gold p-2">
+                            <Icon name="shopping-bag" size={24} />
+                            {cart.length > 0 && <span className="ml-2 text-[10px] font-bold text-black border-l pl-2">{cart.length}</span>}
+                        </button>
+                    </header>
 
-  const finalize = () => {
-    if(sending) return;
-    if(!customer.name || customer.phone.length < 10){
-      alert('Preencha seus dados corretamente.');
-      return;
-    }
+                    <main className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20">
+                        {products.map(product => (
+                            <div key={product.id} className="flex flex-col text-center border-b lux-border pb-10">
+                                <img src={product.image} className="aspect-square w-full object-cover mb-6 border lux-border shadow-sm" />
+                                <h3 className="font-serif text-xl tracking-widest uppercase mb-2">{product.name}</h3>
+                                <div className="mb-4">
+                                    <p className="text-xs text-gray-400 line-through">De {formatMoney(parseFloat(product.price))}</p>
+                                    <p className="lux-gold font-bold text-lg tracking-tighter">PIX: {formatMoney(product.price * (1 - storeConfig.pixDiscount/100))}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">Ou {storeConfig.maxInstallments}x de {formatMoney(product.price / storeConfig.maxInstallments)}</p>
+                                </div>
+                                <button onClick={() => {setCart([...cart, product]); setIsCartOpen(true); setOrderStep('cart');}} className="bg-[#2D2926] text-white py-4 text-[10px] uppercase tracking-[0.3em] font-bold">Adicionar à Sacola</button>
+                            </div>
+                        ))}
+                    </main>
 
-    setSending(true);
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-50">
+                            <div className="cart-overlay" onClick={() => orderStep !== 'success' && setIsCartOpen(false)}></div>
+                            <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col z-[60] p-8">
+                                
+                                {orderStep !== 'success' && (
+                                    <div className="flex justify-between items-center mb-10 border-b lux-border pb-4">
+                                        <h2 className="font-serif text-2xl uppercase tracking-widest">
+                                            {orderStep === 'cart' ? 'Sacola' : 'Finalizar'}
+                                        </h2>
+                                        <button onClick={() => setIsCartOpen(false)}><Icon name="x" size={24} /></button>
+                                    </div>
+                                )}
 
-    const order = {
-      id:'ORD-'+Date.now(),
-      date:new Date().toLocaleString('pt-BR'),
-      customer,
-      items:cart,
-      payment: paymentMethod === 'pix' ? 'PIX' : `${installment}x Cartão`,
-      total: totalFinal
-    };
+                                {orderStep === 'cart' && (
+                                    <div className="flex flex-col h-full">
+                                        <div className="flex-grow overflow-y-auto space-y-4 custom-scroll">
+                                            {cart.map((item, idx) => (
+                                                <div key={idx} className="flex gap-4 border-b lux-border pb-4 items-center">
+                                                    <img src={item.image} className="w-12 h-12 object-cover border" />
+                                                    <div className="flex-grow text-[10px] font-bold uppercase">{item.name}</div>
+                                                    <div className="text-xs lux-gold font-bold">{formatMoney(parseFloat(item.price))}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-6 space-y-3">
+                                            <div className="flex justify-between text-xs text-gray-400 uppercase tracking-widest"><span>Subtotal</span><span>{formatMoney(totalBase)}</span></div>
+                                            <div className="flex justify-between text-sm lux-gold font-bold uppercase tracking-widest border-t lux-border pt-2"><span>Total via PIX</span><span>{formatMoney(totalPix)}</span></div>
+                                            <button onClick={() => setOrderStep('checkout')} className="w-full bg-[#2D2926] text-white py-5 text-[10px] font-bold uppercase tracking-[0.2em] mt-4">Avançar para Checkout</button>
+                                        </div>
+                                    </div>
+                                )}
 
-    const saved = JSON.parse(localStorage.getItem('luxury_orders') || '[]');
-    localStorage.setItem('luxury_orders', JSON.stringify([order,...saved]));
+                                {orderStep === 'checkout' && (
+                                    <div className="flex flex-col h-full space-y-8">
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] uppercase text-gray-400 font-bold tracking-[0.1em]">Seus Dados</p>
+                                            <input className="w-full border-b lux-border bg-transparent py-2 text-sm" placeholder="Nome Completo" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} />
+                                            <div className="flex items-center gap-2 border-b lux-border py-1">
+                                                <span className="text-sm font-bold text-gray-400">+55</span>
+                                                <input className="w-full bg-transparent py-2 text-sm" placeholder="(99) 99999-9999" value={customer.phone} onChange={e => setCustomer({...customer, phone: maskPhone(e.target.value)})} />
+                                            </div>
+                                        </div>
 
-    const phone = storeConfig.whatsapp.replace(/\D/g,'');
-    const msg = `
-Pedido - ${storeConfig.name}
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] uppercase text-gray-400 font-bold tracking-[0.1em]">Pagamento</p>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button onClick={() => setPaymentMethod('pix')} className={`py-4 border text-[9px] font-bold uppercase tracking-widest ${paymentMethod === 'pix' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>PIX (-{storeConfig.pixDiscount}%)</button>
+                                                <button onClick={() => setPaymentMethod('card')} className={`py-4 border text-[9px] font-bold uppercase tracking-widest ${paymentMethod === 'card' ? 'payment-btn-active' : 'border-gray-100 text-gray-400'}`}>Cartão</button>
+                                            </div>
+                                            
+                                            {paymentMethod === 'card' && (
+                                                <div className="space-y-2 animate-in fade-in duration-300">
+                                                    <p className="text-[9px] uppercase text-gray-400">Escolha o parcelamento:</p>
+                                                    <select className="w-full border lux-border bg-transparent py-3 text-[10px] font-bold uppercase px-2 focus:ring-1 focus:ring-[#A68966]" value={selectedInstallment} onChange={e => setSelectedInstallment(e.target.value)}>
+                                                        {[...Array(parseInt(storeConfig.maxInstallments))].map((_, i) => (
+                                                            <option key={i+1} value={i+1}>{i+1}x de {formatMoney(totalBase / (i+1))} (Sem Juros)</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
 
-Cliente: ${customer.name}
-Itens:
-${cart.map(i=>`${i.quantity}x ${i.name} (${i.sku})`).join('\n')}
+                                        <div className="mt-auto border-t lux-border pt-6 space-y-2">
+                                            <div className="flex justify-between text-[10px] uppercase text-gray-400 tracking-widest">
+                                                <span>Subtotal Itens</span>
+                                                <span>{formatMoney(totalBase)}</span>
+                                            </div>
+                                            
+                                            {paymentMethod === 'pix' && (
+                                                <div className="flex justify-between text-[10px] uppercase text-green-600 font-bold tracking-widest">
+                                                    <span>Desconto PIX ({storeConfig.pixDiscount}%)</span>
+                                                    <span>-{formatMoney(totalBase - totalPix)}</span>
+                                                </div>
+                                            )}
 
-Pagamento: ${order.payment}
-Total: ${money(totalFinal)}
+                                            <div className="flex justify-between font-serif text-2xl uppercase mt-4">
+                                                <span>Total</span>
+                                                <span className="lux-gold font-bold">{formatMoney(valorFinal)}</span>
+                                            </div>
+                                            
+                                            <button onClick={handleFinalizeWhatsApp} className="w-full bg-[#2D2926] text-white py-6 text-[10px] font-bold uppercase tracking-[0.3em] shadow-xl active:scale-[0.98] transition-all mt-4">Finalizar via WhatsApp</button>
+                                        </div>
+                                    </div>
+                                )}
 
-Obs: ${customer.notes || 'Nenhuma'}
-`;
-
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
-
-    setTimeout(()=>{
-      setCart([]);
-      setStep('success');
-      setSending(false);
-    },800);
-  };
-
-  return (
-  <div>
-
-    <header className="bg-white border-b lux-border py-6 px-6 flex justify-between items-center sticky top-0 z-40">
-      <div></div>
-      <h1 className="font-serif tracking-[0.4em] uppercase">{storeConfig.name}</h1>
-      <button onClick={()=>{setIsCartOpen(true);setStep('cart')}}>
-        <Icon name="shopping-bag" size={24}/>
-        {cart.length>0 && <span className="ml-2 text-xs font-bold">{cart.length}</span>}
-      </button>
-    </header>
-
-    <main className="max-w-5xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12">
-      {products.length===0 && <p>Catálogo em atualização</p>}
-      {products.map(p=>(
-        <div key={p.id} className="border-b lux-border pb-10 text-center">
-          <img src={p.image} className="w-full aspect-square object-cover mb-6"/>
-          <h3 className="font-serif uppercase">{p.name}</h3>
-          <p className="text-xs text-gray-400">SKU: {p.sku}</p>
-          <p className="lux-gold font-bold mt-2">PIX: {money(p.price*(1-storeConfig.pixDiscount/100))}</p>
-          <button onClick={()=>addToCart(p)} className="mt-4 bg-black text-white py-3 w-full text-xs uppercase tracking-widest">
-            Adicionar à Sacola
-          </button>
-        </div>
-      ))}
-    </main>
-
-    {isCartOpen && (
-    <div className="fixed inset-0 z-50">
-      <div className="cart-overlay" onClick={()=>step!=='success' && setIsCartOpen(false)}></div>
-      <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white p-8 z-60 flex flex-col">
-
-        {step==='cart' && (
-        <>
-          <h2 className="font-serif mb-6">Sacola</h2>
-          <div className="flex-grow space-y-4 overflow-y-auto">
-            {cart.map(i=>(
-              <div key={i.id} className="flex items-center gap-3 border-b pb-3">
-                <img src={i.image} className="w-12 h-12"/>
-                <div className="flex-grow text-xs">{i.name}</div>
-                <div className="flex items-center gap-2">
-                  <button onClick={()=>updateQty(i.id,-1)}>-</button>
-                  <span>{i.quantity}</span>
-                  <button onClick={()=>updateQty(i.id,1)}>+</button>
+                                {orderStep === 'success' && (
+                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
+                                        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600"><Icon name="check" size={40} /></div>
+                                        <h2 className="font-serif text-2xl uppercase tracking-widest">Pedido Enviado!</h2>
+                                        <p className="text-[11px] text-gray-400 uppercase tracking-widest leading-loose">
+                                            Seu pedido foi registrado e a conversa iniciada.<br/>
+                                            <strong>Aguarde o nosso retorno em breve.</strong>
+                                        </p>
+                                        <button onClick={() => setIsCartOpen(false)} className="border border-black px-12 py-4 text-[10px] font-bold uppercase tracking-widest">Voltar à Loja</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <button onClick={()=>removeItem(i.id)}><Icon name="trash-2"/></button>
-              </div>
-            ))}
-          </div>
-          <button onClick={()=>setStep('checkout')} className="mt-6 bg-black text-white py-4 text-xs uppercase">
-            Finalizar
-          </button>
-        </>
-        )}
+            );
+        }
 
-        {step==='checkout' && (
-        <>
-          <input placeholder="Nome" className="border-b mb-4" onChange={e=>setCustomer({...customer,name:e.target.value})}/>
-          <input placeholder="WhatsApp" className="border-b mb-4" onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
-          <textarea placeholder="Observações" className="border p-2 mb-4" onChange={e=>setCustomer({...customer,notes:e.target.value})}></textarea>
-
-          <button onClick={finalize} disabled={sending} className="bg-black text-white py-4">
-            {sending ? 'Enviando...' : 'Finalizar via WhatsApp'}
-          </button>
-        </>
-        )}
-
-        {step==='success' && (
-        <div className="flex flex-col items-center justify-center h-full text-center">
-          <Icon name="check" size={48}/>
-          <p className="mt-4">Pedido enviado com sucesso!</p>
-          <button onClick={()=>setIsCartOpen(false)} className="mt-6 border px-6 py-3">
-            Voltar à loja
-          </button>
-        </div>
-        )}
-
-      </div>
-    </div>
-    )}
-
-  </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
