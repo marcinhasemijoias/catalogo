@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Catálogo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#FDFBF7] text-[#2D2926]">
+
+<header class="relative text-center py-8 border-b">
+  <h1 id="storeName" class="text-2xl font-serif">Catálogo</h1>
+  <a href="../cart.html" class="absolute top-8 right-6 text-xs uppercase">
+    Carrinho (<span id="cartCount">0</span>)
+  </a>
+</header>
+
+<main id="grid" class="max-w-6xl mx-auto px-6 py-10 grid gap-8 sm:grid-cols-2 md:grid-cols-3"></main>
+
+<script>
+const store = JSON.parse(localStorage.getItem('store_config')) || {};
+const products = JSON.parse(localStorage.getItem('store_products')) || [];
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+storeName.innerText = store.name || 'Catálogo';
+
+function format(v){
+  return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+
+function addToCart(id){
+  const p = products.find(x=>x.id===id);
+  const item = cart.find(x=>x.id===id);
+  if(item) item.qty++;
+  else cart.push({...p,qty:1});
+  localStorage.setItem('cart',JSON.stringify(cart));
+  updateCart();
+}
+
+function updateCart(){
+  cartCount.innerText = cart.reduce((s,i)=>s+i.qty,0);
+}
+
+products.forEach(p=>{
+  const pixPrice = p.price - (p.price * (store.pixDiscount||0));
+  grid.innerHTML += `
+    <div class="bg-white border p-6 text-center space-y-4">
+      <img src="${p.image}" class="h-40 mx-auto object-contain">
+      <p class="uppercase text-sm">${p.name}</p>
+      <p class="text-gray-400 line-through">${format(p.price)}</p>
+      <p class="text-green-700">PIX ${format(pixPrice)}</p>
+      <button onclick="addToCart(${p.id})" class="bg-black text-white px-4 py-2 text-xs">
+        Adicionar
+      </button>
+    </div>`;
+});
+
+updateCart();
+</script>
+
+</body>
+</html>
 
