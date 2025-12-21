@@ -2,111 +2,76 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catálogo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 
-<body class="bg-[#FDFBF7]">
-<div id="root"></div>
+<body class="bg-[#FDFBF7] text-[#2D2926]">
 
-<script type="text/babel">
-const {useState,useEffect,useMemo}=React;
+<header class="text-center py-8">
+  <h1 id="storeName" class="text-2xl font-serif tracking-wide"></h1>
+</header>
 
-function App(){
-const [products,setProducts]=useState([]);
-const [store,setStore]=useState({});
-const [cart,setCart]=useState([]);
-const [customer,setCustomer]=useState({name:'',phone:''});
-const [payment,setPayment]=useState('pix');
-const [installments,setInstallments]=useState(1);
+<main class="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8" id="productGrid"></main>
 
-useEffect(()=>{
-setProducts(JSON.parse(localStorage.getItem('store_products')||'[]'));
-setStore(JSON.parse(localStorage.getItem('store_config')||{}));
-},[]);
+<script>
+/* ===== LOAD CONFIG ===== */
+const store = JSON.parse(localStorage.getItem('luxury_config')) || {};
+document.getElementById('storeName').innerText = store.name || 'Catálogo';
 
-const subtotal=useMemo(()=>cart.reduce((s,i)=>s+i.price*i.qty,0),[cart]);
-const discount=payment==='pix'?subtotal*(store.pixDiscount/100):0;
-const total=subtotal-discount;
-const installmentValue=installments?total/installments:total;
+/* ===== LOAD PRODUCTS ===== */
+const products = JSON.parse(localStorage.getItem('luxury_products')) || [];
+const grid = document.getElementById('productGrid');
 
-const format=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const format = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-const sendWhats=()=>{
-const msg=
-`*Pedido - ${store.name}*
-Cliente: ${customer.name}
-WhatsApp: ${customer.phone}
-Pagamento: ${payment==='pix'?'PIX':'Cartão'}
-${payment==='card'?`Parcelamento: ${installments}x de ${format(installmentValue)}`:''}
-Total: ${format(total)}`;
-window.open(`https://wa.me/${store.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank');
+products.forEach(p => {
+  const pixPrice = store.pixDiscount
+    ? p.price - (p.price * store.pixDiscount)
+    : p.price;
+
+  const installment = store.maxInstallments
+    ? (p.price / store.maxInstallments)
+    : p.price;
+
+  grid.innerHTML += `
+    <div class="bg-white border p-6 text-center space-y-4">
+      <img src="${p.image}" class="h-48 mx-auto object-contain">
+      <p class="uppercase text-sm tracking-widest">${p.name}</p>
+
+      <div class="space-y-1 text-sm">
+        <p class="line-through text-gray-400">${format(p.price)}</p>
+        <p class="font-semibold text-green-700">PIX: ${format(pixPrice)}</p>
+        <p class="text-xs text-gray-500">
+          ou ${store.maxInstallments}x de ${format(installment)}
+        </p>
+      </div>
+
+      <button onclick="addToCart(${p.id})"
+        class="w-full bg-black text-white py-3 text-xs uppercase">
+        Adicionar ao Carrinho
+      </button>
+    </div>
+  `;
+});
+
+/* ===== CART ===== */
+function addToCart(id){
+  let cart = JSON.parse(localStorage.getItem('luxury_cart')) || [];
+  const prod = products.find(p => p.id === id);
+
+  const exists = cart.find(i => i.id === id);
+  if(exists){
+    exists.qty++;
+  } else {
+    cart.push({...prod, qty:1});
+  }
+
+  localStorage.setItem('luxury_cart', JSON.stringify(cart));
+  window.location.href = 'cart.html';
 }
-
-return(
-<div className="max-w-md mx-auto p-6">
-<h1 className="text-center text-xl font-serif mb-6">{store.name}</h1>
-
-{products.map(p=>(
-<div key={p.id} className="border p-4 text-center mb-4">
-<img src={p.image} className="h-40 mx-auto mb-3 object-contain"/>
-<p className="uppercase text-sm">{p.name}</p>
-<p>{format(p.price)}</p>
-<button
-onClick={()=>setCart([{...p,qty:1}])}
-className="mt-3 bg-black text-white px-4 py-2 text-xs">
-Comprar
-</button>
-</div>
-))}
-
-{cart.length>0 && (
-<div className="space-y-3">
-<input className="border p-2 w-full" placeholder="Nome"
-onChange={e=>setCustomer({...customer,name:e.target.value})}/>
-<input className="border p-2 w-full" placeholder="WhatsApp"
-onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
-
-<div className="flex gap-2">
-<button onClick={()=>setPayment('pix')}
-className={`flex-1 border p-2 ${payment==='pix'&&'border-black'}`}>
-PIX
-</button>
-<button onClick={()=>setPayment('card')}
-className={`flex-1 border p-2 ${payment==='card'&&'border-black'}`}>
-Cartão
-</button>
-</div>
-
-{payment==='card' && (
-<select
-className="border p-2 w-full"
-value={installments}
-onChange={e=>setInstallments(Number(e.target.value))}>
-{Array.from({length:store.maxInstallments||1},(_,i)=>i+1)
-.map(n=><option key={n} value={n}>{n}x de {format(total/n)}</option>)}
-</select>
-)}
-
-<div className="font-bold text-center">
-Total: {format(total)}
-</div>
-
-<button onClick={sendWhats}
-className="bg-black text-white w-full py-3 text-xs">
-Finalizar no WhatsApp
-</button>
-</div>
-)}
-</div>
-);
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
+
 </body>
 </html>
