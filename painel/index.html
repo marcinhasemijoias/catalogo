@@ -193,15 +193,68 @@
         renderProducts();
     }
 }
-        function renderOrders() {
-            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-            document.getElementById('ordersTable').innerHTML = orders.map((o, i) => `
-                <tr class="border-b">
-                    <td class="p-4"><b>${o.customerName}</b><br>${o.date}</td>
-                    <td class="p-4">R$ ${o.total}</td>
-                    <td class="p-4 text-right"><button onclick="deleteOrder(${i})">✕</button></td>
-                </tr>`).join('');
-        }
+       function renderOrders() {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const container = document.getElementById('ordersTable');
+    
+    container.innerHTML = orders.map((o, i) => `
+        <tr class="border-b border-[#FDFBF7] hover:bg-[#FDFBF7] transition">
+            <td class="p-4">
+                <b class="text-[#111]">${o.customerName}</b>
+                <div class="text-[9px] text-gray-400 uppercase tracking-tighter">${o.date}</div>
+            </td>
+            <td class="p-4 font-serif text-[#111]">R$ ${o.total}</td>
+            <td class="p-4 text-right space-x-3">
+                <button onclick="printOrder(${i})" class="no-print border border-[#A68966] text-[#A68966] px-3 py-1 rounded-sm text-[9px] uppercase hover:bg-[#A68966] hover:text-white transition font-semibold">
+                    Imprimir
+                </button>
+                <button onclick="deleteOrder(${i})" class="no-print text-gray-300 hover:text-red-500 transition text-sm">✕</button>
+            </td>
+        </tr>`).join('');
+}
+
+// COLE A FUNÇÃO ABAIXO LOGO DEPOIS DA RENDERORDERS
+function printOrder(index) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const order = orders[index];
+    const store = localStorage.getItem('storeName') || 'Marcinha Semijoias';
+    
+    const itemsHtml = order.items.map(i => `
+        <div style="display:flex; justify-content:space-between; font-size:13px; padding:10px 0; border-bottom:1px solid #f0f0f0">
+            <span>${i.qty}x ${i.name}</span>
+            <span>R$ ${(i.price * i.qty).toFixed(2)}</span>
+        </div>
+    `).join('');
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head><title>Pedido - ${order.customerName}</title></head>
+            <body style="font-family:sans-serif; padding:40px; color:#111; line-height:1.6">
+                <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:20px; margin-bottom:30px">
+                    <h1 style="text-transform:uppercase; letter-spacing:5px; margin:0; font-size:24px">${store}</h1>
+                    <p style="font-size:11px; color:#666; margin-top:10px">COMPROVANTE DE PEDIDO</p>
+                </div>
+                <div style="margin-bottom:30px">
+                    <p><strong>CLIENTE:</strong> ${order.customerName}</p>
+                    <p><strong>DATA:</strong> ${order.date}</p>
+                </div>
+                <div style="margin-bottom:30px">
+                    <p style="font-size:11px; border-bottom:1px solid #111; padding-bottom:5px; font-weight:bold">DESCRIÇÃO DOS ITENS</p>
+                    ${itemsHtml}
+                </div>
+                <div style="text-align:right; font-size:22px; margin-top:20px; border-top:2px solid #111; padding-top:10px">
+                    <strong>TOTAL: R$ ${order.total}</strong>
+                </div>
+                <div style="margin-top:60px; text-align:center; font-size:11px; color:#999; border-top:1px dashed #ccc; padding-top:20px">
+                    Obrigado pela preferência!<br>Este é um documento informativo.
+                </div>
+                <script>window.onload = function() { window.print(); window.close(); }</script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
         function deleteOrder(i) { let o = JSON.parse(localStorage.getItem('orders')); o.splice(i,1); localStorage.setItem('orders', JSON.stringify(o)); renderOrders(); }
     </script>
 </body>
