@@ -7,106 +7,118 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #111111; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+        }
+        .print-only { display: none; }
     </style>
 </head>
-<body class="bg-[#FDFBF7] text-[#111111] min-h-screen">
+<body>
 
-    <nav class="border-b border-[#E5E1DB] bg-white px-6 py-4 flex justify-between items-center">
+    <nav class="border-b border-[#E5E1DB] bg-white px-6 py-4 flex justify-between items-center no-print">
         <h1 class="font-serif text-xl tracking-tighter uppercase">Painel <span class="text-[#A68966]">Boutique</span></h1>
-        <a href="../catalogo/loja/index.html" target="_blank" class="text-xs tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja</a>
+        <div class="flex gap-4">
+            <a href="../catalogo/loja/index.html" target="_blank" class="text-[10px] tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja</a>
+        </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto p-6 space-y-12">
+    <div class="max-w-5xl mx-auto p-6 space-y-12 no-print">
         
-        <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Configurações da Marca</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">Nome da Loja</label>
-                    <input type="text" id="storeName" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="Ex: Joalheria Real">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            
+            <section class="space-y-6">
+                <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Configurações</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    <input type="text" id="storeName" class="w-full bg-white border border-[#E5E1DB] p-3 text-sm focus:outline-none" placeholder="Nome da Loja">
+                    <input type="number" id="whatsapp" class="w-full bg-white border border-[#E5E1DB] p-3 text-sm focus:outline-none" placeholder="WhatsApp (Ex: 5511999999999)">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="number" id="pixDiscount" class="bg-white border border-[#E5E1DB] p-3 text-sm focus:outline-none" placeholder="Desc. PIX %">
+                        <input type="number" id="maxInstallments" class="bg-white border border-[#E5E1DB] p-3 text-sm focus:outline-none" placeholder="Parcelas Máx.">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">WhatsApp (com DDD)</label>
-                    <input type="number" id="whatsapp" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="5511999999999">
+                <button onclick="saveSettings()" class="bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase w-full py-4">Salvar Alterações</button>
+            </section>
+
+            <section class="space-y-6">
+                <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Novo Item</h2>
+                <div class="bg-white border border-[#E5E1DB] p-6 space-y-4 shadow-sm">
+                    <input type="text" id="pName" placeholder="Nome do Produto" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
+                    <input type="number" id="pPrice" placeholder="Preço (Ex: 189.90)" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
+                    <div class="space-y-1">
+                        <label class="text-[10px] uppercase tracking-widest text-[#8C857B]">Foto do Produto</label>
+                        <input type="file" id="pImage" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#FDFBF7] file:text-[#A68966]">
+                    </div>
+                    <button onclick="addProduct()" class="w-full border border-[#111111] text-[#111111] text-[10px] tracking-[0.2em] uppercase py-3 hover:bg-[#111111] hover:text-white transition">Cadastrar no Catálogo</button>
                 </div>
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">Desconto PIX (%)</label>
-                    <input type="number" id="pixDiscount" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="Ex: 10">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">Parcelamento Máx.</label>
-                    <input type="number" id="maxInstallments" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="Ex: 3">
-                </div>
-            </div>
-            <button onclick="saveSettings()" class="bg-[#111111] text-white text-xs tracking-[0.2em] uppercase w-full py-4 hover:bg-[#222] transition">Salvar Identidade</button>
-        </section>
+            </section>
+        </div>
 
         <hr class="border-[#E5E1DB]">
 
         <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Novo Produto</h2>
-            <div class="bg-white border border-[#E5E1DB] p-6 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="pName" placeholder="Nome do Produto" class="w-full border-b border-[#E5E1DB] py-2 focus:outline-none focus:border-[#A68966]">
-                    <input type="number" id="pPrice" placeholder="Preço (Ex: 189.90)" class="w-full border-b border-[#E5E1DB] py-2 focus:outline-none focus:border-[#A68966]">
-                </div>
-                
-                <div class="space-y-2">
-                    <label class="block text-xs uppercase tracking-widest text-[#8C857B]">Foto do Produto (Upload)</label>
-                    <input type="file" id="pImage" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-semibold file:bg-[#FDFBF7] file:text-[#A68966] hover:file:bg-[#E5E1DB]">
-                </div>
-
-                <button onclick="addProduct()" class="w-full border border-[#111111] text-[#111111] text-xs tracking-[0.2em] uppercase py-3 hover:bg-[#111111] hover:text-white transition">Cadastrar no Catálogo</button>
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Relatório de Pedidos</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse bg-white">
+                    <thead>
+                        <tr class="border-b border-[#E5E1DB] text-[10px] uppercase tracking-widest text-[#8C857B]">
+                            <th class="p-4">Data/Cliente</th>
+                            <th class="p-4">Itens</th>
+                            <th class="p-4">Total</th>
+                            <th class="p-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTable" class="text-sm">
+                        </tbody>
+                </table>
             </div>
         </section>
 
         <section class="space-y-6">
             <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Estoque Atual</h2>
-            <div id="productList" class="grid gap-4">
+            <div id="productList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 </div>
         </section>
     </div>
 
+    <div id="printArea" class="print-only p-10">
+        </div>
+
     <script>
-        // Carregar dados iniciais
-        document.getElementById('storeName').value = localStorage.getItem('storeName') || '';
-        document.getElementById('whatsapp').value = localStorage.getItem('whatsapp') || '';
-        document.getElementById('pixDiscount').value = localStorage.getItem('pixDiscount') || '';
-        document.getElementById('maxInstallments').value = localStorage.getItem('maxInstallments') || '';
+        // Funções de Inicialização e Configuração
+        function loadData() {
+            document.getElementById('storeName').value = localStorage.getItem('storeName') || '';
+            document.getElementById('whatsapp').value = localStorage.getItem('whatsapp') || '';
+            document.getElementById('pixDiscount').value = localStorage.getItem('pixDiscount') || '';
+            document.getElementById('maxInstallments').value = localStorage.getItem('maxInstallments') || '';
+            renderProducts();
+            renderOrders();
+        }
 
         function saveSettings() {
             localStorage.setItem('storeName', document.getElementById('storeName').value);
             localStorage.setItem('whatsapp', document.getElementById('whatsapp').value);
             localStorage.setItem('pixDiscount', document.getElementById('pixDiscount').value);
             localStorage.setItem('maxInstallments', document.getElementById('maxInstallments').value);
-            alert("Configurações atualizadas com sucesso!");
+            alert("Configurações Premium Salvas!");
         }
 
+        // Gestão de Produtos (Upload Base64)
         function addProduct() {
             const name = document.getElementById('pName').value;
             const price = document.getElementById('pPrice').value;
             const imageFile = document.getElementById('pImage').files[0];
 
-            if (!name || !price || !imageFile) {
-                alert("Por favor, preencha todos os campos e selecione uma imagem.");
-                return;
-            }
+            if (!name || !price || !imageFile) return alert("Preencha todos os campos.");
 
-            // Converter Imagem para Base64 (Upload real sem servidor externo)
             const reader = new FileReader();
             reader.onloadend = function() {
                 const products = JSON.parse(localStorage.getItem('products') || '[]');
-                products.push({
-                    id: Date.now().toString(),
-                    name: name,
-                    price: parseFloat(price),
-                    image: reader.result // Aqui salva a string da imagem
-                });
+                products.push({ id: Date.now().toString(), name, price: parseFloat(price), image: reader.result });
                 localStorage.setItem('products', JSON.stringify(products));
                 renderProducts();
-                
-                // Limpar campos
                 document.getElementById('pName').value = '';
                 document.getElementById('pPrice').value = '';
                 document.getElementById('pImage').value = '';
@@ -115,31 +127,101 @@
         }
 
         function removeProduct(id) {
-            let products = JSON.parse(localStorage.getItem('products') || '[]');
-            products = products.filter(p => p.id !== id);
-            localStorage.setItem('products', JSON.stringify(products));
-            renderProducts();
+            if(confirm("Deseja excluir este produto?")) {
+                let products = JSON.parse(localStorage.getItem('products') || '[]');
+                products = products.filter(p => p.id !== id);
+                localStorage.setItem('products', JSON.stringify(products));
+                renderProducts();
+            }
         }
 
         function renderProducts() {
             const list = document.getElementById('productList');
             const products = JSON.parse(localStorage.getItem('products') || '[]');
-            
             list.innerHTML = products.map(p => `
-                <div class="flex items-center justify-between bg-white border border-[#E5E1DB] p-4 group">
-                    <div class="flex items-center space-x-4">
-                        <img src="${p.image}" class="w-12 h-12 object-cover border border-[#FDFBF7]">
+                <div class="bg-white border border-[#E5E1DB] p-4 flex items-center justify-between group">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image}" class="w-12 h-12 object-cover rounded-sm">
                         <div>
-                            <p class="font-serif text-sm">${p.name}</p>
-                            <p class="text-xs text-[#8C857B]">R$ ${p.price.toFixed(2)}</p>
+                            <p class="text-xs font-semibold uppercase">${p.name}</p>
+                            <p class="text-xs text-[#A68966]">R$ ${p.price.toFixed(2)}</p>
                         </div>
                     </div>
-                    <button onclick="removeProduct('${p.id}')" class="text-xs text-red-400 opacity-0 group-hover:opacity-100 transition uppercase tracking-widest">Excluir</button>
+                    <button onclick="removeProduct('${p.id}')" class="text-[#8C857B] hover:text-red-500 text-[9px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition">Excluir</button>
                 </div>
             `).join('');
         }
 
-        renderProducts();
+        // Relatório de Pedidos
+        function renderOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const container = document.getElementById('ordersTable');
+            
+            if (orders.length === 0) {
+                container.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-[#8C857B] italic">Nenhum pedido registrado.</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = orders.map((order, index) => `
+                <tr class="border-b border-[#FDFBF7] hover:bg-[#FDFBF7] transition">
+                    <td class="p-4">
+                        <div class="text-xs font-bold">${order.customerName}</div>
+                        <div class="text-[10px] text-[#8C857B]">${order.date}</div>
+                    </td>
+                    <td class="p-4 text-xs">${order.itemCount} itens</td>
+                    <td class="p-4 text-xs font-serif">R$ ${order.total}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="printOrder(${index})" class="text-[#A68966] text-[10px] uppercase border border-[#A68966] px-2 py-1">Imprimir</button>
+                        <button onclick="deleteOrder(${index})" class="text-red-400 text-[10px] uppercase border border-red-100 px-2 py-1">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteOrder(index) {
+            if(confirm("Excluir este pedido do histórico?")) {
+                let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+                orders.splice(index, 1);
+                localStorage.setItem('orders', JSON.stringify(orders));
+                renderOrders();
+            }
+        }
+
+        function printOrder(index) {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const order = orders[index];
+            const storeName = localStorage.getItem('storeName') || 'Boutique';
+
+            let itemsHtml = order.items.map(i => `
+                <div style="display:flex; justify-content:between; border-bottom:1px solid #EEE; padding: 5px 0; font-size: 12px">
+                    <span>${i.qty}x ${i.name}</span>
+                    <span style="margin-left: auto">R$ ${(i.price * i.qty).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('printArea').innerHTML = `
+                <div style="text-align:center; margin-bottom: 20px">
+                    <h1 style="font-family: serif; text-transform: uppercase; letter-spacing: 2px">${storeName}</h1>
+                    <p style="font-size: 10px; color: #666">RESUMO DO PEDIDO</p>
+                </div>
+                <div style="margin-bottom: 20px; font-size: 12px">
+                    <p><strong>Cliente:</strong> ${order.customerName}</p>
+                    <p><strong>Data:</strong> ${order.date}</p>
+                </div>
+                <div style="margin-bottom: 20px">
+                    ${itemsHtml}
+                </div>
+                <div style="text-align: right; border-top: 2px solid #111; padding-top: 10px">
+                    <p style="font-size: 16px; font-weight: bold">Total: R$ ${order.total}</p>
+                </div>
+                <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #888">
+                    Obrigado pela preferência.
+                </div>
+            `;
+            window.print();
+        }
+
+        window.onload = loadData;
     </script>
 </body>
 </html>
