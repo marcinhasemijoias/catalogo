@@ -33,24 +33,20 @@
     <!-- SEÇÃO DE PRODUTOS -->
     <section class="mb-12">
       <h2 class="font-serif text-2xl tracking-wide mb-6">Produtos</h2>
-      <div id="productGrid" class="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-        <!-- Cards de produtos serão inseridos via JS -->
-      </div>
+      <div id="productGrid" class="grid gap-8 sm:grid-cols-2 md:grid-cols-3"></div>
 
       <button id="addProductBtn" class="mt-6 btn-primary px-6 py-2 rounded tracking-widest uppercase">
         Adicionar Produto
       </button>
     </section>
 
-    <!-- SEÇÃO DE PEDIDOS -->
+    <!-- SEÇÃO DE PEDIDOS / RELATÓRIOS -->
     <section class="mb-12">
-      <h2 class="font-serif text-2xl tracking-wide mb-6">Pedidos</h2>
-      <div id="ordersList" class="space-y-4">
-        <!-- Pedidos aparecerão aqui via JS -->
-      </div>
+      <h2 class="font-serif text-2xl tracking-wide mb-6">Pedidos / Relatórios</h2>
+      <div id="ordersList" class="space-y-4"></div>
     </section>
 
-    <!-- FORMULÁRIO MODAL DE PRODUTO (OCULTO) -->
+    <!-- MODAL DE PRODUTO -->
     <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
       <div class="bg-[#FDFBF7] rounded-xl p-8 w-full max-w-lg relative">
         <h3 class="font-serif text-xl mb-4">Adicionar / Editar Produto</h3>
@@ -73,7 +69,7 @@
           </div>
           <div>
             <label class="text-sm font-semibold mb-1 block">Imagem do Produto</label>
-            <input type="file" id="productImage" accept="image/*" required>
+            <input type="file" id="productImage" accept="image/*">
           </div>
           <div class="flex justify-end space-x-3 mt-4">
             <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded">Cancelar</button>
@@ -85,7 +81,6 @@
 
   </main>
 
-  <!-- SCRIPT -->
   <script>
     let products = [];
     let orders = [];
@@ -109,7 +104,7 @@
       productForm.reset();
     });
 
-    // Adicionar produto
+    // Adicionar / Editar Produto
     productForm.addEventListener('submit', (e) => {
       e.preventDefault();
 
@@ -118,33 +113,33 @@
       const pix = parseFloat(document.getElementById('productPix').value) || null;
       const parcel = document.getElementById('productParcel').value;
 
-      // Upload da imagem para DataURL
       const file = productImageInput.files[0];
-      const reader = new FileReader();
 
-      reader.onload = function(event) {
-        const image = event.target.result;
-
-        const newProduct = { id: Date.now(), name, price, pix, parcel, image };
+      const processProduct = (imageData) => {
+        const newProduct = { id: Date.now(), name, price, pix, parcel, image: imageData || '' };
         products.push(newProduct);
         renderProducts();
         productModal.classList.add('hidden');
         productForm.reset();
-      };
+      }
 
       if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => processProduct(event.target.result);
         reader.readAsDataURL(file);
+      } else {
+        processProduct(null); // mantém produtos anteriores sem imagem nova
       }
     });
 
-    // Renderizar produtos
+    // Renderizar Produtos
     function renderProducts() {
       productGrid.innerHTML = '';
       products.forEach(p => {
         const card = document.createElement('div');
         card.className = 'card p-4 flex flex-col items-center text-center';
         card.innerHTML = `
-          <img src="${p.image}" alt="${p.name}" class="w-full h-48 object-cover mb-4 rounded">
+          <img src="${p.image || 'https://via.placeholder.com/300'}" alt="${p.name}" class="w-full h-48 object-cover mb-4 rounded">
           <h3 class="font-serif text-lg mb-1">${p.name}</h3>
           <p class="text-base mb-1">R$ ${p.price.toFixed(2)}</p>
           ${p.pix ? `<p class="price-pix mb-1">PIX R$ ${p.pix.toFixed(2)}</p>` : ''}
@@ -158,7 +153,7 @@
       });
     }
 
-    // Editar produto
+    // Editar Produto
     function editProduct(id) {
       const p = products.find(x => x.id === id);
       if (!p) return;
@@ -170,13 +165,25 @@
       deleteProduct(id);
     }
 
-    // Excluir produto
+    // Excluir Produto
     function deleteProduct(id) {
       products = products.filter(p => p.id !== id);
       renderProducts();
     }
 
+    // Renderizar Pedidos (simulação)
+    function renderOrders() {
+      ordersList.innerHTML = '';
+      orders.forEach(o => {
+        const div = document.createElement('div');
+        div.className = 'p-4 bg-white border rounded';
+        div.innerHTML = `<strong>Pedido #${o.id}</strong> - Total: R$ ${o.total.toFixed(2)}`;
+        ordersList.appendChild(div);
+      });
+    }
+
     renderProducts();
+    renderOrders();
   </script>
 
 </body>
