@@ -16,13 +16,12 @@
             Joias selecionadas • Pedido via WhatsApp
         </p>
 
-        <a href="../cart.html" class="mt-6 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2 hover:bg-[#111111] hover:text-white transition">
+        <a href="cart.html" class="mt-6 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2 hover:bg-[#111111] hover:text-white transition">
             Carrinho (<span id="cartCount">0</span>)
         </a>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 py-16 grid gap-12 sm:grid-cols-2 md:grid-cols-3" id="productGrid">
-        </main>
+    <main class="max-w-6xl mx-auto px-6 py-16 grid gap-12 sm:grid-cols-2 md:grid-cols-3" id="productGrid"></main>
 
     <script>
         const products = JSON.parse(localStorage.getItem("products")) || [];
@@ -30,9 +29,7 @@
         const pixDiscount = Number(localStorage.getItem("pixDiscount") || 0);
         const maxInstallments = Number(localStorage.getItem("maxInstallments") || 1);
 
-        // Atualiza contador do carrinho
         document.getElementById("cartCount").innerText = cart.reduce((a, b) => a + b.qty, 0);
-
         const container = document.getElementById("productGrid");
 
         if (products.length === 0) {
@@ -50,35 +47,22 @@
                         <h3 class="font-serif text-lg uppercase tracking-tight">${p.name}</h3>
                         <p class="text-[10px] text-[#8C857B] tracking-widest uppercase">SKU: ${p.sku || '---'}</p>
                     </div>
-
                     <div class="py-2">
                         <p class="text-xs text-gray-400 line-through">R$ ${p.price.toFixed(2)}</p>
                         <p class="text-[#A68966] font-bold text-xl">PIX R$ ${pixPrice}</p>
-                        <p class="text-[10px] text-[#8C857B] uppercase tracking-wider">
-                            ou ${maxInstallments}x de R$ ${installment}
-                        </p>
+                        <p class="text-[10px] text-[#8C857B] uppercase tracking-wider">ou ${maxInstallments}x de R$ ${installment}</p>
                     </div>
-
-                    <button onclick="addToCart('${p.id}')" 
-                            class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-3 hover:bg-[#333] transition">
+                    <button onclick="addToCart('${p.id}')" class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-3 hover:bg-[#333] transition">
                         Adicionar ao Carrinho
                     </button>
-                </div>
-            `;
+                </div>`;
         });
 
         function addToCart(id) {
             const p = products.find(x => x.id === id);
             const cartItem = cart.find(x => x.id === id);
-
-            if (cartItem) {
-                cartItem.qty++;
-            } else {
-                cart.push({ ...p, qty: 1 });
-            }
-
+            if (cartItem) { cartItem.qty++; } else { cart.push({ ...p, qty: 1 }); }
             localStorage.setItem("cart", JSON.stringify(cart));
-            // Atualiza apenas o contador sem recarregar a página toda (UX melhor)
             document.getElementById("cartCount").innerText = cart.reduce((a, b) => a + b.qty, 0);
             alert("Produto adicionado!");
         }
