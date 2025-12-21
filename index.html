@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catálogo</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -18,23 +18,32 @@ const {useState,useEffect,useMemo}=React;
 
 function App(){
 const [products,setProducts]=useState([]);
-const [store,setStore]=useState({name:'Nome da Loja',pixDiscount:0});
+const [store,setStore]=useState({});
 const [cart,setCart]=useState([]);
 const [customer,setCustomer]=useState({name:'',phone:''});
+const [payment,setPayment]=useState('pix');
+const [installments,setInstallments]=useState(1);
 
 useEffect(()=>{
 setProducts(JSON.parse(localStorage.getItem('store_products')||'[]'));
-setStore(JSON.parse(localStorage.getItem('store_config')||store));
+setStore(JSON.parse(localStorage.getItem('store_config')||{}));
 },[]);
 
 const subtotal=useMemo(()=>cart.reduce((s,i)=>s+i.price*i.qty,0),[cart]);
-const discount=subtotal*(store.pixDiscount/100);
+const discount=payment==='pix'?subtotal*(store.pixDiscount/100):0;
 const total=subtotal-discount;
+const installmentValue=installments?total/installments:total;
 
 const format=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 const sendWhats=()=>{
-const msg=`*Pedido - ${store.name}*\nCliente: ${customer.name}\nWhatsApp: ${customer.phone}\nTotal: ${format(total)}`;
+const msg=
+`*Pedido - ${store.name}*
+Cliente: ${customer.name}
+WhatsApp: ${customer.phone}
+Pagamento: ${payment==='pix'?'PIX':'Cartão'}
+${payment==='card'?`Parcelamento: ${installments}x de ${format(installmentValue)}`:''}
+Total: ${format(total)}`;
 window.open(`https://wa.me/${store.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
@@ -47,16 +56,50 @@ return(
 <img src={p.image} className="h-40 mx-auto mb-3 object-contain"/>
 <p className="uppercase text-sm">{p.name}</p>
 <p>{format(p.price)}</p>
-<button onClick={()=>setCart([{...p,qty:1}])} className="mt-3 bg-black text-white px-4 py-2 text-xs">Comprar</button>
+<button
+onClick={()=>setCart([{...p,qty:1}])}
+className="mt-3 bg-black text-white px-4 py-2 text-xs">
+Comprar
+</button>
 </div>
 ))}
 
 {cart.length>0 && (
-<div className="space-y-2">
-<input placeholder="Nome" className="border p-2 w-full" onChange={e=>setCustomer({...customer,name:e.target.value})}/>
-<input placeholder="WhatsApp" className="border p-2 w-full" onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
-<div className="font-bold">Total: {format(total)}</div>
-<button onClick={sendWhats} className="bg-black text-white w-full py-3 text-xs">Finalizar WhatsApp</button>
+<div className="space-y-3">
+<input className="border p-2 w-full" placeholder="Nome"
+onChange={e=>setCustomer({...customer,name:e.target.value})}/>
+<input className="border p-2 w-full" placeholder="WhatsApp"
+onChange={e=>setCustomer({...customer,phone:e.target.value})}/>
+
+<div className="flex gap-2">
+<button onClick={()=>setPayment('pix')}
+className={`flex-1 border p-2 ${payment==='pix'&&'border-black'}`}>
+PIX
+</button>
+<button onClick={()=>setPayment('card')}
+className={`flex-1 border p-2 ${payment==='card'&&'border-black'}`}>
+Cartão
+</button>
+</div>
+
+{payment==='card' && (
+<select
+className="border p-2 w-full"
+value={installments}
+onChange={e=>setInstallments(Number(e.target.value))}>
+{Array.from({length:store.maxInstallments||1},(_,i)=>i+1)
+.map(n=><option key={n} value={n}>{n}x de {format(total/n)}</option>)}
+</select>
+)}
+
+<div className="font-bold text-center">
+Total: {format(total)}
+</div>
+
+<button onClick={sendWhats}
+className="bg-black text-white w-full py-3 text-xs">
+Finalizar no WhatsApp
+</button>
 </div>
 )}
 </div>
