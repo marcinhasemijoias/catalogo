@@ -23,8 +23,11 @@
 <input id="storeName" class="w-full border-b p-2" placeholder="Nome da Loja">
 <input id="storeWhatsapp" class="w-full border-b p-2" placeholder="WhatsApp (5511999999999)">
 <input id="pixDiscount" type="number" class="w-full border-b p-2" placeholder="Desconto PIX (%)">
+<input id="maxInstallments" type="number" class="w-full border-b p-2" placeholder="Parcelas máximas no cartão">
 
-<button onclick="saveStore()" class="bg-black text-white px-4 py-2 text-xs uppercase">Salvar</button>
+<button onclick="saveStore()" class="bg-black text-white px-4 py-2 text-xs uppercase">
+Salvar
+</button>
 </section>
 
 <!-- PRODUTO -->
@@ -36,7 +39,9 @@
 <input id="prodPrice" class="w-full border-b p-2" placeholder="Preço (ex: 12,50)">
 <input id="prodImg" type="file" accept="image/*">
 
-<button onclick="addProduct()" class="bg-black text-white px-4 py-2 text-xs uppercase">Adicionar</button>
+<button onclick="addProduct()" class="bg-black text-white px-4 py-2 text-xs uppercase">
+Adicionar
+</button>
 <p id="prodMsg" class="text-xs text-red-600"></p>
 </section>
 
@@ -46,49 +51,41 @@
 <div id="productList"></div>
 </section>
 
-<!-- RELATÓRIOS -->
-<section class="bg-white border p-6 space-y-4">
-<h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Relatórios de Vendas</h2>
-
-<div id="ordersList" class="text-xs space-y-2"></div>
-
-<button onclick="window.print()" class="bg-black text-white px-4 py-2 text-xs uppercase">
-Imprimir / Gerar PDF
-</button>
-</section>
-
 </main>
 
 <script>
 const STORE_KEY='store_config';
 const PRODUCT_KEY='store_products';
-const ORDER_KEY='store_orders';
 
-/* ===== STORE ===== */
 function saveStore(){
-localStorage.setItem(STORE_KEY, JSON.stringify({
+localStorage.setItem(STORE_KEY,JSON.stringify({
 name:storeName.value,
 whatsapp:storeWhatsapp.value,
-pixDiscount:Number(pixDiscount.value)
+pixDiscount:Number(pixDiscount.value),
+maxInstallments:Number(maxInstallments.value)
 }));
 alert('Configurações salvas');
 }
 
-/* ===== PRODUTOS ===== */
+function loadStore(){
+const s=JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+storeName.value=s.name||'';
+storeWhatsapp.value=s.whatsapp||'';
+pixDiscount.value=s.pixDiscount||'';
+maxInstallments.value=s.maxInstallments||'';
+}
+
 function addProduct(){
 prodMsg.textContent='';
-
-if(!prodName.value || !prodPrice.value || !prodImg.files[0]){
+if(!prodName.value||!prodPrice.value||!prodImg.files[0]){
 prodMsg.textContent='Preencha todos os campos.';
 return;
 }
-
-const price = Number(prodPrice.value.replace(',','.'));
+const price=Number(prodPrice.value.replace(',','.'));
 if(isNaN(price)){
 prodMsg.textContent='Preço inválido.';
 return;
 }
-
 const reader=new FileReader();
 reader.onload=()=>{
 const products=JSON.parse(localStorage.getItem(PRODUCT_KEY)||'[]');
@@ -113,7 +110,7 @@ productList.innerHTML='';
 products.forEach(p=>{
 productList.innerHTML+=`
 <div class="flex justify-between border-b py-2 text-xs">
-<span>${p.name} - R$ ${p.price.toFixed(2)}</span>
+<span>${p.name} — R$ ${p.price.toFixed(2)}</span>
 <button onclick="deleteProduct(${p.id})" class="text-red-600">Excluir</button>
 </div>`;
 });
@@ -125,27 +122,8 @@ localStorage.setItem(PRODUCT_KEY,JSON.stringify(products));
 renderProducts();
 }
 
-/* ===== RELATÓRIOS ===== */
-function renderOrders(){
-const orders=JSON.parse(localStorage.getItem(ORDER_KEY)||'[]');
-ordersList.innerHTML='';
-if(!orders.length){
-ordersList.innerHTML='<p>Nenhum pedido registrado.</p>';
-return;
-}
-orders.forEach(o=>{
-ordersList.innerHTML+=`
-<div class="border-b pb-2">
-<p><strong>${o.customer}</strong></p>
-<p>Total: R$ ${o.total.toFixed(2)}</p>
-<p>${new Date(o.date).toLocaleString()}</p>
-</div>`;
-});
-}
-
-/* INIT */
+loadStore();
 renderProducts();
-renderOrders();
 </script>
 
 </body>
