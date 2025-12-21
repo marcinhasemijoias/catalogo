@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Painel Administrativo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -16,95 +16,137 @@
 
 <main class="max-w-3xl mx-auto p-6 space-y-10">
 
+<!-- CONFIG LOJA -->
 <section class="bg-white border p-6 space-y-4">
 <h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Dados da Loja</h2>
 
 <input id="storeName" class="w-full border-b p-2" placeholder="Nome da Loja">
 <input id="storeWhatsapp" class="w-full border-b p-2" placeholder="WhatsApp (5511999999999)">
 <input id="pixDiscount" type="number" class="w-full border-b p-2" placeholder="Desconto PIX (%)">
-<input id="maxInstallments" type="number" class="w-full border-b p-2" placeholder="Parcelas Máx">
 
 <button onclick="saveStore()" class="bg-black text-white px-4 py-2 text-xs uppercase">Salvar</button>
 </section>
 
+<!-- PRODUTO -->
 <section class="bg-white border p-6 space-y-4">
 <h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Produto</h2>
 
 <input id="prodName" class="w-full border-b p-2" placeholder="Nome">
 <input id="prodSku" class="w-full border-b p-2" placeholder="SKU">
-<input id="prodPrice" type="number" class="w-full border-b p-2" placeholder="Preço">
+<input id="prodPrice" class="w-full border-b p-2" placeholder="Preço (ex: 12,50)">
 <input id="prodImg" type="file" accept="image/*">
 
 <button onclick="addProduct()" class="bg-black text-white px-4 py-2 text-xs uppercase">Adicionar</button>
+<p id="prodMsg" class="text-xs text-red-600"></p>
 </section>
 
+<!-- PRODUTOS -->
 <section class="bg-white border p-6">
 <h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Produtos</h2>
 <div id="productList"></div>
 </section>
 
+<!-- RELATÓRIOS -->
+<section class="bg-white border p-6 space-y-4">
+<h2 class="text-xs uppercase tracking-widest border-l-2 pl-3 border-[#A68966]">Relatórios de Vendas</h2>
+
+<div id="ordersList" class="text-xs space-y-2"></div>
+
+<button onclick="window.print()" class="bg-black text-white px-4 py-2 text-xs uppercase">
+Imprimir / Gerar PDF
+</button>
+</section>
+
 </main>
 
 <script>
-const STORE_KEY = 'store_config';
-const PRODUCT_KEY = 'store_products';
+const STORE_KEY='store_config';
+const PRODUCT_KEY='store_products';
+const ORDER_KEY='store_orders';
 
+/* ===== STORE ===== */
 function saveStore(){
-const store = {
-name: storeName.value,
-whatsapp: storeWhatsapp.value,
-pixDiscount: Number(pixDiscount.value),
-maxInstallments: Number(maxInstallments.value)
-};
-localStorage.setItem(STORE_KEY, JSON.stringify(store));
+localStorage.setItem(STORE_KEY, JSON.stringify({
+name:storeName.value,
+whatsapp:storeWhatsapp.value,
+pixDiscount:Number(pixDiscount.value)
+}));
 alert('Configurações salvas');
 }
 
-function loadStore(){
-const data = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-storeName.value = data.name || '';
-storeWhatsapp.value = data.whatsapp || '';
-pixDiscount.value = data.pixDiscount || '';
-maxInstallments.value = data.maxInstallments || '';
+/* ===== PRODUTOS ===== */
+function addProduct(){
+prodMsg.textContent='';
+
+if(!prodName.value || !prodPrice.value || !prodImg.files[0]){
+prodMsg.textContent='Preencha todos os campos.';
+return;
 }
 
-function addProduct(){
-const reader = new FileReader();
-reader.onload = () => {
-const products = JSON.parse(localStorage.getItem(PRODUCT_KEY) || '[]');
+const price = Number(prodPrice.value.replace(',','.'));
+if(isNaN(price)){
+prodMsg.textContent='Preço inválido.';
+return;
+}
+
+const reader=new FileReader();
+reader.onload=()=>{
+const products=JSON.parse(localStorage.getItem(PRODUCT_KEY)||'[]');
 products.push({
-id: Date.now(),
-name: prodName.value,
-sku: prodSku.value,
-price: Number(prodPrice.value),
-image: reader.result
+id:Date.now(),
+name:prodName.value,
+sku:prodSku.value,
+price,
+image:reader.result
 });
-localStorage.setItem(PRODUCT_KEY, JSON.stringify(products));
+localStorage.setItem(PRODUCT_KEY,JSON.stringify(products));
 renderProducts();
+prodName.value=prodSku.value=prodPrice.value='';
+prodImg.value='';
 };
 reader.readAsDataURL(prodImg.files[0]);
 }
 
 function renderProducts(){
-const products = JSON.parse(localStorage.getItem(PRODUCT_KEY) || '[]');
-productList.innerHTML = '';
+const products=JSON.parse(localStorage.getItem(PRODUCT_KEY)||'[]');
+productList.innerHTML='';
 products.forEach(p=>{
-productList.innerHTML += `
+productList.innerHTML+=`
 <div class="flex justify-between border-b py-2 text-xs">
-<span>${p.name} (${p.sku})</span>
-<button onclick="deleteProduct(${p.id})" class="text-red-500">Excluir</button>
+<span>${p.name} - R$ ${p.price.toFixed(2)}</span>
+<button onclick="deleteProduct(${p.id})" class="text-red-600">Excluir</button>
 </div>`;
 });
 }
 
 function deleteProduct(id){
-const products = JSON.parse(localStorage.getItem(PRODUCT_KEY) || '[]').filter(p=>p.id!==id);
-localStorage.setItem(PRODUCT_KEY, JSON.stringify(products));
+const products=JSON.parse(localStorage.getItem(PRODUCT_KEY)||'[]').filter(p=>p.id!==id);
+localStorage.setItem(PRODUCT_KEY,JSON.stringify(products));
 renderProducts();
 }
 
-loadStore();
+/* ===== RELATÓRIOS ===== */
+function renderOrders(){
+const orders=JSON.parse(localStorage.getItem(ORDER_KEY)||'[]');
+ordersList.innerHTML='';
+if(!orders.length){
+ordersList.innerHTML='<p>Nenhum pedido registrado.</p>';
+return;
+}
+orders.forEach(o=>{
+ordersList.innerHTML+=`
+<div class="border-b pb-2">
+<p><strong>${o.customer}</strong></p>
+<p>Total: R$ ${o.total.toFixed(2)}</p>
+<p>${new Date(o.date).toLocaleString()}</p>
+</div>`;
+});
+}
+
+/* INIT */
 renderProducts();
+renderOrders();
 </script>
+
 </body>
 </html>
