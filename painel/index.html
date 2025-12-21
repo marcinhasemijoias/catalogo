@@ -182,8 +182,17 @@
             currentImgBase64 = "";
         }
 
-        function removeProduct(id) { if(confirm("Excluir?")) { const p = JSON.parse(localStorage.getItem('products')).filter(x => x.id !== id); localStorage.setItem('products', JSON.stringify(p)); renderProducts(); } }
-
+        function removeProduct(id) {
+    if(confirm("Excluir este produto?")) {
+        let products = JSON.parse(localStorage.getItem('products') || '[]');
+        // Filtra para remover o item com o ID clicado
+        products = products.filter(p => p.id === id ? false : true); 
+        // OU: products = products.filter(p => String(p.id) !== String(id));
+        
+        localStorage.setItem('products', JSON.stringify(products));
+        renderProducts();
+    }
+}
         function renderOrders() {
             const orders = JSON.parse(localStorage.getItem('orders') || '[]');
             document.getElementById('ordersTable').innerHTML = orders.map((o, i) => `
