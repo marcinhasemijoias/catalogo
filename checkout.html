@@ -2,30 +2,41 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Finalizar</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-[#FDFBF7] text-[#2D2926]">
+<body class="bg-neutral-50 p-4">
 
-<main class="max-w-md mx-auto px-6 py-10 space-y-4">
+<h1 class="text-xl text-center mb-6 font-serif">Finalizar Pedido</h1>
 
-<input id="name" class="w-full border p-3" placeholder="Nome">
-<button onclick="send()" class="w-full bg-black text-white py-4 text-xs uppercase">
-Finalizar no WhatsApp
+<input id="name" placeholder="Nome" class="border p-2 w-full mb-2">
+<input id="whats" placeholder="WhatsApp" class="border p-2 w-full mb-4">
+
+<select id="payment" class="border p-2 w-full mb-4">
+  <option value="PIX">PIX</option>
+  <option value="Cartão">Cartão</option>
+</select>
+
+<button onclick="send()"
+  class="w-full bg-black text-white py-3">
+  Enviar no WhatsApp
 </button>
 
-</main>
-
 <script>
-const store = JSON.parse(localStorage.getItem('store_config')) || {};
-const cart = JSON.parse(localStorage.getItem('cart')) || [];
+const cart = JSON.parse(localStorage.getItem("cart")) || [];
+const phone = localStorage.getItem("storePhone") || "5500000000000";
 
-function send(){
-  let msg = `Pedido - ${store.name}\n`;
-  cart.forEach(p=>msg+=`${p.qty}x ${p.name}\n`);
-  window.open(`https://wa.me/${store.whatsapp}?text=${encodeURIComponent(msg)}`);
+function send() {
+  let msg = `Pedido:%0A`;
+  cart.forEach(i => {
+    msg += `${i.qty}x ${i.name} - R$ ${i.price}%0A`;
+  });
+
+  msg += `%0APagamento: ${payment.value}`;
+
+  window.open(`https://wa.me/${phone}?text=${msg}`);
 }
 </script>
 
