@@ -10,9 +10,6 @@
         body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #111111; }
         @media print { .no-print { display: none !important; } .print-only { display: block !important; } body { background: white; } }
         .print-only { display: none; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #FDFBF7; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #A68966; }
     </style>
 </head>
 <body>
@@ -20,14 +17,12 @@
     <nav class="border-b border-[#E5E1DB] bg-white px-6 py-4 flex justify-between items-center no-print">
         <h1 class="font-serif text-xl tracking-tighter uppercase">Gestão <span class="text-[#A68966]">Boutique</span></h1>
         <div class="flex gap-4">
-            <a href="https://marcinhasemijoias.github.io/catalogo/index.html" target="_blank" class="text-[10px] tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja Online</a>
+            <a href="../index.html" class="text-[10px] tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja Online</a>
         </div>
     </nav>
 
     <div class="max-w-6xl mx-auto p-6 space-y-12 no-print">
-        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             <section class="lg:col-span-1 space-y-6">
                 <h2 class="font-serif text-xl border-b border-[#A68966] pb-2">Marca & Regras</h2>
                 <div class="space-y-3 bg-white p-5 border border-[#E5E1DB] shadow-sm">
@@ -48,85 +43,69 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="pName" placeholder="Nome da Joia" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
                         <input type="text" id="pSku" placeholder="SKU (Ex: AN-001)" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
-                        <input type="number" id="pPrice" placeholder="Preço (189.90)" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
-                        <input type="number" id="pStock" placeholder="Estoque Atual" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
+                        <input type="number" id="pPrice" placeholder="Preço" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
+                        <input type="number" id="pStock" placeholder="Estoque" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
                     </div>
-                    
                     <div class="mt-4 flex items-center gap-4">
-                        <div class="flex-1">
-                            <label class="text-[9px] uppercase tracking-widest text-[#8C857B]">Foto do Produto (Upload)</label>
-                            <input type="file" id="pImage" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-[#FDFBF7] file:text-[#A68966] cursor-pointer">
-                        </div>
-                        <div id="imgPreview" class="w-14 h-14 border border-[#E5E1DB] hidden bg-center bg-cover shadow-inner"></div>
+                        <input type="file" id="pImage" accept="image/*" class="text-xs">
+                        <div id="imgPreview" class="w-14 h-14 border hidden bg-center bg-cover"></div>
                     </div>
-
                     <div class="flex gap-2 mt-6">
-                        <button onclick="addProduct()" id="btnSave" class="flex-1 bg-[#111111] text-white text-[10px] tracking-widest uppercase py-4 hover:bg-[#333] transition">Salvar no Catálogo</button>
-                        <button onclick="resetForm()" id="btnCancel" class="hidden px-6 border border-gray-200 text-[10px] uppercase hover:bg-gray-50 transition">Cancelar</button>
+                        <button onclick="addProduct()" id="btnSave" class="flex-1 bg-[#111111] text-white text-[10px] uppercase py-4">Salvar no Catálogo</button>
+                        <button onclick="resetForm()" id="btnCancel" class="hidden px-6 border text-[10px] uppercase">Cancelar</button>
                     </div>
                 </div>
             </section>
         </div>
 
         <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Estoque & Catálogo</h2>
-            <div class="bg-white border border-[#E5E1DB] overflow-hidden shadow-sm">
-                <table class="w-full text-left border-collapse">
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2">Estoque</h2>
+            <div class="bg-white border border-[#E5E1DB]">
+                <table class="w-full text-left">
                     <thead>
-                        <tr class="bg-[#FDFBF7] text-[10px] uppercase tracking-widest text-[#8C857B] border-b border-[#E5E1DB]">
-                            <th class="p-4 font-normal">Produto</th>
-                            <th class="p-4 font-normal">SKU</th>
-                            <th class="p-4 font-normal">Preço</th>
-                            <th class="p-4 font-normal text-center">Estoque</th>
-                            <th class="p-4 font-normal text-right">Ações</th>
+                        <tr class="bg-[#FDFBF7] text-[10px] uppercase text-[#8C857B] border-b">
+                            <th class="p-4">Produto</th>
+                            <th class="p-4">Preço</th>
+                            <th class="p-4 text-center">Estoque</th>
+                            <th class="p-4 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="productList" class="text-sm divide-y divide-[#FDFBF7]"></tbody>
+                    <tbody id="productList" class="text-sm"></tbody>
                 </table>
             </div>
         </section>
 
         <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Relatório de Vendas</h2>
-            <div class="bg-white border border-[#E5E1DB] overflow-x-auto shadow-sm">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-[10px] uppercase tracking-widest text-[#8C857B] border-b border-[#E5E1DB]">
-                            <th class="p-4 font-normal">Data / Cliente</th>
-                            <th class="p-4 font-normal">Itens</th>
-                            <th class="p-4 font-normal">Total</th>
-                            <th class="p-4 font-normal text-right">Ações</th>
-                        </tr>
-                    </thead>
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2">Vendas</h2>
+            <div class="bg-white border border-[#E5E1DB]">
+                <table class="w-full text-left">
                     <tbody id="ordersTable" class="text-xs"></tbody>
                 </table>
             </div>
         </section>
     </div>
 
-    <div id="printArea" class="print-only p-10"></div>
+    <div id="printArea" class="print-only"></div>
 
     <script>
-        // Funções de inicialização e dados permanecem as mesmas das versões anteriores
         window.onload = () => {
-            document.getElementById('storeName').value = localStorage.getItem('storeName') || '';
-            document.getElementById('whatsapp').value = localStorage.getItem('whatsapp') || '';
-            document.getElementById('pixDiscount').value = localStorage.getItem('pixDiscount') || '';
-            document.getElementById('maxInstallments').value = localStorage.getItem('maxInstallments') || '';
+            ['storeName', 'whatsapp', 'pixDiscount', 'maxInstallments'].forEach(id => {
+                document.getElementById(id).value = localStorage.getItem(id) || '';
+            });
             renderProducts();
             renderOrders();
         };
 
         function saveSettings() {
-            localStorage.setItem('storeName', document.getElementById('storeName').value);
-            localStorage.setItem('whatsapp', document.getElementById('whatsapp').value);
-            localStorage.setItem('pixDiscount', document.getElementById('pixDiscount').value);
-            localStorage.setItem('maxInstallments', document.getElementById('maxInstallments').value);
-            alert("Configurações atualizadas!");
+            ['storeName', 'whatsapp', 'pixDiscount', 'maxInstallments'].forEach(id => {
+                localStorage.setItem(id, document.getElementById(id).value);
+            });
+            alert("Salvo!");
+            location.reload();
         }
 
         let currentImgBase64 = "";
-        document.getElementById('pImage').onchange = function(e) {
+        document.getElementById('pImage').onchange = (e) => {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 currentImgBase64 = ev.target.result;
@@ -140,132 +119,70 @@
         function addProduct() {
             const id = document.getElementById('editId').value;
             const name = document.getElementById('pName').value;
+            const price = parseFloat(document.getElementById('pPrice').value);
+            const stock = parseInt(document.getElementById('pStock').value) || 0;
             const sku = document.getElementById('pSku').value;
-            const price = document.getElementById('pPrice').value;
-            const stock = document.getElementById('pStock').value;
 
-            if (!name || !price) return alert("Nome e Preço são obrigatórios.");
+            if (!name || isNaN(price)) return alert("Preencha os campos!");
 
             let products = JSON.parse(localStorage.getItem('products') || '[]');
-
             if (id) {
-                const index = products.findIndex(p => p.id === id);
-                products[index] = { ...products[index], name, sku, price: parseFloat(price), stock: parseInt(stock) || 0, image: currentImgBase64 || products[index].image };
+                const idx = products.findIndex(p => p.id === id);
+                products[idx] = { ...products[idx], name, sku, price, stock, image: currentImgBase64 || products[idx].image };
             } else {
-                if(!currentImgBase64) return alert("Selecione uma imagem.");
-                products.push({ id: Date.now().toString(), name, sku, price: parseFloat(price), stock: parseInt(stock) || 0, image: currentImgBase64 });
+                products.push({ id: Date.now().toString(), name, sku, price, stock, image: currentImgBase64 });
             }
-
             localStorage.setItem('products', JSON.stringify(products));
-            resetForm();
-            renderProducts();
+            resetForm(); renderProducts();
+        }
+
+        function renderProducts() {
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            document.getElementById('productList').innerHTML = products.map(p => `
+                <tr class="border-b">
+                    <td class="p-4 flex items-center gap-2"><img src="${p.image}" class="w-8 h-8 object-cover">${p.name}</td>
+                    <td class="p-4">R$ ${p.price.toFixed(2)}</td>
+                    <td class="p-4 text-center">${p.stock} un</td>
+                    <td class="p-4 text-right">
+                        <button onclick="editProduct('${p.id}')" class="text-[#A68966] mr-2">Editar</button>
+                        <button onclick="removeProduct('${p.id}')" class="text-red-400">Excluir</button>
+                    </td>
+                </tr>`).join('');
         }
 
         function editProduct(id) {
-            const products = JSON.parse(localStorage.getItem('products') || '[]');
-            const p = products.find(x => x.id === id);
+            const p = JSON.parse(localStorage.getItem('products')).find(x => x.id === id);
             document.getElementById('editId').value = p.id;
             document.getElementById('pName').value = p.name;
-            document.getElementById('pSku').value = p.sku || '';
             document.getElementById('pPrice').value = p.price;
-            document.getElementById('pStock').value = p.stock || 0;
-            document.getElementById('formTitle').innerText = "Editando Item";
-            document.getElementById('btnSave').innerText = "Salvar Alterações";
+            document.getElementById('pStock').value = p.stock;
+            document.getElementById('pSku').value = p.sku;
+            document.getElementById('formTitle').innerText = "Editando...";
             document.getElementById('btnCancel').classList.remove('hidden');
-            const prev = document.getElementById('imgPreview');
-            prev.style.backgroundImage = `url(${p.image})`;
-            prev.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function resetForm() {
             document.getElementById('editId').value = '';
             document.getElementById('pName').value = '';
-            document.getElementById('pSku').value = '';
             document.getElementById('pPrice').value = '';
             document.getElementById('pStock').value = '';
-            document.getElementById('pImage').value = '';
+            document.getElementById('pSku').value = '';
             document.getElementById('imgPreview').classList.add('hidden');
-            document.getElementById('formTitle').innerText = "Novo Produto";
-            document.getElementById('btnSave').innerText = "Salvar no Catálogo";
-            document.getElementById('btnCancel').classList.add('hidden');
             currentImgBase64 = "";
         }
 
-        function renderProducts() {
-            const list = document.getElementById('productList');
-            const products = JSON.parse(localStorage.getItem('products') || '[]');
-            list.innerHTML = products.map(p => `
-                <tr class="hover:bg-[#FDFBF7] transition">
-                    <td class="p-4 flex items-center gap-3">
-                        <img src="${p.image}" class="w-10 h-10 object-cover rounded border border-[#FDFBF7]">
-                        <span class="font-medium">${p.name}</span>
-                    </td>
-                    <td class="p-4 text-[10px] text-gray-400 font-mono">${p.sku || '--'}</td>
-                    <td class="p-4 font-serif">R$ ${p.price.toFixed(2)}</td>
-                    <td class="p-4 text-center">
-                        <span class="px-2 py-1 ${p.stock <= 3 ? 'bg-red-50 text-red-500 font-bold' : 'bg-gray-50 text-gray-600'} rounded text-[10px]">${p.stock || 0} un</span>
-                    </td>
-                    <td class="p-4 text-right space-x-4">
-                        <button onclick="editProduct('${p.id}')" class="text-[#A68966] text-[10px] uppercase tracking-tighter hover:underline font-semibold">Editar</button>
-                        <button onclick="removeProduct('${p.id}')" class="text-red-300 text-[10px] uppercase hover:text-red-500 transition">Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function removeProduct(id) {
-            if(confirm("Excluir este produto?")) {
-                let products = JSON.parse(localStorage.getItem('products') || '[]');
-                products = products.filter(p => p.id !== id);
-                localStorage.setItem('products', JSON.stringify(products));
-                renderProducts();
-            }
-        }
+        function removeProduct(id) { if(confirm("Excluir?")) { const p = JSON.parse(localStorage.getItem('products')).filter(x => x.id !== id); localStorage.setItem('products', JSON.stringify(p)); renderProducts(); } }
 
         function renderOrders() {
             const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-            const container = document.getElementById('ordersTable');
-            container.innerHTML = orders.map((order, index) => `
-                <tr class="border-b border-[#FDFBF7] hover:bg-[#FDFBF7] transition">
-                    <td class="p-4">
-                        <p class="font-bold">${order.customerName}</p>
-                        <p class="text-[9px] text-gray-400 uppercase">${order.date}</p>
-                    </td>
-                    <td class="p-4">${order.itemCount} itens</td>
-                    <td class="p-4 font-serif">R$ ${order.total}</td>
-                    <td class="p-4 text-right space-x-2">
-                        <button onclick="printOrder(${index})" class="border border-[#A68966] text-[#A68966] px-3 py-1 rounded-sm text-[9px] uppercase hover:bg-[#A68966] hover:text-white transition">Imprimir</button>
-                        <button onclick="deleteOrder(${index})" class="text-gray-200 hover:text-red-500 transition px-2">✕</button>
-                    </td>
-                </tr>
-            `).join('');
+            document.getElementById('ordersTable').innerHTML = orders.map((o, i) => `
+                <tr class="border-b">
+                    <td class="p-4"><b>${o.customerName}</b><br>${o.date}</td>
+                    <td class="p-4">R$ ${o.total}</td>
+                    <td class="p-4 text-right"><button onclick="deleteOrder(${i})">✕</button></td>
+                </tr>`).join('');
         }
-
-        function deleteOrder(i) {
-            if(confirm("Excluir pedido?")) {
-                let orders = JSON.parse(localStorage.getItem('orders') || '[]');
-                orders.splice(i, 1);
-                localStorage.setItem('orders', JSON.stringify(orders));
-                renderOrders();
-            }
-        }
-
-        function printOrder(index) {
-            const order = JSON.parse(localStorage.getItem('orders'))[index];
-            const store = localStorage.getItem('storeName') || 'Boutique';
-            const items = order.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid #f0f0f0"><span>${i.qty}x ${i.name}</span><span>R$ ${(i.price * i.qty).toFixed(2)}</span></div>`).join('');
-            document.getElementById('printArea').innerHTML = `
-                <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:20px">
-                    <h1 style="font-family:serif; letter-spacing:4px; text-transform:uppercase; margin:0">${store}</h1>
-                    <p style="font-size:10px; margin-top:5px">RELATÓRIO DE PEDIDO</p>
-                </div>
-                <div style="font-size:12px; margin-bottom:20px"><p><strong>CLIENTE:</strong> ${order.customerName}</p><p><strong>DATA:</strong> ${order.date}</p></div>
-                <div style="margin-bottom:20px">${items}</div>
-                <div style="text-align:right; margin-top:20px; font-size:18px"><strong>TOTAL: R$ ${order.total}</strong></div>
-            `;
-            window.print();
-        }
+        function deleteOrder(i) { let o = JSON.parse(localStorage.getItem('orders')); o.splice(i,1); localStorage.setItem('orders', JSON.stringify(o)); renderOrders(); }
     </script>
 </body>
 </html>
