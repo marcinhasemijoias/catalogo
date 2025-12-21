@@ -1,177 +1,145 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Admin — Catálogo Premium</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css">
-<style>
-  body { background-color: #FDFBF7; color: #111111; font-family: system-ui, sans-serif; }
-  h1, h2, h3 { font-family: serif; letter-spacing: 0.05em; }
-  .price-pix { color: #A68966; font-weight: bold; }
-  .price-parcel { color: #8C857B; }
-  .btn-primary { background-color: #111111; color: #FDFBF7; font-weight: bold; transition: 0.2s; }
-  .btn-primary:hover { background-color: #A68966; color: #FDFBF7; }
-  .card { background-color: #fff; border: 1px solid #E5E1DB; border-radius: 16px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
-  .card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-  input, select, textarea { border: 1px solid #E5E1DB; padding: 0.5rem; border-radius: 6px; width: 100%; background-color: #FDFBF7; }
-  label { font-weight: 600; }
-  .modal-bg { backdrop-filter: blur(4px); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin | Gestão Boutique</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-[#FDFBF7] text-[#111111]">
+<body class="bg-[#FDFBF7] text-[#111111] min-h-screen">
 
-<!-- HEADER -->
-<header class="text-center py-10 border-b border-[#E5E1DB]">
-  <h1 class="font-serif text-4xl tracking-wide" id="storeName">Catálogo Boutique</h1>
-  <p class="text-xs tracking-[0.3em] uppercase text-[#8C857B] mt-2">
-    Joias selecionadas • Painel Administrativo
-  </p>
-</header>
+    <nav class="border-b border-[#E5E1DB] bg-white px-6 py-4 flex justify-between items-center">
+        <h1 class="font-serif text-xl tracking-tighter uppercase">Painel <span class="text-[#A68966]">Boutique</span></h1>
+        <a href="../catalogo/loja/index.html" target="_blank" class="text-xs tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja</a>
+    </nav>
 
-<main class="max-w-7xl mx-auto px-6 py-12">
+    <div class="max-w-4xl mx-auto p-6 space-y-12">
+        
+        <section class="space-y-6">
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Configurações da Marca</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">Nome da Loja</label>
+                    <input type="text" id="storeName" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="Ex: Joalheria Real">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">WhatsApp (com DDD)</label>
+                    <input type="number" id="whatsapp" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="5511999999999">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">Desconto PIX (%)</label>
+                    <input type="number" id="pixDiscount" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="Ex: 10">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-[#8C857B] mb-2">Parcelamento Máx.</label>
+                    <input type="number" id="maxInstallments" class="w-full bg-white border border-[#E5E1DB] p-3 focus:outline-none focus:border-[#A68966]" placeholder="Ex: 3">
+                </div>
+            </div>
+            <button onclick="saveSettings()" class="bg-[#111111] text-white text-xs tracking-[0.2em] uppercase w-full py-4 hover:bg-[#222] transition">Salvar Identidade</button>
+        </section>
 
-  <!-- SEÇÃO DE PRODUTOS -->
-  <section class="mb-16">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="font-serif text-2xl tracking-wide">Produtos</h2>
-      <button id="addProductBtn" class="btn-primary px-6 py-2 rounded tracking-widest uppercase">Adicionar Produto</button>
+        <hr class="border-[#E5E1DB]">
+
+        <section class="space-y-6">
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Novo Produto</h2>
+            <div class="bg-white border border-[#E5E1DB] p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="pName" placeholder="Nome do Produto" class="w-full border-b border-[#E5E1DB] py-2 focus:outline-none focus:border-[#A68966]">
+                    <input type="number" id="pPrice" placeholder="Preço (Ex: 189.90)" class="w-full border-b border-[#E5E1DB] py-2 focus:outline-none focus:border-[#A68966]">
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-xs uppercase tracking-widest text-[#8C857B]">Foto do Produto (Upload)</label>
+                    <input type="file" id="pImage" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-semibold file:bg-[#FDFBF7] file:text-[#A68966] hover:file:bg-[#E5E1DB]">
+                </div>
+
+                <button onclick="addProduct()" class="w-full border border-[#111111] text-[#111111] text-xs tracking-[0.2em] uppercase py-3 hover:bg-[#111111] hover:text-white transition">Cadastrar no Catálogo</button>
+            </div>
+        </section>
+
+        <section class="space-y-6">
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Estoque Atual</h2>
+            <div id="productList" class="grid gap-4">
+                </div>
+        </section>
     </div>
 
-    <div id="productGrid" class="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"></div>
-  </section>
+    <script>
+        // Carregar dados iniciais
+        document.getElementById('storeName').value = localStorage.getItem('storeName') || '';
+        document.getElementById('whatsapp').value = localStorage.getItem('whatsapp') || '';
+        document.getElementById('pixDiscount').value = localStorage.getItem('pixDiscount') || '';
+        document.getElementById('maxInstallments').value = localStorage.getItem('maxInstallments') || '';
 
-  <!-- SEÇÃO DE PEDIDOS -->
-  <section>
-    <h2 class="font-serif text-2xl tracking-wide mb-6">Pedidos / Relatórios</h2>
-    <div id="ordersList" class="space-y-4"></div>
-  </section>
+        function saveSettings() {
+            localStorage.setItem('storeName', document.getElementById('storeName').value);
+            localStorage.setItem('whatsapp', document.getElementById('whatsapp').value);
+            localStorage.setItem('pixDiscount', document.getElementById('pixDiscount').value);
+            localStorage.setItem('maxInstallments', document.getElementById('maxInstallments').value);
+            alert("Configurações atualizadas com sucesso!");
+        }
 
-</main>
+        function addProduct() {
+            const name = document.getElementById('pName').value;
+            const price = document.getElementById('pPrice').value;
+            const imageFile = document.getElementById('pImage').files[0];
 
-<!-- MODAL DE PRODUTO -->
-<div id="productModal" class="fixed inset-0 hidden items-center justify-center z-50 modal-bg bg-black bg-opacity-30">
-  <div class="bg-[#FDFBF7] rounded-2xl p-8 w-full max-w-lg shadow-lg">
-    <h3 class="font-serif text-2xl mb-6 text-center">Adicionar / Editar Produto</h3>
-    <form id="productForm" class="space-y-4">
-      <div>
-        <label>Nome do Produto</label>
-        <input type="text" id="productName" required>
-      </div>
-      <div>
-        <label>Preço (R$)</label>
-        <input type="number" id="productPrice" step="0.01" required>
-      </div>
-      <div>
-        <label>Desconto PIX (R$)</label>
-        <input type="number" id="productPix" step="0.01">
-      </div>
-      <div>
-        <label>Parcelamento Cartão</label>
-        <input type="text" id="productParcel">
-      </div>
-      <div>
-        <label>Imagem do Produto</label>
-        <input type="file" id="productImage" accept="image/*">
-      </div>
-      <div class="flex justify-end gap-3 mt-6">
-        <button type="button" id="closeModalBtn" class="px-4 py-2 border rounded tracking-wide">Cancelar</button>
-        <button type="submit" class="btn-primary px-6 py-2 rounded tracking-wide">Salvar</button>
-      </div>
-    </form>
-  </div>
-</div>
+            if (!name || !price || !imageFile) {
+                alert("Por favor, preencha todos os campos e selecione uma imagem.");
+                return;
+            }
 
-<script>
-  let products = [];
-  let orders = [];
+            // Converter Imagem para Base64 (Upload real sem servidor externo)
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                const products = JSON.parse(localStorage.getItem('products') || '[]');
+                products.push({
+                    id: Date.now().toString(),
+                    name: name,
+                    price: parseFloat(price),
+                    image: reader.result // Aqui salva a string da imagem
+                });
+                localStorage.setItem('products', JSON.stringify(products));
+                renderProducts();
+                
+                // Limpar campos
+                document.getElementById('pName').value = '';
+                document.getElementById('pPrice').value = '';
+                document.getElementById('pImage').value = '';
+            }
+            reader.readAsDataURL(imageFile);
+        }
 
-  const productGrid = document.getElementById('productGrid');
-  const ordersList = document.getElementById('ordersList');
-  const productModal = document.getElementById('productModal');
-  const productForm = document.getElementById('productForm');
-  const addProductBtn = document.getElementById('addProductBtn');
-  const closeModalBtn = document.getElementById('closeModalBtn');
-  const productImageInput = document.getElementById('productImage');
+        function removeProduct(id) {
+            let products = JSON.parse(localStorage.getItem('products') || '[]');
+            products = products.filter(p => p.id !== id);
+            localStorage.setItem('products', JSON.stringify(products));
+            renderProducts();
+        }
 
-  addProductBtn.addEventListener('click', () => productModal.classList.remove('hidden'));
-  closeModalBtn.addEventListener('click', () => { productModal.classList.add('hidden'); productForm.reset(); });
+        function renderProducts() {
+            const list = document.getElementById('productList');
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            
+            list.innerHTML = products.map(p => `
+                <div class="flex items-center justify-between bg-white border border-[#E5E1DB] p-4 group">
+                    <div class="flex items-center space-x-4">
+                        <img src="${p.image}" class="w-12 h-12 object-cover border border-[#FDFBF7]">
+                        <div>
+                            <p class="font-serif text-sm">${p.name}</p>
+                            <p class="text-xs text-[#8C857B]">R$ ${p.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <button onclick="removeProduct('${p.id}')" class="text-xs text-red-400 opacity-0 group-hover:opacity-100 transition uppercase tracking-widest">Excluir</button>
+                </div>
+            `).join('');
+        }
 
-  productForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('productName').value;
-    const price = parseFloat(document.getElementById('productPrice').value);
-    const pix = parseFloat(document.getElementById('productPix').value) || null;
-    const parcel = document.getElementById('productParcel').value;
-
-    const file = productImageInput.files[0];
-
-    const saveProduct = (imageData) => {
-      const newProduct = { id: Date.now(), name, price, pix, parcel, image: imageData || '' };
-      products.push(newProduct);
-      renderProducts();
-      productModal.classList.add('hidden');
-      productForm.reset();
-    };
-
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => saveProduct(e.target.result);
-      reader.readAsDataURL(file);
-    } else {
-      saveProduct(null);
-    }
-  });
-
-  function renderProducts() {
-    productGrid.innerHTML = '';
-    products.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'card p-4 flex flex-col items-center text-center';
-      card.innerHTML = `
-        <img src="${p.image || 'https://via.placeholder.com/300'}" alt="${p.name}" class="w-full h-48 object-cover mb-4 rounded">
-        <h3 class="font-serif text-lg mb-1">${p.name}</h3>
-        <p class="text-base mb-1">R$ ${p.price.toFixed(2)}</p>
-        ${p.pix ? `<p class="price-pix mb-1">PIX R$ ${p.pix.toFixed(2)}</p>` : ''}
-        ${p.parcel ? `<p class="price-parcel mb-2">${p.parcel}</p>` : ''}
-        <div class="flex gap-2">
-          <button onclick="editProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Editar</button>
-          <button onclick="deleteProduct(${p.id})" class="px-3 py-1 border rounded text-xs">Excluir</button>
-        </div>
-      `;
-      productGrid.appendChild(card);
-    });
-  }
-
-  function editProduct(id) {
-    const p = products.find(x => x.id === id);
-    if (!p) return;
-    document.getElementById('productName').value = p.name;
-    document.getElementById('productPrice').value = p.price;
-    document.getElementById('productPix').value = p.pix || '';
-    document.getElementById('productParcel').value = p.parcel || '';
-    productModal.classList.remove('hidden');
-    deleteProduct(id);
-  }
-
-  function deleteProduct(id) {
-    products = products.filter(p => p.id !== id);
-    renderProducts();
-  }
-
-  function renderOrders() {
-    ordersList.innerHTML = '';
-    orders.forEach(o => {
-      const div = document.createElement('div');
-      div.className = 'p-4 bg-white border rounded';
-      div.innerHTML = `<strong>Pedido #${o.id}</strong> - Total: R$ ${o.total.toFixed(2)}`;
-      ordersList.appendChild(div);
-    });
-  }
-
-  renderProducts();
-  renderOrders();
-</script>
-
+        renderProducts();
+    </script>
 </body>
 </html>
