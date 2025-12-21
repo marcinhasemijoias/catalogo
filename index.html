@@ -1,122 +1,49 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>Catálogo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<body class="bg-[#FDFBF7] text-[#2D2926]">
-
-<!-- HEADER -->
-<header class="relative text-center py-8 border-b">
-  <h1 id="storeName" class="text-2xl font-serif tracking-wide">
-    Catálogo
-  </h1>
-
-  <!-- CARRINHO -->
-  <a href="cart.html"
-     class="absolute top-8 right-6 text-xs uppercase tracking-widest">
-    Carrinho (<span id="cartCount">0</span>)
-  </a>
-</header>
-
-<!-- PRODUTOS -->
-<main
-  id="productGrid"
-  class="max-w-6xl mx-auto px-6 py-10 grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-</main>
-
 <script>
-/* =========================
-   CONFIG E DADOS
-========================= */
 const store = JSON.parse(localStorage.getItem('luxury_config')) || {};
 const products = JSON.parse(localStorage.getItem('luxury_products')) || [];
 let cart = JSON.parse(localStorage.getItem('luxury_cart')) || [];
 
-const format = v =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const format = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-document.getElementById('storeName').innerText =
-  store.name || 'Catálogo';
+document.getElementById('storeName').innerText = store.name || 'Catálogo';
 
-/* =========================
-   CARRINHO
-========================= */
-function updateCartCount() {
-  const count = cart.reduce((sum, item) => sum + item.qty, 0);
-  document.getElementById('cartCount').innerText = count;
+function updateCartCount(){
+  document.getElementById('cartCount').innerText =
+    cart.reduce((s,p)=>s+p.qty,0);
 }
 
-function addToCart(id) {
-  const product = products.find(p => p.id === id);
-  if (!product) return;
-
-  const existing = cart.find(item => item.id === id);
-  if (existing) {
-    existing.qty++;
-  } else {
-    cart.push({ ...product, qty: 1 });
-  }
+function addToCart(id){
+  const p = products.find(p=>p.id===id);
+  const item = cart.find(i=>i.id===id);
+  if(item){ item.qty++; }
+  else{ cart.push({...p, qty:1}); }
 
   localStorage.setItem('luxury_cart', JSON.stringify(cart));
   updateCartCount();
 }
 
-/* =========================
-   RENDER PRODUTOS
-========================= */
 const grid = document.getElementById('productGrid');
-grid.innerHTML = '';
 
-products.forEach(product => {
-  const pixDiscount = store.pixDiscount || 0;
-  const pixPrice = product.price - product.price * pixDiscount;
-
-  const installments = store.maxInstallments || 1;
-  const installmentValue = product.price / installments;
+products.forEach(p=>{
+  const pix = p.price - (p.price * (store.pixDiscount || 0) / 100);
+  const parcela = p.price / (store.maxInstallments || 1);
 
   grid.innerHTML += `
     <div class="bg-white border p-6 text-center space-y-4">
-      <img src="${product.image}"
-           class="h-48 mx-auto object-contain"
-           alt="${product.name}" />
-
-      <p class="uppercase text-sm tracking-widest">
-        ${product.name}
+      <img src="${p.image}" class="h-48 mx-auto object-contain">
+      <p class="uppercase text-sm">${p.name}</p>
+      <p class="line-through text-gray-400">${format(p.price)}</p>
+      <p class="text-green-700 font-semibold">PIX ${format(pix)}</p>
+      <p class="text-xs text-gray-500">
+        ${store.maxInstallments}x de ${format(parcela)}
       </p>
-
-      <div class="space-y-1 text-sm">
-        <p class="line-through text-gray-400">
-          ${format(product.price)}
-        </p>
-
-        <p class="font-semibold text-green-700">
-          PIX: ${format(pixPrice)}
-        </p>
-
-        <p class="text-xs text-gray-500">
-          ou ${installments}x de ${format(installmentValue)}
-        </p>
-      </div>
-
-      <button
-        onclick="addToCart(${product.id})"
-        class="w-full bg-black text-white py-3 text-xs uppercase tracking-widest">
+      <button onclick="addToCart(${p.id})"
+        class="w-full bg-black text-white py-3 text-xs uppercase">
         Adicionar ao carrinho
       </button>
     </div>
   `;
 });
 
-/* =========================
-   INIT
-========================= */
 updateCartCount();
 </script>
-
-</body>
-</html>
-
