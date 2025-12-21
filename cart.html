@@ -1,3 +1,32 @@
-let discount = payment==='pix'
-  ? subtotal * (store.pixDiscount || 0) / 100
-  : 0;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Carrinho</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#FDFBF7] text-[#2D2926]">
+
+<header class="text-center py-6">
+  <h1 class="text-xl font-serif">Carrinho</h1>
+</header>
+
+<main class="max-w-md mx-auto px-6 space-y-4" id="wrap"></main>
+
+<button onclick="location.href='checkout.html'" class="w-full bg-black text-white py-4 text-xs uppercase">
+Finalizar
+</button>
+
+<script>
+const cart = JSON.parse(localStorage.getItem('cart')) || [];
+wrap.innerHTML = cart.map(p=>`
+  <div class="border p-3 text-xs flex justify-between">
+    <span>${p.qty}x ${p.name}</span>
+    <span>R$ ${(p.price*p.qty).toFixed(2)}</span>
+  </div>`).join('');
+</script>
+
+</body>
+</html>
