@@ -121,48 +121,78 @@ function AdminPanel(){
         }
     };
 
+    const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // FUNÇÃO DE IMPRESSÃO CORRIGIDA E REATIVA
     const printOrder = (order) => {
         const win = window.open('', '_blank');
+        const itemsHtml = order.items?.map(i => `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 12px 0;">
+                    <div style="font-weight: bold;">${i.name.toUpperCase()}</div>
+                    <div style="font-size: 10px; color: #888;">SKU: ${i.sku || 'N/A'}</div>
+                </td>
+                <td align="center">${i.quantity || 1}</td>
+                <td align="right">${formatBRL(parseFloat(i.price))}</td>
+                <td align="right">${formatBRL(parseFloat(i.price) * (i.quantity || 1))}</td>
+            </tr>
+        `).join('');
+
         win.document.write(`
             <html>
-            <body style="font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: auto; color: #333;">
+            <head><title>Recibo - ${config.name}</title></head>
+            <body style="font-family: 'Inter', Arial, sans-serif; padding: 40px; max-width: 700px; margin: auto; color: #2D2926;">
                 <div style="text-align: center; text-transform: uppercase; margin-bottom: 30px;">
-                    <h1 style="margin: 0; letter-spacing: 5px; font-family: 'Playfair Display', serif;">${config.name}</h1>
-                    <div style="font-size: 10px; margin-top: 5px;">ALTA JOALHARIA & DESIGN</div>
-                    <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; margin: 20px 0; padding: 10px; font-weight: bold;">COMPROVANTE DE PEDIDO</div>
+                    <h1 style="margin: 0; letter-spacing: 5px; font-family: 'Playfair Display', serif; font-size: 28px;">${config.name}</h1>
+                    <div style="font-size: 10px; margin-top: 5px; letter-spacing: 2px;">ALTA JOALHARIA & DESIGN</div>
+                    <div style="border-top: 1px solid #2D2926; border-bottom: 1px solid #2D2926; margin: 20px 0; padding: 10px; font-weight: bold; letter-spacing: 3px;">DOCUMENTO DE VENDA</div>
                 </div>
-                <div style="font-size: 12px; margin-bottom: 30px; line-height: 1.6;">
-                    <strong>CLIENTE:</strong> ${order.customer?.name?.toUpperCase()}<br>
-                    <strong>CONTATO:</strong> ${order.customer?.phone}<br>
-                    <strong>DATA:</strong> ${order.date}
+                
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 30px; line-height: 1.6;">
+                    <div>
+                        <strong>DESTINATÁRIO</strong><br>
+                        ${order.customer?.name?.toUpperCase()}<br>
+                        ${order.customer?.phone}
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>Nº DO REGISTRO:</strong> #${order.id.slice(-4)}<br>
+                        <strong>DATA:</strong> ${order.date}
+                    </div>
                 </div>
+
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead>
-                        <tr style="border-bottom: 2px solid #000;">
-                            <th align="left" style="padding: 10px 0;">DESCRIÇÃO</th>
-                            <th align="center">QTD</th>
-                            <th align="right">TOTAL</th>
+                        <tr style="border-bottom: 2px solid #2D2926; text-transform: uppercase; font-size: 10px;">
+                            <th align="left" style="padding: 10px 0;">Descrição da Peça</th>
+                            <th align="center">Qtd</th>
+                            <th align="right">Vlr. Unitário</th>
+                            <th align="right">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${order.items?.map(i => `
-                            <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px 0;">${i.name.toUpperCase()}</td>
-                                <td align="center">${i.quantity || 1}</td>
-                                <td align="right">R$ ${(parseFloat(i.price) * (i.quantity || 1)).toFixed(2)}</td>
-                            </tr>
-                        `).join('')}
+                        ${itemsHtml}
                     </tbody>
                 </table>
-                <div style="margin-top: 20px; text-align: right;">
-                    <div style="font-size: 18px; font-weight: bold;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
-                    <div style="font-size: 11px;">PAGAMENTO: ${order.paymentMethod}</div>
+
+                <div style="margin-top: 20px; border-top: 1px solid #2D2926; padding-top: 10px;">
+                    <div style="display: flex; justify-content: flex-end; gap: 40px; font-size: 13px;">
+                        <strong>TOTAL:</strong>
+                        <span style="font-weight: bold; font-size: 16px;">${formatBRL(order.total)}</span>
+                    </div>
+                    <div style="text-align: right; font-size: 11px; margin-top: 5px; color: #555;">
+                        Forma de Pagamento: ${order.paymentMethod}
+                    </div>
+                </div>
+
+                <div style="margin-top: 60px; text-align: center; font-size: 10px; color: #999; line-height: 1.5;">
+                    ${config.address || ''}<br>
+                    <strong>Obrigado por escolher a excelência. Este documento comprova a autenticidade da sua transação.</strong>
                 </div>
             </body>
             </html>
         `);
         win.document.close();
-        win.print();
+        setTimeout(() => { win.print(); }, 500);
     };
 
     return (
@@ -182,6 +212,7 @@ function AdminPanel(){
                         <div className="space-y-4">
                             <div><label>Nome da Loja</label><input className="input-field" value={config.name} onChange={e => updateConfig('name', e.target.value)} /></div>
                             <div><label>WhatsApp Destinatário</label><input className="input-field" value={config.whatsapp} onChange={e => updateConfig('whatsapp', e.target.value)} /></div>
+                            <div><label>Endereço do Recibo</label><input className="input-field" value={config.address} onChange={e => updateConfig('address', e.target.value)} /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label>Desc. PIX %</label><input type="number" className="input-field" value={config.pixDiscount} onChange={e => updateConfig('pixDiscount', e.target.value)} /></div>
                                 <div><label>Max Parcelas</label><input type="number" className="input-field" value={config.maxInstallments} onChange={e => updateConfig('maxInstallments', e.target.value)} /></div>
@@ -197,13 +228,11 @@ function AdminPanel(){
                             <input placeholder="Nome da Joia" className="input-field" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} />
                             <input placeholder="Preço Base" type="number" className="input-field" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} />
                             <input placeholder="SKU" className="input-field" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
-                            
                             <div>
                                 <label>Foto do Produto</label>
                                 <input id="fileInput" type="file" accept="image/*" className="file-input w-full" onChange={handleImageUpload} />
                                 {newProd.image && <div className="mt-2 text-[9px] text-green-600 font-bold uppercase">✓ Imagem Selecionada</div>}
                             </div>
-
                             <button onClick={handleSaveProduct} className="w-full bg-black text-white py-3 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-colors">
                                 {editingId ? 'Salvar Alterações' : 'Cadastrar Item'}
                             </button>
@@ -223,11 +252,16 @@ function AdminPanel(){
                                 <div key={order.id} className="p-4 border lux-border rounded-lg flex justify-between items-center bg-white hover:bg-gray-50">
                                     <div>
                                         <p className="text-xs font-bold uppercase">{order.customer?.name}</p>
-                                        <p className="text-[10px] text-gray-500">{order.date} • <span className="lux-gold font-bold">R$ {order.total?.toFixed(2)}</span></p>
+                                        <p className="text-[10px] text-gray-500">{order.date} • <span className="lux-gold font-bold">{formatBRL(order.total)}</span></p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => printOrder(order)} className="p-2 bg-zinc-100 rounded-md hover:bg-zinc-200"><Icon name="printer" size={16}/></button>
-                                        <button onClick={() => {if(confirm("Excluir pedido?")){const up = orders.filter(o=>o.id!==order.id); setOrders(up); localStorage.setItem('luxury_orders', JSON.stringify(up))}}} className="p-2 text-red-300 hover:text-red-500"><Icon name="trash-2" size={16}/></button>
+                                        {/* BOTÃO DA IMPRESSORA QUE ABRE O RECIBO */}
+                                        <button onClick={() => printOrder(order)} className="p-2 bg-zinc-100 rounded-md hover:bg-zinc-200" title="Imprimir Recibo">
+                                            <Icon name="printer" size={16}/>
+                                        </button>
+                                        <button onClick={() => {if(confirm("Excluir pedido?")){const up = orders.filter(o=>o.id!==order.id); setOrders(up); localStorage.setItem('luxury_orders', JSON.stringify(up))}}} className="p-2 text-red-300 hover:text-red-500">
+                                            <Icon name="trash-2" size={16}/>
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -242,7 +276,7 @@ function AdminPanel(){
                                     <img src={p.image} className="w-12 h-12 object-cover rounded border" />
                                     <div className="flex-grow">
                                         <p className="text-[10px] font-bold uppercase leading-none">{p.name}</p>
-                                        <p className="text-[10px] lux-gold mt-1 font-bold">R$ {p.price.toFixed(2)}</p>
+                                        <p className="text-[10px] lux-gold mt-1 font-bold">{formatBRL(p.price)}</p>
                                     </div>
                                     <div className="flex gap-1">
                                         <button onClick={() => startEdit(p)} className="p-2 text-zinc-400 hover:text-black transition-colors" title="Editar"><Icon name="edit-3" size={14}/></button>
