@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel Administrativo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="max-w-5xl mx-auto p-6 space-y-8">
+
+    <!-- TÍTULO -->
+    <h1 class="text-3xl font-serif text-center">Painel Administrativo</h1>
+
+    <!-- CONFIGURAÇÕES DA LOJA -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+      <h2 class="text-xl font-semibold">Configurações da Loja</h2>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium">Nome da Loja</label>
+          <input id="storeName" class="w-full border p-2 rounded" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Desconto PIX (%)</label>
+          <input id="pixDiscount" type="number" class="w-full border p-2 rounded" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Parcelamento no Cartão</label>
+          <input id="cardInstallments" type="number" class="w-full border p-2 rounded" />
+        </div>
+      </div>
+
+      <button onclick="saveSettings()" class="bg-black text-white px-4 py-2 rounded">
+        Salvar Configurações
+      </button>
+    </section>
+
+    <!-- CADASTRO DE PRODUTOS -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+      <h2 class="text-xl font-semibold">Cadastrar Produto</h2>
+
+      <div class="grid md:grid-cols-4 gap-4">
+        <input id="sku" placeholder="SKU" class="border p-2 rounded"/>
+        <input id="name" placeholder="Nome" class="border p-2 rounded"/>
+        <input id="price" placeholder="Preço" type="number" class="border p-2 rounded"/>
+        <input id="image" placeholder="URL da Imagem" class="border p-2 rounded"/>
+      </div>
+
+      <button onclick="addProduct()" class="bg-green-600 text-white px-4 py-2 rounded">
+        Adicionar Produto
+      </button>
+    </section>
+
+    <!-- LISTA DE PRODUTOS -->
+    <section class="bg-white p-6 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Produtos Cadastrados</h2>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left p-2">SKU</th>
+            <th class="text-left p-2">Nome</th>
+            <th class="text-left p-2">Preço</th>
+            <th class="text-left p-2">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="productList"></tbody>
+      </table>
+    </section>
+
+  </div>
+
+<script>
+let products = JSON.parse(localStorage.getItem('products')) || [];
+let settings = JSON.parse(localStorage.getItem('settings')) || {
+  storeName: 'Minha Loja',
+  pixDiscount: 5,
+  cardInstallments: 3
+};
+
+document.getElementById('storeName').value = settings.storeName;
+document.getElementById('pixDiscount').value = settings.pixDiscount;
+document.getElementById('cardInstallments').value = settings.cardInstallments;
+
+function saveSettings() {
+  settings = {
+    storeName: storeName.value,
+    pixDiscount: pixDiscount.value,
+    cardInstallments: cardInstallments.value
+  };
+  localStorage.setItem('settings', JSON.stringify(settings));
+  alert('Configurações salvas!');
+}
+
+function addProduct() {
+  const product = {
+    id: Date.now(),
+    sku: sku.value,
+    name: name.value,
+    price: parseFloat(price.value),
+    image: image.value
+  };
+  products.push(product);
+  localStorage.setItem('products', JSON.stringify(products));
+  renderProducts();
+  sku.value = name.value = price.value = image.value = '';
+}
+
+function renderProducts() {
+  productList.innerHTML = '';
+  products.forEach(p => {
+    productList.innerHTML += `
+      <tr class="border-b">
+        <td class="p-2">${p.sku}</td>
+        <td class="p-2">${p.name}</td>
+        <td class="p-2">R$ ${p.price.toFixed(2)}</td>
+        <td class="p-2 space-x-2">
+          <button onclick="editProduct(${p.id})" class="text-blue-600">Editar</button>
+          <button onclick="deleteProduct(${p.id})" class="text-red-600">Excluir</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  localStorage.setItem('products', JSON.stringify(products));
+  renderProducts();
+}
+
+function editProduct(id) {
+  const p = products.find(p => p.id === id);
+  sku.value = p.sku;
+  name.value = p.name;
+  price.value = p.price;
+  image.value = p.image;
+  deleteProduct(id);
+}
+
+renderProducts();
+</script>
+
+</body>
+</html>
