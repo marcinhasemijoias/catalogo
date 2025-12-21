@@ -2,65 +2,133 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel Admin</title>
+<title>Painel Administrativo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="p-4 bg-neutral-100 max-w-xl mx-auto">
+<body class="bg-neutral-100 p-4 max-w-3xl mx-auto">
 
-<h1 class="text-xl mb-4 font-serif">Painel Administrativo</h1>
+<h1 class="text-2xl font-serif mb-4">Painel Administrativo</h1>
 
+<!-- CONFIGURAÇÕES DA LOJA -->
+<section class="bg-white p-4 mb-6 border">
 <h2 class="font-medium mb-2">Configurações da Loja</h2>
 
-<input placeholder="Nome da Loja"
-  class="border p-2 w-full mb-2"
-  oninput="localStorage.setItem('storeName', this.value)">
+<input class="border p-2 w-full mb-2" placeholder="Nome da Loja"
+oninput="save('storeName',this.value)">
 
-<input placeholder="WhatsApp da Loja (somente números)"
-  class="border p-2 w-full mb-2"
-  oninput="localStorage.setItem('storePhone', this.value)">
+<input class="border p-2 w-full mb-2" placeholder="WhatsApp da Loja"
+oninput="save('storePhone',this.value)">
 
-<input placeholder="Desconto PIX (%)"
-  class="border p-2 w-full mb-2"
-  oninput="localStorage.setItem('pixDiscount', this.value)">
+<input class="border p-2 w-full mb-2" placeholder="Desconto PIX (%)"
+oninput="save('pixDiscount',this.value)">
 
-<input placeholder="Máx. parcelas no cartão (ex: 3, 6, 10)"
-  class="border p-2 w-full mb-4"
-  oninput="localStorage.setItem('maxInstallments', this.value)">
+<input class="border p-2 w-full mb-2" placeholder="Parcelas no cartão (ex: 3,6,10)"
+oninput="save('maxInstallments',this.value)">
+</section>
 
-<hr class="my-4">
+<!-- CADASTRO DE PRODUTO -->
+<section class="bg-white p-4 mb-6 border">
+<h2 class="font-medium mb-2">Cadastrar Produto</h2>
 
-<h2 class="font-medium mb-2">Novo Produto</h2>
-
-<input id="name" placeholder="Nome do Produto"
-  class="border p-2 w-full mb-2">
-
-<input id="price" placeholder="Preço"
-  class="border p-2 w-full mb-2">
-
-<input id="image" placeholder="URL da imagem"
-  class="border p-2 w-full mb-2">
+<input id="pName" class="border p-2 w-full mb-2" placeholder="Nome">
+<input id="pPrice" class="border p-2 w-full mb-2" placeholder="Preço">
+<input id="pImage" class="border p-2 w-full mb-2" placeholder="URL da imagem">
 
 <button onclick="addProduct()"
-  class="bg-black text-white px-4 py-2">
+class="bg-black text-white px-4 py-2">
 Adicionar Produto
 </button>
+</section>
+
+<!-- PRODUTOS CADASTRADOS -->
+<section class="bg-white p-4 mb-6 border">
+<h2 class="font-medium mb-4">Produtos Cadastrados</h2>
+<div id="productList" class="space-y-3"></div>
+</section>
+
+<!-- RELATÓRIOS -->
+<section class="bg-white p-4 border">
+<h2 class="font-medium mb-2">Relatório de Vendas</h2>
+
+<button onclick="printReport()"
+class="bg-black text-white px-4 py-2">
+Gerar / Imprimir PDF
+</button>
+
+<div id="report" class="mt-4 text-sm"></div>
+</section>
 
 <script>
-function addProduct() {
-  const products = JSON.parse(localStorage.getItem("products")) || [];
+function save(k,v){ localStorage.setItem(k,v) }
 
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+function addProduct(){
   products.push({
     id: Date.now().toString(),
-    name: name.value,
-    price: Number(price.value),
-    image: image.value
+    name: pName.value,
+    price: Number(pPrice.value),
+    image: pImage.value
+  });
+  localStorage.setItem("products", JSON.stringify(products));
+  location.reload();
+}
+
+function renderProducts(){
+  productList.innerHTML = "";
+  products.forEach((p,i)=>{
+    productList.innerHTML += `
+    <div class="border p-3 flex justify-between">
+      <div>
+        <p class="font-medium">${p.name}</p>
+        <p class="text-sm">R$ ${p.price}</p>
+      </div>
+      <div class="space-x-2">
+        <button onclick="edit(${i})">✏️</button>
+        <button onclick="del(${i})">🗑️</button>
+      </div>
+    </div>`;
+  });
+}
+
+function edit(i){
+  const p = products[i];
+  const n = prompt("Nome", p.name);
+  const pr = prompt("Preço", p.price);
+  if(n && pr){
+    p.name = n;
+    p.price = Number(pr);
+    localStorage.setItem("products", JSON.stringify(products));
+    renderProducts();
+  }
+}
+
+function del(i){
+  if(confirm("Excluir produto?")){
+    products.splice(i,1);
+    localStorage.setItem("products", JSON.stringify(products));
+    renderProducts();
+  }
+}
+
+function printReport(){
+  let html = "<h2>Relatório de Vendas</h2>";
+  let total = 0;
+
+  orders.forEach(o=>{
+    html += `<p>${o.date} - R$ ${o.total}</p>`;
+    total += o.total;
   });
 
-  localStorage.setItem("products", JSON.stringify(products));
-  alert("Produto cadastrado!");
+  html += `<strong>Total Geral: R$ ${total}</strong>`;
+  report.innerHTML = html;
+  window.print();
 }
+
+renderProducts();
 </script>
 
 </body>
