@@ -7,34 +7,30 @@
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-neutral-50 p-4">
+<body class="bg-neutral-50 p-4 max-w-xl mx-auto">
 
-<h1 class="text-xl text-center mb-6 font-serif">Finalizar Pedido</h1>
+<h1 class="text-xl font-serif mb-4 text-center">Finalizar Pedido</h1>
 
 <input id="name" placeholder="Nome" class="border p-2 w-full mb-2">
 <input id="whats" placeholder="WhatsApp" class="border p-2 w-full mb-4">
 
-<select id="payment" class="border p-2 w-full mb-4">
-  <option value="PIX">PIX</option>
-  <option value="Cartão">Cartão</option>
-</select>
-
 <button onclick="send()"
-  class="w-full bg-black text-white py-3">
-  Enviar no WhatsApp
+  class="bg-black text-white w-full py-3">
+Enviar Pedido no WhatsApp
 </button>
 
 <script>
 const cart = JSON.parse(localStorage.getItem("cart")) || [];
-const phone = localStorage.getItem("storePhone") || "5500000000000";
+const payment = localStorage.getItem("payment") || "PIX";
+const phone = localStorage.getItem("storePhone");
 
 function send() {
-  let msg = `Pedido:%0A`;
+  let msg = `🛍️ Pedido:%0A`;
   cart.forEach(i => {
     msg += `${i.qty}x ${i.name} - R$ ${i.price}%0A`;
   });
 
-  msg += `%0APagamento: ${payment.value}`;
+  msg += `%0A💳 Pagamento: ${payment}`;
 
   window.open(`https://wa.me/${phone}?text=${msg}`);
 }
