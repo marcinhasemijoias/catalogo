@@ -136,19 +136,30 @@
             resetForm(); renderProducts();
         }
 
-        function renderProducts() {
-            const products = JSON.parse(localStorage.getItem('products') || '[]');
-            document.getElementById('productList').innerHTML = products.map(p => `
-                <tr class="border-b">
-                    <td class="p-4 flex items-center gap-2"><img src="${p.image}" class="w-8 h-8 object-cover">${p.name}</td>
-                    <td class="p-4">R$ ${p.price.toFixed(2)}</td>
-                    <td class="p-4 text-center">${p.stock} un</td>
-                    <td class="p-4 text-right">
-                        <button onclick="editProduct('${p.id}')" class="text-[#A68966] mr-2">Editar</button>
-                        <button onclick="removeProduct('${p.id}')" class="text-red-400">Excluir</button>
-                    </td>
-                </tr>`).join('');
-        }
+       function renderProducts() {
+    const list = document.getElementById('productList');
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    
+    list.innerHTML = products.map(p => `
+        <tr class="hover:bg-[#FDFBF7] transition border-b border-[#FDFBF7]">
+            <td class="p-4 flex items-center gap-3">
+                <img src="${p.image}" class="w-10 h-10 object-cover rounded border border-[#FDFBF7]">
+                <span class="font-medium">${p.name}</span>
+            </td>
+            <td class="p-4 text-[10px] text-gray-400 font-mono">${p.sku || '--'}</td>
+            <td class="p-4 font-serif">R$ ${Number(p.price).toFixed(2)}</td>
+            <td class="p-4 text-center">
+                <span class="px-2 py-1 ${p.stock <= 3 ? 'bg-red-50 text-red-500 font-bold' : 'bg-gray-50 text-gray-600'} rounded text-[10px]">
+                    ${p.stock || 0} un
+                </span>
+            </td>
+            <td class="p-4 text-right space-x-4">
+                <button onclick="editProduct('${p.id}')" class="text-[#A68966] text-[10px] uppercase tracking-tighter hover:underline font-semibold">Editar</button>
+                <button onclick="removeProduct('${p.id}')" class="text-red-300 text-[10px] uppercase hover:text-red-500 transition">Excluir</button>
+            </td>
+        </tr>
+    `).join('');
+}
 
         function editProduct(id) {
             const p = JSON.parse(localStorage.getItem('products')).find(x => x.id === id);
