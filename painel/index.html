@@ -1,145 +1,131 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Painel Administrativo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<title>Painel Administrativo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800">
 
-  <div class="max-w-5xl mx-auto p-6 space-y-8">
+<body class="bg-neutral-100 p-4 max-w-3xl mx-auto">
 
-    <!-- TÍTULO -->
-    <h1 class="text-3xl font-serif text-center">Painel Administrativo</h1>
+<h1 class="text-2xl font-serif mb-4">Painel Administrativo</h1>
 
-    <!-- CONFIGURAÇÕES DA LOJA -->
-    <section class="bg-white p-6 rounded shadow space-y-4">
-      <h2 class="text-xl font-semibold">Configurações da Loja</h2>
+<!-- CONFIGURAÇÕES DA LOJA -->
+<section class="bg-white p-4 mb-6 border">
+<h2 class="font-medium mb-2">Configurações da Loja</h2>
 
-      <div class="grid md:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-sm font-medium">Nome da Loja</label>
-          <input id="storeName" class="w-full border p-2 rounded" />
-        </div>
+<input class="border p-2 w-full mb-2" placeholder="Nome da Loja"
+oninput="save('storeName',this.value)">
 
-        <div>
-          <label class="block text-sm font-medium">Desconto PIX (%)</label>
-          <input id="pixDiscount" type="number" class="w-full border p-2 rounded" />
-        </div>
+<input class="border p-2 w-full mb-2" placeholder="WhatsApp da Loja"
+oninput="save('storePhone',this.value)">
 
-        <div>
-          <label class="block text-sm font-medium">Parcelamento no Cartão</label>
-          <input id="cardInstallments" type="number" class="w-full border p-2 rounded" />
-        </div>
-      </div>
+<input class="border p-2 w-full mb-2" placeholder="Desconto PIX (%)"
+oninput="save('pixDiscount',this.value)">
 
-      <button onclick="saveSettings()" class="bg-black text-white px-4 py-2 rounded">
-        Salvar Configurações
-      </button>
-    </section>
+<input class="border p-2 w-full mb-2" placeholder="Parcelas no cartão (ex: 3,6,10)"
+oninput="save('maxInstallments',this.value)">
+</section>
 
-    <!-- CADASTRO DE PRODUTOS -->
-    <section class="bg-white p-6 rounded shadow space-y-4">
-      <h2 class="text-xl font-semibold">Cadastrar Produto</h2>
+<!-- CADASTRO DE PRODUTO -->
+<section class="bg-white p-4 mb-6 border">
+<h2 class="font-medium mb-2">Cadastrar Produto</h2>
 
-      <div class="grid md:grid-cols-4 gap-4">
-        <input id="sku" placeholder="SKU" class="border p-2 rounded"/>
-        <input id="name" placeholder="Nome" class="border p-2 rounded"/>
-        <input id="price" placeholder="Preço" type="number" class="border p-2 rounded"/>
-        <input id="image" placeholder="URL da Imagem" class="border p-2 rounded"/>
-      </div>
+<input id="pName" class="border p-2 w-full mb-2" placeholder="Nome">
+<input id="pPrice" class="border p-2 w-full mb-2" placeholder="Preço">
+<input id="pImage" class="border p-2 w-full mb-2" placeholder="URL da imagem">
 
-      <button onclick="addProduct()" class="bg-green-600 text-white px-4 py-2 rounded">
-        Adicionar Produto
-      </button>
-    </section>
+<button onclick="addProduct()"
+class="bg-black text-white px-4 py-2">
+Adicionar Produto
+</button>
+</section>
 
-    <!-- LISTA DE PRODUTOS -->
-    <section class="bg-white p-6 rounded shadow">
-      <h2 class="text-xl font-semibold mb-4">Produtos Cadastrados</h2>
+<!-- PRODUTOS CADASTRADOS -->
+<section class="bg-white p-4 mb-6 border">
+<h2 class="font-medium mb-4">Produtos Cadastrados</h2>
+<div id="productList" class="space-y-3"></div>
+</section>
 
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b">
-            <th class="text-left p-2">SKU</th>
-            <th class="text-left p-2">Nome</th>
-            <th class="text-left p-2">Preço</th>
-            <th class="text-left p-2">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="productList"></tbody>
-      </table>
-    </section>
+<!-- RELATÓRIOS -->
+<section class="bg-white p-4 border">
+<h2 class="font-medium mb-2">Relatório de Vendas</h2>
 
-  </div>
+<button onclick="printReport()"
+class="bg-black text-white px-4 py-2">
+Gerar / Imprimir PDF
+</button>
+
+<div id="report" class="mt-4 text-sm"></div>
+</section>
 
 <script>
-let products = JSON.parse(localStorage.getItem('products')) || [];
-let settings = JSON.parse(localStorage.getItem('settings')) || {
-  storeName: 'Minha Loja',
-  pixDiscount: 5,
-  cardInstallments: 3
-};
+function save(k,v){ localStorage.setItem(k,v) }
 
-document.getElementById('storeName').value = settings.storeName;
-document.getElementById('pixDiscount').value = settings.pixDiscount;
-document.getElementById('cardInstallments').value = settings.cardInstallments;
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
 
-function saveSettings() {
-  settings = {
-    storeName: storeName.value,
-    pixDiscount: pixDiscount.value,
-    cardInstallments: cardInstallments.value
-  };
-  localStorage.setItem('settings', JSON.stringify(settings));
-  alert('Configurações salvas!');
+function addProduct(){
+  products.push({
+    id: Date.now().toString(),
+    name: pName.value,
+    price: Number(pPrice.value),
+    image: pImage.value
+  });
+  localStorage.setItem("products", JSON.stringify(products));
+  location.reload();
 }
 
-function addProduct() {
-  const product = {
-    id: Date.now(),
-    sku: sku.value,
-    name: name.value,
-    price: parseFloat(price.value),
-    image: image.value
-  };
-  products.push(product);
-  localStorage.setItem('products', JSON.stringify(products));
-  renderProducts();
-  sku.value = name.value = price.value = image.value = '';
-}
-
-function renderProducts() {
-  productList.innerHTML = '';
-  products.forEach(p => {
+function renderProducts(){
+  productList.innerHTML = "";
+  products.forEach((p,i)=>{
     productList.innerHTML += `
-      <tr class="border-b">
-        <td class="p-2">${p.sku}</td>
-        <td class="p-2">${p.name}</td>
-        <td class="p-2">R$ ${p.price.toFixed(2)}</td>
-        <td class="p-2 space-x-2">
-          <button onclick="editProduct(${p.id})" class="text-blue-600">Editar</button>
-          <button onclick="deleteProduct(${p.id})" class="text-red-600">Excluir</button>
-        </td>
-      </tr>
-    `;
+    <div class="border p-3 flex justify-between">
+      <div>
+        <p class="font-medium">${p.name}</p>
+        <p class="text-sm">R$ ${p.price}</p>
+      </div>
+      <div class="space-x-2">
+        <button onclick="edit(${i})">✏️</button>
+        <button onclick="del(${i})">🗑️</button>
+      </div>
+    </div>`;
   });
 }
 
-function deleteProduct(id) {
-  products = products.filter(p => p.id !== id);
-  localStorage.setItem('products', JSON.stringify(products));
-  renderProducts();
+function edit(i){
+  const p = products[i];
+  const n = prompt("Nome", p.name);
+  const pr = prompt("Preço", p.price);
+  if(n && pr){
+    p.name = n;
+    p.price = Number(pr);
+    localStorage.setItem("products", JSON.stringify(products));
+    renderProducts();
+  }
 }
 
-function editProduct(id) {
-  const p = products.find(p => p.id === id);
-  sku.value = p.sku;
-  name.value = p.name;
-  price.value = p.price;
-  image.value = p.image;
-  deleteProduct(id);
+function del(i){
+  if(confirm("Excluir produto?")){
+    products.splice(i,1);
+    localStorage.setItem("products", JSON.stringify(products));
+    renderProducts();
+  }
+}
+
+function printReport(){
+  let html = "<h2>Relatório de Vendas</h2>";
+  let total = 0;
+
+  orders.forEach(o=>{
+    html += `<p>${o.date} - R$ ${o.total}</p>`;
+    total += o.total;
+  });
+
+  html += `<strong>Total Geral: R$ ${total}</strong>`;
+  report.innerHTML = html;
+  window.print();
 }
 
 renderProducts();
@@ -147,3 +133,4 @@ renderProducts();
 
 </body>
 </html>
+
