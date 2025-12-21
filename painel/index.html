@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin | Gestão Boutique Pro</title>
+    <title>Painel Admin | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
@@ -20,7 +20,7 @@
     <nav class="border-b border-[#E5E1DB] bg-white px-6 py-4 flex justify-between items-center no-print">
         <h1 class="font-serif text-xl tracking-tighter uppercase">Gestão <span class="text-[#A68966]">Boutique</span></h1>
         <div class="flex gap-4">
-            <a href="../catalogo/loja/index.html" target="_blank" class="text-[10px] tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja</a>
+            <a href="https://marcinhasemijoias.github.io/catalogo/loja/" target="_blank" class="text-[10px] tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja Online</a>
         </div>
     </nav>
 
@@ -30,14 +30,14 @@
             
             <section class="lg:col-span-1 space-y-6">
                 <h2 class="font-serif text-xl border-b border-[#A68966] pb-2">Marca & Regras</h2>
-                <div class="space-y-3 bg-white p-5 border border-[#E5E1DB]">
+                <div class="space-y-3 bg-white p-5 border border-[#E5E1DB] shadow-sm">
                     <input type="text" id="storeName" class="w-full bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="Nome da Loja">
                     <input type="number" id="whatsapp" class="w-full bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="WhatsApp (DDD)">
                     <div class="grid grid-cols-2 gap-4">
                         <input type="number" id="pixDiscount" class="bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="Desc. PIX %">
                         <input type="number" id="maxInstallments" class="bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="Parcelas">
                     </div>
-                    <button onclick="saveSettings()" class="w-full bg-[#111111] text-white text-[10px] tracking-widest uppercase py-3 mt-2">Atualizar</button>
+                    <button onclick="saveSettings()" class="w-full bg-[#111111] text-white text-[10px] tracking-widest uppercase py-3 mt-2 hover:bg-[#333] transition">Atualizar Configurações</button>
                 </div>
             </section>
 
@@ -54,15 +54,15 @@
                     
                     <div class="mt-4 flex items-center gap-4">
                         <div class="flex-1">
-                            <label class="text-[9px] uppercase tracking-widest text-[#8C857B]">Foto (Upload)</label>
-                            <input type="file" id="pImage" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-[#FDFBF7] file:text-[#A68966]">
+                            <label class="text-[9px] uppercase tracking-widest text-[#8C857B]">Foto do Produto (Upload)</label>
+                            <input type="file" id="pImage" accept="image/*" class="w-full text-xs text-gray-400 file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-[#FDFBF7] file:text-[#A68966] cursor-pointer">
                         </div>
-                        <div id="imgPreview" class="w-12 h-12 border border-[#E5E1DB] hidden"></div>
+                        <div id="imgPreview" class="w-14 h-14 border border-[#E5E1DB] hidden bg-center bg-cover"></div>
                     </div>
 
                     <div class="flex gap-2 mt-6">
-                        <button onclick="addProduct()" id="btnSave" class="flex-1 bg-[#111111] text-white text-[10px] tracking-widest uppercase py-4">Salvar Produto</button>
-                        <button onclick="resetForm()" id="btnCancel" class="hidden px-6 border border-gray-200 text-[10px] uppercase">Cancelar</button>
+                        <button onclick="addProduct()" id="btnSave" class="flex-1 bg-[#111111] text-white text-[10px] tracking-widest uppercase py-4 hover:bg-[#333] transition">Salvar no Catálogo</button>
+                        <button onclick="resetForm()" id="btnCancel" class="hidden px-6 border border-gray-200 text-[10px] uppercase hover:bg-gray-50 transition">Cancelar</button>
                     </div>
                 </div>
             </section>
@@ -70,15 +70,15 @@
 
         <section class="space-y-6">
             <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Estoque & Catálogo</h2>
-            <div class="bg-white border border-[#E5E1DB] overflow-hidden">
+            <div class="bg-white border border-[#E5E1DB] overflow-hidden shadow-sm">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-[#FDFBF7] text-[10px] uppercase tracking-widest text-[#8C857B] border-b border-[#E5E1DB]">
-                            <th class="p-4">Produto</th>
-                            <th class="p-4">SKU</th>
-                            <th class="p-4">Preço</th>
-                            <th class="p-4 text-center">Estoque</th>
-                            <th class="p-4 text-right">Ações</th>
+                            <th class="p-4 font-normal">Produto</th>
+                            <th class="p-4 font-normal">SKU</th>
+                            <th class="p-4 font-normal">Preço</th>
+                            <th class="p-4 font-normal text-center">Estoque</th>
+                            <th class="p-4 font-normal text-right">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="productList" class="text-sm divide-y divide-[#FDFBF7]">
@@ -88,15 +88,15 @@
         </section>
 
         <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Histórico de Vendas</h2>
-            <div class="bg-white border border-[#E5E1DB] overflow-x-auto">
+            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2 inline-block">Relatório de Vendas</h2>
+            <div class="bg-white border border-[#E5E1DB] overflow-x-auto shadow-sm">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="text-[10px] uppercase tracking-widest text-[#8C857B] border-b border-[#E5E1DB]">
-                            <th class="p-4">Data/Cliente</th>
-                            <th class="p-4">Itens</th>
-                            <th class="p-4">Total</th>
-                            <th class="p-4 text-right">Ações</th>
+                            <th class="p-4 font-normal">Data / Cliente</th>
+                            <th class="p-4 font-normal">Itens</th>
+                            <th class="p-4 font-normal">Total</th>
+                            <th class="p-4 font-normal text-right">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="ordersTable" class="text-xs">
@@ -124,19 +124,18 @@
             localStorage.setItem('whatsapp', document.getElementById('whatsapp').value);
             localStorage.setItem('pixDiscount', document.getElementById('pixDiscount').value);
             localStorage.setItem('maxInstallments', document.getElementById('maxInstallments').value);
-            alert("Configurações atualizadas!");
+            alert("Configurações atualizadas com sucesso!");
         }
 
-        // --- GESTÃO DE PRODUTOS (SKU, ESTOQUE, EDITAR) ---
+        // --- GESTÃO DE PRODUTOS ---
         let currentImgBase64 = "";
 
-        // Preview da imagem ao subir
         document.getElementById('pImage').onchange = function(e) {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 currentImgBase64 = ev.target.result;
                 const prev = document.getElementById('imgPreview');
-                prev.innerHTML = `<img src="${currentImgBase64}" class="w-full h-full object-cover">`;
+                prev.style.backgroundImage = `url(${currentImgBase64})`;
                 prev.classList.remove('hidden');
             };
             reader.readAsDataURL(e.target.files[0]);
@@ -149,12 +148,11 @@
             const price = document.getElementById('pPrice').value;
             const stock = document.getElementById('pStock').value;
 
-            if (!name || !price) return alert("Nome e Preço são obrigatórios.");
+            if (!name || !price) return alert("Nome e Preço são campos obrigatórios.");
 
             let products = JSON.parse(localStorage.getItem('products') || '[]');
 
             if (id) {
-                // Edição
                 const index = products.findIndex(p => p.id === id);
                 products[index] = { 
                     ...products[index], 
@@ -164,8 +162,7 @@
                     image: currentImgBase64 || products[index].image
                 };
             } else {
-                // Novo
-                if(!currentImgBase64) return alert("Selecione uma imagem.");
+                if(!currentImgBase64) return alert("Por favor, selecione uma imagem.");
                 products.push({
                     id: Date.now().toString(),
                     name, sku,
@@ -189,18 +186,18 @@
             document.getElementById('pSku').value = p.sku || '';
             document.getElementById('pPrice').value = p.price;
             document.getElementById('pStock').value = p.stock || 0;
-            document.getElementById('formTitle').innerText = "Editando Produto";
+            document.getElementById('formTitle').innerText = "Editando Item";
             document.getElementById('btnSave').innerText = "Salvar Alterações";
             document.getElementById('btnCancel').classList.remove('hidden');
             
             const prev = document.getElementById('imgPreview');
-            prev.innerHTML = `<img src="${p.image}" class="w-full h-full object-cover">`;
+            prev.style.backgroundImage = `url(${p.image})`;
             prev.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function removeProduct(id) {
-            if(confirm("Deseja remover este item permanentemente?")) {
+            if(confirm("Deseja excluir este produto do estoque?")) {
                 let products = JSON.parse(localStorage.getItem('products') || '[]');
                 products = products.filter(p => p.id !== id);
                 localStorage.setItem('products', JSON.stringify(products));
@@ -217,7 +214,7 @@
             document.getElementById('pImage').value = '';
             document.getElementById('imgPreview').classList.add('hidden');
             document.getElementById('formTitle').innerText = "Novo Produto";
-            document.getElementById('btnSave').innerText = "Salvar Produto";
+            document.getElementById('btnSave').innerText = "Salvar no Catálogo";
             document.getElementById('btnCancel').classList.add('hidden');
             currentImgBase64 = "";
         }
@@ -228,19 +225,19 @@
             list.innerHTML = products.map(p => `
                 <tr class="hover:bg-[#FDFBF7] transition">
                     <td class="p-4 flex items-center gap-3">
-                        <img src="${p.image}" class="w-10 h-10 object-cover rounded shadow-sm">
+                        <img src="${p.image}" class="w-10 h-10 object-cover rounded shadow-sm border border-[#FDFBF7]">
                         <span class="font-medium">${p.name}</span>
                     </td>
-                    <td class="p-4 text-xs text-gray-500">${p.sku || '--'}</td>
+                    <td class="p-4 text-[10px] text-gray-400 font-mono">${p.sku || '--'}</td>
                     <td class="p-4 font-serif">R$ ${p.price.toFixed(2)}</td>
                     <td class="p-4 text-center">
-                        <span class="px-2 py-1 ${p.stock <= 2 ? 'bg-red-50 text-red-600' : 'bg-gray-50'} rounded text-[10px]">
+                        <span class="px-2 py-1 ${p.stock <= 3 ? 'bg-red-50 text-red-500 font-bold' : 'bg-gray-50 text-gray-600'} rounded text-[10px]">
                             ${p.stock || 0} un
                         </span>
                     </td>
-                    <td class="p-4 text-right space-x-3">
-                        <button onclick="editProduct('${p.id}')" class="text-[#A68966] text-[10px] uppercase font-bold">Editar</button>
-                        <button onclick="removeProduct('${p.id}')" class="text-red-300 text-[10px] uppercase">Excluir</button>
+                    <td class="p-4 text-right space-x-4">
+                        <button onclick="editProduct('${p.id}')" class="text-[#A68966] text-[10px] uppercase tracking-tighter hover:underline">Editar</button>
+                        <button onclick="removeProduct('${p.id}')" class="text-red-300 text-[10px] uppercase hover:text-red-500 transition">Excluir</button>
                     </td>
                 </tr>
             `).join('');
@@ -251,23 +248,23 @@
             const orders = JSON.parse(localStorage.getItem('orders') || '[]');
             const container = document.getElementById('ordersTable');
             container.innerHTML = orders.map((order, index) => `
-                <tr class="border-b border-[#FDFBF7]">
+                <tr class="border-b border-[#FDFBF7] hover:bg-[#FDFBF7] transition">
                     <td class="p-4">
                         <p class="font-bold">${order.customerName}</p>
-                        <p class="text-[9px] text-gray-400">${order.date}</p>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-tighter">${order.date}</p>
                     </td>
                     <td class="p-4">${order.itemCount} itens</td>
                     <td class="p-4 font-serif">R$ ${order.total}</td>
                     <td class="p-4 text-right space-x-2">
-                        <button onclick="printOrder(${index})" class="border border-[#A68966] text-[#A68966] px-3 py-1 rounded text-[9px] uppercase">Imprimir</button>
-                        <button onclick="deleteOrder(${index})" class="text-gray-300 hover:text-red-500 transition">✕</button>
+                        <button onclick="printOrder(${index})" class="border border-[#A68966] text-[#A68966] px-3 py-1 rounded-sm text-[9px] uppercase hover:bg-[#A68966] hover:text-white transition">Imprimir</button>
+                        <button onclick="deleteOrder(${index})" class="text-gray-200 hover:text-red-500 transition px-2">✕</button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function deleteOrder(i) {
-            if(confirm("Excluir pedido do histórico?")) {
+            if(confirm("Excluir este pedido do histórico?")) {
                 let orders = JSON.parse(localStorage.getItem('orders') || '[]');
                 orders.splice(i, 1);
                 localStorage.setItem('orders', JSON.stringify(orders));
@@ -278,17 +275,24 @@
         function printOrder(index) {
             const order = JSON.parse(localStorage.getItem('orders'))[index];
             const store = localStorage.getItem('storeName') || 'Boutique';
-            const items = order.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid #eee"><span>${i.qty}x ${i.name}</span><span>R$ ${(i.price * i.qty).toFixed(2)}</span></div>`).join('');
+            const items = order.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid #f0f0f0"><span>${i.qty}x ${i.name}</span><span>R$ ${(i.price * i.qty).toFixed(2)}</span></div>`).join('');
             
             document.getElementById('printArea').innerHTML = `
                 <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:20px">
-                    <h1 style="font-family:serif; letter-spacing:3px">${store}</h1>
-                    <p style="font-size:10px">RELATÓRIO DE PEDIDO</p>
+                    <h1 style="font-family:serif; letter-spacing:4px; text-transform:uppercase; margin:0">${store}</h1>
+                    <p style="font-size:10px; margin-top:5px">PEDIDO INTERNO DE VENDA</p>
                 </div>
-                <p style="font-size:12px"><strong>Cliente:</strong> ${order.customerName}</p>
-                <p style="font-size:12px; margin-bottom:20px"><strong>Data:</strong> ${order.date}</p>
-                ${items}
-                <div style="text-align:right; margin-top:20px; font-size:16px"><strong>Total: R$ ${order.total}</strong></div>
+                <div style="font-size:12px; line-height:1.6; margin-bottom:20px">
+                    <p><strong>CLIENTE:</strong> ${order.customerName}</p>
+                    <p><strong>DATA:</strong> ${order.date}</p>
+                </div>
+                <div style="margin-bottom:20px">${items}</div>
+                <div style="text-align:right; margin-top:20px; font-size:18px; font-family:serif">
+                    <strong>TOTAL: R$ ${order.total}</strong>
+                </div>
+                <div style="text-align:center; margin-top:50px; font-size:10px; color:#888; border-top:1px dashed #ccc; padding-top:20px">
+                    Documento auxiliar de conferência.
+                </div>
             `;
             window.print();
         }
