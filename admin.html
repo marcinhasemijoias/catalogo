@@ -23,12 +23,13 @@
         .input-field { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px; width: 100%; outline: none; margin-top: 4px; font-size: 14px; }
         label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; }
         
-        /* Estilo para o campo de upload */
         .file-input { font-size: 12px; color: #6b7280; margin-top: 8px; }
         .file-input::-webkit-file-upload-button {
             background: #f3f4f6; border: 1px solid #d1d5db; padding: 8px 12px; border-radius: 4px; 
             text-transform: uppercase; font-size: 9px; font-weight: bold; cursor: pointer; margin-right: 10px;
         }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #E5DACE; border-radius: 10px; }
     </style>
 </head>
 
@@ -55,6 +56,7 @@ function AdminPanel(){
     });
 
     const [newProd, setNewProd] = useState({ name: '', price: '', sku: '', image: '' });
+    const [editingId, setEditingId] = useState(null);
 
     useEffect(() => {
         const p = localStorage.getItem('luxury_products');
@@ -71,7 +73,6 @@ function AdminPanel(){
         localStorage.setItem('luxury_config', JSON.stringify(updated));
     };
 
-    // FUNÇÃO PARA CONVERTER O ARQUIVO EM STRING PARA SALVAR NO BROWSER
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -83,21 +84,37 @@ function AdminPanel(){
         }
     };
 
-    const handleAddProduct = (e) => {
+    const handleSaveProduct = (e) => {
         e.preventDefault();
         if (!newProd.name || !newProd.price || !newProd.image) {
-            return alert("Preencha todos os campos e selecione uma imagem!");
+            return alert("Preencha todos os campos!");
         }
-        const productToAdd = { ...newProd, id: Date.now().toString(), price: parseFloat(newProd.price) };
-        const updated = [...products, productToAdd];
-        setProducts(updated);
-        localStorage.setItem('luxury_products', JSON.stringify(updated));
+
+        let updatedProducts;
+        if (editingId) {
+            updatedProducts = products.map(p => 
+                p.id === editingId ? { ...newProd, id: editingId, price: parseFloat(newProd.price) } : p
+            );
+            setEditingId(null);
+        } else {
+            const productToAdd = { ...newProd, id: Date.now().toString(), price: parseFloat(newProd.price) };
+            updatedProducts = [...products, productToAdd];
+        }
+
+        setProducts(updatedProducts);
+        localStorage.setItem('luxury_products', JSON.stringify(updatedProducts));
         setNewProd({ name: '', price: '', sku: '', image: '' });
-        document.getElementById('fileInput').value = ""; // Limpa o campo de arquivo
+        document.getElementById('fileInput').value = "";
+    };
+
+    const startEdit = (product) => {
+        setNewProd({ name: product.name, price: product.price, sku: product.sku, image: product.image });
+        setEditingId(product.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const deleteProduct = (id) => {
-        if (confirm("Excluir item?")) {
+        if (confirm("Excluir item permanentemente?")) {
             const updated = products.filter(p => p.id !== id);
             setProducts(updated);
             localStorage.setItem('luxury_products', JSON.stringify(updated));
@@ -117,7 +134,7 @@ function AdminPanel(){
                 <div style="font-size: 12px; margin-bottom: 30px; line-height: 1.6;">
                     <strong>CLIENTE:</strong> ${order.customer?.name?.toUpperCase()}<br>
                     <strong>CONTATO:</strong> ${order.customer?.phone}<br>
-                    <strong>DATA:</strong> ${order.date} | <strong>ID:</strong> #${order.id.slice(-4)}
+                    <strong>DATA:</strong> ${order.date}
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead>
@@ -130,7 +147,7 @@ function AdminPanel(){
                     <tbody>
                         ${order.items?.map(i => `
                             <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 12px 0;">${i.name.toUpperCase()}<br><small style="color:#888">SKU: ${i.sku || 'N/A'}</small></td>
+                                <td style="padding: 12px 0;">${i.name.toUpperCase()}</td>
                                 <td align="center">${i.quantity || 1}</td>
                                 <td align="right">R$ ${(parseFloat(i.price) * (i.quantity || 1)).toFixed(2)}</td>
                             </tr>
@@ -138,11 +155,8 @@ function AdminPanel(){
                     </tbody>
                 </table>
                 <div style="margin-top: 20px; text-align: right;">
-                    <div style="font-size: 18px; font-weight: bold;">TOTAL FINAL: R$ ${order.total?.toFixed(2)}</div>
-                    <div style="font-size: 11px; margin-top: 5px;">PAGAMENTO: ${order.paymentMethod}</div>
-                </div>
-                <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 20px;">
-                    ${config.address || ''}<br>Documento gerado para controle interno.
+                    <div style="font-size: 18px; font-weight: bold;">TOTAL: R$ ${order.total?.toFixed(2)}</div>
+                    <div style="font-size: 11px;">PAGAMENTO: ${order.paymentMethod}</div>
                 </div>
             </body>
             </html>
@@ -156,9 +170,9 @@ function AdminPanel(){
             <header className="flex justify-between items-center mb-10 border-b lux-border pb-6">
                 <div>
                     <h1 className="text-2xl font-serif tracking-widest uppercase">{config.name}</h1>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Painel de Controle</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Painel de Administração</p>
                 </div>
-                <a href="index.html" className="text-xs font-bold border-b border-black">VER LOJA</a>
+                <a href="index.html" target="_blank" className="text-xs font-bold border-b border-black">VISUALIZAR LOJA</a>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -167,32 +181,35 @@ function AdminPanel(){
                         <h2 className="text-xs font-bold uppercase mb-4 lux-gold">Configurações Gerais</h2>
                         <div className="space-y-4">
                             <div><label>Nome da Loja</label><input className="input-field" value={config.name} onChange={e => updateConfig('name', e.target.value)} /></div>
-                            <div><label>WhatsApp Destinatário (Ex: 5519...)</label><input className="input-field" value={config.whatsapp} onChange={e => updateConfig('whatsapp', e.target.value)} /></div>
-                            <div><label>Endereço / Rodapé</label><input className="input-field" value={config.address} onChange={e => updateConfig('address', e.target.value)} /></div>
+                            <div><label>WhatsApp Destinatário</label><input className="input-field" value={config.whatsapp} onChange={e => updateConfig('whatsapp', e.target.value)} /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label>Desc. PIX %</label><input type="number" className="input-field" value={config.pixDiscount} onChange={e => updateConfig('pixDiscount', e.target.value)} /></div>
-                                <div><label>Parcelas</label><input type="number" className="input-field" value={config.maxInstallments} onChange={e => updateConfig('maxInstallments', e.target.value)} /></div>
+                                <div><label>Max Parcelas</label><input type="number" className="input-field" value={config.maxInstallments} onChange={e => updateConfig('maxInstallments', e.target.value)} /></div>
                             </div>
                         </div>
                     </section>
 
-                    <section className="card">
-                        <h2 className="text-xs font-bold uppercase mb-4 lux-gold">Novo Produto</h2>
+                    <section className="card border-2 border-zinc-100">
+                        <h2 className="text-xs font-bold uppercase mb-4 lux-gold">
+                            {editingId ? 'Editar Produto' : 'Novo Produto'}
+                        </h2>
                         <div className="space-y-3">
                             <input placeholder="Nome da Joia" className="input-field" value={newProd.name} onChange={e => setNewProd({...newProd, name: e.target.value})} />
                             <input placeholder="Preço Base" type="number" className="input-field" value={newProd.price} onChange={e => setNewProd({...newProd, price: e.target.value})} />
                             <input placeholder="SKU" className="input-field" value={newProd.sku} onChange={e => setNewProd({...newProd, sku: e.target.value})} />
                             
-                            {/* CAMPO DE UPLOAD DE IMAGEM AJUSTADO */}
                             <div>
                                 <label>Foto do Produto</label>
                                 <input id="fileInput" type="file" accept="image/*" className="file-input w-full" onChange={handleImageUpload} />
-                                {newProd.image && (
-                                    <div className="mt-2 text-[9px] text-green-600 font-bold uppercase">✓ Imagem carregada</div>
-                                )}
+                                {newProd.image && <div className="mt-2 text-[9px] text-green-600 font-bold uppercase">✓ Imagem Selecionada</div>}
                             </div>
 
-                            <button onClick={handleAddProduct} className="w-full bg-black text-white py-3 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-zinc-800">Cadastrar Item</button>
+                            <button onClick={handleSaveProduct} className="w-full bg-black text-white py-3 rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-colors">
+                                {editingId ? 'Salvar Alterações' : 'Cadastrar Item'}
+                            </button>
+                            {editingId && (
+                                <button onClick={() => {setEditingId(null); setNewProd({name:'',price:'',sku:'',image:''})}} className="w-full text-[9px] uppercase font-bold text-gray-400 mt-2">Cancelar Edição</button>
+                            )}
                         </div>
                     </section>
                 </div>
@@ -201,15 +218,14 @@ function AdminPanel(){
                     <section className="card">
                         <h2 className="text-xs font-bold uppercase mb-4">Pedidos Recebidos</h2>
                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scroll">
-                            {orders.length === 0 ? <p className="text-xs text-gray-400">Nenhum pedido realizado.</p> : 
+                            {orders.length === 0 ? <p className="text-xs text-gray-400">Nenhum pedido registrado.</p> : 
                             orders.map(order => (
-                                <div key={order.id} className="p-4 border lux-border rounded-lg flex justify-between items-center hover:bg-gray-50">
+                                <div key={order.id} className="p-4 border lux-border rounded-lg flex justify-between items-center bg-white hover:bg-gray-50">
                                     <div>
-                                        <p className="text-xs font-bold uppercase">{order.customer?.name || 'Cliente Sem Nome'}</p>
+                                        <p className="text-xs font-bold uppercase">{order.customer?.name}</p>
                                         <p className="text-[10px] text-gray-500">{order.date} • <span className="lux-gold font-bold">R$ {order.total?.toFixed(2)}</span></p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => window.open(`https://wa.me/${order.customer?.phone?.replace(/\D/g,'')}`)} className="p-2 bg-green-50 text-green-600 rounded-md hover:bg-green-100"><Icon name="message-circle" size={16}/></button>
                                         <button onClick={() => printOrder(order)} className="p-2 bg-zinc-100 rounded-md hover:bg-zinc-200"><Icon name="printer" size={16}/></button>
                                         <button onClick={() => {if(confirm("Excluir pedido?")){const up = orders.filter(o=>o.id!==order.id); setOrders(up); localStorage.setItem('luxury_orders', JSON.stringify(up))}}} className="p-2 text-red-300 hover:text-red-500"><Icon name="trash-2" size={16}/></button>
                                     </div>
@@ -222,13 +238,16 @@ function AdminPanel(){
                         <h2 className="text-xs font-bold uppercase mb-4">Catálogo de Produtos</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {products.map(p => (
-                                <div key={p.id} className="flex items-center gap-3 p-3 border lux-border rounded-lg">
+                                <div key={p.id} className="flex items-center gap-3 p-3 border lux-border rounded-lg bg-white shadow-sm">
                                     <img src={p.image} className="w-12 h-12 object-cover rounded border" />
                                     <div className="flex-grow">
                                         <p className="text-[10px] font-bold uppercase leading-none">{p.name}</p>
-                                        <p className="text-[10px] lux-gold mt-1">R$ {p.price.toFixed(2)}</p>
+                                        <p className="text-[10px] lux-gold mt-1 font-bold">R$ {p.price.toFixed(2)}</p>
                                     </div>
-                                    <button onClick={() => deleteProduct(p.id)} className="text-red-200 hover:text-red-500"><Icon name="trash-2" size={14}/></button>
+                                    <div className="flex gap-1">
+                                        <button onClick={() => startEdit(p)} className="p-2 text-zinc-400 hover:text-black transition-colors" title="Editar"><Icon name="edit-3" size={14}/></button>
+                                        <button onClick={() => deleteProduct(p.id)} className="p-2 text-red-200 hover:text-red-500 transition-colors" title="Excluir"><Icon name="trash-2" size={14}/></button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
