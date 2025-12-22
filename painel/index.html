@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Completo | Marcinha Semijoias</title>
+    <title>Painel Profissional | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
@@ -17,13 +17,13 @@
 <body class="p-4 md:p-8">
 
     <header class="max-w-5xl mx-auto mb-10 border-b pb-6">
-        <h1 class="font-serif text-2xl uppercase tracking-widest text-[#A68966]">Gestão Profissional</h1>
-        <p id="status" class="text-[10px] text-green-500 font-bold uppercase mt-1">● Sistema Sincronizado</p>
+        <h1 class="font-serif text-2xl uppercase tracking-widest text-[#A68966]">Gestão Marcinha Semijoias</h1>
+        <p id="status" class="text-[10px] text-green-500 font-bold uppercase mt-1 tracking-tighter">● Banco de Dados Sincronizado</p>
         
-        <nav class="flex gap-4 mt-6">
-            <button onclick="openTab('produtos')" class="text-[10px] uppercase tracking-widest font-bold border-b-2 border-[#A68966] pb-1">Produtos</button>
-            <button onclick="openTab('config')" class="text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1">Configuração</button>
-            <button onclick="openTab('vendas')" class="text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1">Vendas/Pedidos</button>
+        <nav class="flex gap-4 mt-6 overflow-x-auto pb-2">
+            <button onclick="openTab('produtos')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-[#A68966] pb-1 whitespace-nowrap">Produtos</button>
+            <button onclick="openTab('vendas')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1 whitespace-nowrap text-gray-400">Vendas e Pedidos</button>
+            <button onclick="openTab('config')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1 whitespace-nowrap text-gray-400">Configurações</button>
         </nav>
     </header>
 
@@ -31,12 +31,18 @@
         
         <div id="produtos" class="tab-content active space-y-8">
             <section class="bg-white p-6 border border-[#E5E1DB]">
-                <h2 class="font-serif text-lg mb-4">Novo Produto</h2>
+                <h2 class="font-serif text-lg mb-4">Adicionar ao Estoque</h2>
                 <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" id="pName" placeholder="Nome da Peça" class="border p-3 text-sm" required>
                     <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm" required>
-                    <input type="text" id="pImage" placeholder="Link da Imagem" class="border p-3 text-sm" required>
-                    <input type="number" id="pStock" placeholder="Estoque" class="border p-3 text-sm" required>
+                    
+                    <div class="border p-3 bg-gray-50 rounded">
+                        <label class="text-[9px] uppercase text-gray-400 block mb-1">Imagem da Joia (Upload)</label>
+                        <input type="file" id="pImageFile" accept="image/*" class="text-[10px]" required>
+                    </div>
+
+                    <input type="number" id="pStock" placeholder="Quantidade em Estoque" class="border p-3 text-sm" required>
+                    
                     <select id="pCategory" class="border p-3 text-sm bg-white md:col-span-2" required>
                         <option value="" disabled selected>Escolha a Categoria</option>
                         <option value="Brincos">Brincos</option>
@@ -44,46 +50,48 @@
                         <option value="Pulseiras">Pulseiras</option>
                         <option value="Aneis">Aneis</option>
                     </select>
-                    <button type="submit" class="md:col-span-2 bg-black text-white py-4 text-[10px] uppercase tracking-widest">Salvar na Nuvem</button>
+                    <button type="submit" id="btnSave" class="md:col-span-2 bg-black text-white py-4 text-[10px] uppercase tracking-widest hover:bg-[#A68966] transition">Salvar na Nuvem</button>
                 </form>
             </section>
-            <div id="adminProductList" class="space-y-2"></div>
-        </div>
-
-        <div id="config" class="tab-content space-y-8">
-            <section class="bg-white p-6 border border-[#E5E1DB]">
-                <h2 class="font-serif text-lg mb-4">Dados da Loja</h2>
-                <form id="configForm" class="grid grid-cols-1 gap-4">
-                    <div>
-                        <label class="text-[10px] uppercase text-gray-400">WhatsApp (DDD + Número)</label>
-                        <input type="text" id="storePhone" placeholder="Ex: 11999999999" class="w-full border p-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[10px] uppercase text-gray-400">% Desconto no PIX</label>
-                        <input type="number" id="pixDiscount" placeholder="Ex: 5" class="w-full border p-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[10px] uppercase text-gray-400">Parcelas Máximas (Cartão)</label>
-                        <input type="number" id="maxInstallments" placeholder="Ex: 3" class="w-full border p-3 text-sm">
-                    </div>
-                    <button type="submit" class="bg-[#A68966] text-white py-4 text-[10px] uppercase tracking-widest">Atualizar Configurações</button>
-                </form>
-            </section>
+            
+            <div id="adminProductList" class="grid grid-cols-1 gap-2">
+                </div>
         </div>
 
         <div id="vendas" class="tab-content space-y-8">
             <section class="bg-white p-6 border border-[#E5E1DB]">
-                <h2 class="font-serif text-lg mb-4">Últimos Pedidos</h2>
+                <h2 class="font-serif text-lg mb-4">Histórico de Pedidos</h2>
                 <div id="ordersList" class="space-y-4">
-                    <p class="text-xs text-gray-400">Nenhum pedido registrado ainda.</p>
+                    <p class="text-xs text-gray-400">Carregando pedidos...</p>
                 </div>
+            </section>
+        </div>
+
+        <div id="config" class="tab-content space-y-8">
+            <section class="bg-white p-6 border border-[#E5E1DB]">
+                <h2 class="font-serif text-lg mb-4">Configurações da Loja</h2>
+                <form id="configForm" class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 font-bold">Seu WhatsApp (Ex: 5511999999999)</label>
+                        <input type="text" id="storePhone" class="w-full border-b p-2 text-sm focus:outline-none focus:border-[#A68966]">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 font-bold">% Desconto PIX</label>
+                        <input type="number" id="pixDiscount" class="w-full border-b p-2 text-sm focus:outline-none focus:border-[#A68966]">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 font-bold">Parcelamento Máximo (Cartão)</label>
+                        <input type="number" id="maxInstallments" class="w-full border-b p-2 text-sm focus:outline-none focus:border-[#A68966]">
+                    </div>
+                    <button type="submit" class="bg-[#A68966] text-white py-4 text-[10px] uppercase tracking-widest">Atualizar Loja</button>
+                </form>
             </section>
         </div>
 
     </main>
 
     <script>
-        // Suas chaves do Firebase
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
             authDomain: "marcinha-semijoias.firebaseapp.com",
@@ -96,88 +104,124 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Alternar entre abas
+        // CONTROLE DE ABAS
         function openTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-[#A68966]', 'text-black');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            
             document.getElementById(tabName).classList.add('active');
-            document.querySelectorAll('nav button').forEach(btn => btn.style.borderColor = 'transparent');
-            event.currentTarget.style.borderColor = '#A68966';
+            event.currentTarget.classList.add('border-[#A68966]', 'text-black');
+            event.currentTarget.classList.remove('border-transparent', 'text-gray-400');
         }
 
-        // --- LÓGICA DE PRODUTOS ---
+        // CONVERSOR DE IMAGEM
+        function resizeAndConvert(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600; 
+                        const scale = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                    };
+                };
+            });
+        }
+
+        // CADASTRO DE PRODUTO
+        document.getElementById("productForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btnSave");
+            btn.innerText = "ENVIANDO IMAGEM...";
+            btn.disabled = true;
+
+            const file = document.getElementById("pImageFile").files[0];
+            const base64Image = await resizeAndConvert(file);
+
+            const newProduct = {
+                name: document.getElementById("pName").value,
+                price: parseFloat(document.getElementById("pPrice").value),
+                image: base64Image,
+                stock: parseInt(document.getElementById("pStock").value),
+                category: document.getElementById("pCategory").value
+            };
+
+            db.ref('products').push(newProduct).then(() => {
+                alert("Salvo na nuvem!");
+                e.target.reset();
+                btn.innerText = "SALVAR NA NUVEM";
+                btn.disabled = false;
+            });
+        });
+
+        // LISTAGEM DE PRODUTOS
         db.ref('products').on('value', (snapshot) => {
             const data = snapshot.val();
             const products = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
             const list = document.getElementById("adminProductList");
-            list.innerHTML = products.map(p => `
-                <div class="flex items-center justify-between bg-white p-4 border border-[#E5E1DB]">
-                    <div class="flex items-center gap-4">
-                        <img src="${p.image}" class="w-12 h-12 object-cover">
+            list.innerHTML = products.reverse().map(p => `
+                <div class="flex items-center justify-between bg-white p-3 border border-[#E5E1DB] rounded">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image}" class="w-10 h-10 object-cover rounded">
                         <div>
-                            <p class="text-xs font-bold uppercase">${p.name} <span class="text-[9px] text-gray-400">(${p.category})</span></p>
-                            <p class="text-[10px] text-gray-400">R$ ${Number(p.price).toFixed(2)} | Estoque: ${p.stock}</p>
+                            <p class="text-[10px] font-bold uppercase">${p.name}</p>
+                            <p class="text-[9px] text-gray-400">${p.category} | Est: ${p.stock}</p>
                         </div>
                     </div>
-                    <button onclick="deleteProduct('${p.id}')" class="text-red-300 hover:text-red-500 text-xs">Excluir</button>
+                    <button onclick="deleteProduct('${p.id}')" class="text-red-300 text-[10px] uppercase">Excluir</button>
                 </div>
             `).join('');
-        });
-
-        document.getElementById("productForm").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const newProduct = {
-                name: document.getElementById("pName").value,
-                price: parseFloat(document.getElementById("pPrice").value),
-                image: document.getElementById("pImage").value,
-                stock: parseInt(document.getElementById("pStock").value),
-                category: document.getElementById("pCategory").value
-            };
-            db.ref('products').push(newProduct);
-            e.target.reset();
         });
 
         function deleteProduct(id) {
             if(confirm("Excluir definitivamente?")) db.ref('products/' + id).remove();
         }
 
-        // --- LÓGICA DE CONFIGURAÇÃO ---
+        // CONFIGURAÇÕES
         db.ref('settings').on('value', (snapshot) => {
-            const settings = snapshot.val();
-            if (settings) {
-                document.getElementById('storePhone').value = settings.phone || "";
-                document.getElementById('pixDiscount').value = settings.pixDiscount || "";
-                document.getElementById('maxInstallments').value = settings.installments || "";
+            const s = snapshot.val();
+            if(s) {
+                document.getElementById('storePhone').value = s.phone || "";
+                document.getElementById('pixDiscount').value = s.pixDiscount || "";
+                document.getElementById('maxInstallments').value = s.installments || "";
             }
         });
 
         document.getElementById("configForm").addEventListener("submit", (e) => {
             e.preventDefault();
-            const settings = {
+            const s = {
                 phone: document.getElementById('storePhone').value,
                 pixDiscount: document.getElementById('pixDiscount').value,
                 installments: document.getElementById('maxInstallments').value
             };
-            db.ref('settings').set(settings).then(() => alert("Configurações atualizadas na nuvem!"));
+            db.ref('settings').set(s).then(() => alert("Loja atualizada!"));
         });
 
-        // --- LÓGICA DE PEDIDOS (VENDAS) ---
+        // PEDIDOS
         db.ref('orders').on('value', (snapshot) => {
             const data = snapshot.val();
             const orders = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
             const list = document.getElementById("ordersList");
-            if (orders.length === 0) {
-                list.innerHTML = `<p class="text-xs text-gray-400">Nenhum pedido registrado.</p>`;
-                return;
-            }
-            list.innerHTML = orders.reverse().map(o => `
-                <div class="p-4 border bg-[#FDFBF7] text-xs">
-                    <div class="flex justify-between font-bold mb-2">
+            list.innerHTML = orders.length ? orders.reverse().map(o => `
+                <div class="p-3 border bg-[#FDFBF7] text-[10px] rounded">
+                    <div class="flex justify-between font-bold uppercase mb-1">
                         <span>${o.customerName}</span>
-                        <span>${o.date}</span>
+                        <span class="text-gray-400">${o.date}</span>
                     </div>
-                    <p class="text-gray-500">Total: R$ ${o.total} via ${o.payment}</p>
+                    <p>Total: R$ ${o.total} via ${o.payment}</p>
                 </div>
-            `).join('');
+            `).join('') : '<p class="text-xs text-gray-400">Sem pedidos no momento.</p>';
         });
     </script>
 </body>
