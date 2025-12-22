@@ -30,20 +30,27 @@
                             <span class="text-[#8C857B]">Subtotal</span>
                             <span id="subtotal">R$ 0,00</span>
                         </div>
-                        <div class="flex justify-between text-green-600 font-medium">
-                            <span>Desconto PIX</span>
-                            <span id="pixSavings">- R$ 0,00</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-end mb-6">
-                        <span class="text-xs uppercase tracking-widest">Total PIX</span>
-                        <span id="total" class="text-2xl font-serif text-[#A68966]">R$ 0,00</span>
-                    </div>
-                    <div class="space-y-4">
-                        <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none focus:border-[#A68966] bg-transparent">
-                        <button onclick="checkout()" class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-4 hover:bg-[#333] transition">
-                            Finalizar via WhatsApp
-                        </button>
+                       <div class="space-y-4">
+    <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none focus:border-[#A68966] bg-transparent">
+
+    <div class="py-4 border-t border-[#FDFBF7] mt-2">
+        <p class="text-[10px] uppercase tracking-[0.1em] text-gray-400 mb-3">Escolha a forma de pagamento:</p>
+        <div class="flex flex-col gap-3">
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="radio" name="paymentMethod" value="PIX" checked class="accent-[#A68966] w-4 h-4">
+                <span class="text-[11px] uppercase tracking-wider text-gray-600 group-hover:text-black">PIX (com desconto)</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="radio" name="paymentMethod" value="CARTÃO" class="accent-[#A68966] w-4 h-4">
+                <span class="text-[11px] uppercase tracking-wider text-gray-600 group-hover:text-black">Cartão de Crédito</span>
+            </label>
+        </div>
+    </div>
+
+    <button onclick="checkout()" class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-4 hover:bg-[#333] transition">
+        Finalizar via WhatsApp
+    </button>
+</div>
                     </div>
                 </div>
             </div>
@@ -105,37 +112,65 @@
             renderCart();
         }
 
-        function checkout() {
+       function checkout() {
             const name = document.getElementById("customerName").value;
             if (!name) return alert("Por favor, digite seu nome.");
-            const whatsapp = localStorage.getItem("whatsapp");
-            if (!whatsapp) return alert("Erro: WhatsApp não configurado.");
             
+            // Captura o WhatsApp e a Forma de Pagamento
+            const settings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
+            const whatsapp = settings.phone || localStorage.getItem("whatsapp");
+            const paymentElement = document.querySelector('input[name="paymentMethod"]:checked');
+            const payment = paymentElement ? paymentElement.value : "PIX";
+
+            if (!whatsapp) return alert("Erro: WhatsApp não configurado.");
+            if (cart.length === 0) return alert("Seu carrinho está vazio.");
+
+            // Lógica de Cálculo (PIX com desconto / Cartão valor cheio)
             const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-            const savings = subtotal * (pixDiscount / 100);
+            const pixDiscountPercent = Number(settings.pixDiscount) || 0;
+            const savings = payment === "PIX" ? (subtotal * (pixDiscountPercent / 100)) : 0;
             const finalTotal = (subtotal - savings).toFixed(2);
 
-            // Gerar Pedido para o Admin
+            // 1. Gerar Pedido para o Relatório do Admin
             const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-            orders.unshift({ customerName: name, date: new Date().toLocaleString('pt-BR'), itemCount: cart.reduce((a, b) => a + b.qty, 0), total: finalTotal, items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })) });
+            orders.unshift({ 
+                customerName: name, 
+                date: new Date().toLocaleString('pt-BR'), 
+                itemCount: cart.reduce((a, b) => a + b.qty, 0), 
+                total: finalTotal,
+                payment: payment,
+                items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })) 
+            });
             localStorage.setItem("orders", JSON.stringify(orders));
 
-            // Baixa no Estoque
+            // 2. Baixa no Estoque (Mantendo sua lógica original)
             let products = JSON.parse(localStorage.getItem("products") || "[]");
             cart.forEach(cItem => {
                 const pIdx = products.findIndex(p => p.id === cItem.id);
-                if (pIdx !== -1) products[pIdx].stock -= cItem.qty;
+                if (pIdx !== -1) {
+                    products[pIdx].stock = Math.max(0, products[pIdx].stock - cItem.qty);
+                }
             });
             localStorage.setItem("products", JSON.stringify(products));
 
-            // WhatsApp
-            let msg = `*Novo Pedido*\n*Cliente:* ${name}\n---\n`;
+            // 3. Formatar Mensagem para o WhatsApp
+            let msg = `*Novo Pedido - ${name}*\n`;
+            msg += `--------------------------\n`;
             cart.forEach(i => msg += `${i.qty}x ${i.name} - R$ ${(i.price * i.qty).toFixed(2)}\n`);
-            msg += `---\n*Total: R$ ${finalTotal}*`;
+            msg += `--------------------------\n`;
+            msg += `*Pagamento:* ${payment}\n`;
+            msg += `*Total: R$ ${finalTotal}*`;
             
+            if(payment === "CARTÃO") {
+                msg += `\n\n_Favor enviar o link para pagamento no cartão._`;
+            }
+
+            // 4. Finalização
             localStorage.removeItem("cart");
-            window.location.href = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msg)}`;
+            const url = `https://api.whatsapp.com/send?phone=55${whatsapp}&text=${encodeURIComponent(msg)}`;
+            window.location.href = url;
         }
+
         renderCart();
     </script>
 </body>
