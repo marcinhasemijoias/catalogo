@@ -61,41 +61,38 @@
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
         const pixDiscount = Number(localStorage.getItem("pixDiscount") || 0);
 
-        function renderCart() {
-            const list = document.getElementById("cartList");
-            if (cart.length === 0) {
-                document.getElementById("cartContent").innerHTML = `
-                    <div class="col-span-full text-center py-20">
-                        <p class="font-serif text-xl text-[#8C857B]">Seu carrinho está vazio.</p>
-                        <a href="index.html" class="mt-4 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2">Explorar Joias</a>
-                    </div>`;
-                return;
-            }
-            let subtotal = 0;
-            list.innerHTML = cart.map((item, index) => {
-                subtotal += item.price * item.qty;
-                return `
-                    <div class="flex items-center gap-4 bg-white p-4 border border-[#E5E1DB]">
-                        <img src="${item.image}" class="w-20 h-20 object-cover border border-[#FDFBF7]">
-                        <div class="flex-1">
-                            <h3 class="text-xs uppercase font-bold tracking-tight">${item.name}</h3>
-                            <p class="text-[10px] text-[#8C857B]">R$ ${item.price.toFixed(2)} / un</p>
-                            <div class="flex items-center gap-3 mt-2">
-                                <button onclick="updateQty(${index}, -1)" class="text-lg">-</button>
-                                <span class="text-xs">${item.qty}</span>
-                                <button onclick="updateQty(${index}, 1)" class="text-lg">+</button>
-                            </div>
-                        </div>
-                        <button onclick="removeItem(${index})" class="text-gray-300 hover:text-red-500 transition">✕</button>
-                    </div>`;
-            }).join('');
-            const savings = subtotal * (pixDiscount / 100);
-            const totalValue = subtotal - savings;
-            document.getElementById("subtotal").innerText = `R$ ${subtotal.toFixed(2)}`;
-            document.getElementById("pixSavings").innerText = `- R$ ${savings.toFixed(2)}`;
-            document.getElementById("total").innerText = `R$ ${totalValue.toFixed(2)}`;
-        }
+       function renderCart() {
+    const list = document.getElementById("cartList");
+    if (cart.length === 0) {
+        document.getElementById("cartContent").innerHTML = `
+            <div class="col-span-full text-center py-20">
+                <p class="font-serif text-xl text-[#8C857B]">Seu carrinho está vazio.</p>
+                <a href="index.html" class="mt-4 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2">Explorar Joias</a>
+            </div>`;
+        return;
+    }
+    let subtotal = 0;
+    list.innerHTML = cart.map((item, index) => {
+        subtotal += item.price * item.qty;
+        return `
+            <div class="flex items-center gap-4 bg-white p-4 border border-[#E5E1DB]">
+                <img src="${item.image}" class="w-20 h-20 object-cover border border-[#FDFBF7]">
+                <div class="flex-1">
+                    <h3 class="text-xs uppercase font-bold tracking-tight">${item.name}</h3>
+                    <p class="text-[10px] text-[#8C857B]">R$ ${item.price.toFixed(2)} / un</p>
+                    <div class="flex items-center gap-3 mt-2">
+                        <button onclick="updateQty(${index}, -1)" class="text-lg">-</button>
+                        <span class="text-xs">${item.qty}</span>
+                        <button onclick="updateQty(${index}, 1)" class="text-lg">+</button>
+                    </div>
+                </div>
+                <button onclick="removeItem(${index})" class="text-gray-300 hover:text-red-500 transition">✕</button>
+            </div>`;
+    }).join('');
 
+    updateDisplayValues(); 
+           
+}
         function updateQty(index, change) {
             cart[index].qty += change;
             if (cart[index].qty < 1) return removeItem(index);
@@ -172,6 +169,49 @@
         }
 
         renderCart();
+        function updateDisplayValues() {
+    // 1. Busca as configurações (PIX e Parcelas) do seu Painel
+    const settings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
+    const pixDiscountPercent = Number(settings.pixDiscount) || 0;
+    const maxInstallments = Number(settings.installments) || 3;
+    
+    // 2. Vê qual botão o cliente clicou
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "PIX";
+    
+    // 3. Calcula os valores
+    const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    const savings = subtotal * (pixDiscountPercent / 100);
+    
+    // 4. Referencia os elementos que vão mudar na tela
+    const discountRow = document.getElementById('discountRow');
+    const installmentsRow = document.getElementById('installmentsRow');
+    const totalDisplay = document.getElementById('total');
+    const pixSavingsDisplay = document.getElementById('pixSavings');
+    const installmentDetail = document.getElementById('installmentDetail');
+
+    // 5. Lógica de troca
+    if (paymentMethod === "PIX") {
+        if(discountRow) discountRow.style.display = 'flex';
+        if(installmentsRow) installmentsRow.style.display = 'none';
+        
+        if(pixSavingsDisplay) pixSavingsDisplay.innerText = `- R$ ${savings.toFixed(2)}`;
+        if(totalDisplay) totalDisplay.innerText = `R$ ${(subtotal - savings).toFixed(2)}`;
+    } else {
+        if(discountRow) discountRow.style.display = 'none';
+        if(installmentsRow) installmentsRow.style.display = 'block';
+        
+        if(totalDisplay) totalDisplay.innerText = `R$ ${subtotal.toFixed(2)}`;
+        const installmentValue = subtotal / maxInstallments;
+        if(installmentDetail) installmentDetail.innerText = `${maxInstallments}x de R$ ${installmentValue.toFixed(2)} sem juros`;
+    }
+}
+
+// Escuta a mudança de clique nos botões de PIX/Cartão
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'paymentMethod') {
+        updateDisplayValues();
+    }
+});
     </script>
 </body>
 </html>
