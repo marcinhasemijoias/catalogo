@@ -2,70 +2,76 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marcinha Semijoias | Catálogo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
+    </style>
 </head>
-<body class="bg-[#FDFBF7] text-[#111111] font-sans">
-
-    <header class="text-center py-10 border-b border-[#E5E1DB] bg-white">
-        <h1 class="font-serif text-3xl tracking-wide uppercase" id="displayStoreName">
-            <script>document.write(localStorage.getItem("storeName") || "Minha Loja")</script>
-        </h1>
-        <p class="text-[10px] tracking-[0.3em] uppercase text-[#8C857B] mt-2">
-            Joias selecionadas • Pedido via WhatsApp
-        </p>
-
-        <a href="cart.html" class="mt-6 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2 hover:bg-[#111111] hover:text-white transition">
-            Carrinho (<span id="cartCount">0</span>)
-        </a>
+<body>
+    <header class="py-12 text-center border-b border-[#E5E1DB] bg-white">
+        <h1 class="font-serif text-4xl tracking-widest uppercase">Marcinha Semijoias</h1>
+        <p class="text-[10px] tracking-[0.3em] uppercase text-[#8C857B] mt-2">Luxo e Sofisticação em cada detalhe</p>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 py-16 grid gap-12 sm:grid-cols-2 md:grid-cols-3" id="productGrid"></main>
+    <main class="max-w-7xl mx-auto p-6 py-12">
+        <div id="productList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            </div>
+    </main>
 
     <script>
-        const products = JSON.parse(localStorage.getItem("products")) || [];
-        const cart = JSON.parse(localStorage.getItem("cart")) || [];
-        const pixDiscount = Number(localStorage.getItem("pixDiscount") || 0);
-        const maxInstallments = Number(localStorage.getItem("maxInstallments") || 1);
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+            authDomain: "marcinha-semijoias.firebaseapp.com",
+            databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
+            projectId: "marcinha-semijoias",
+            storageBucket: "marcinha-semijoias.firebasestorage.app",
+            messagingSenderId: "830107812924",
+            appId: "1:830107812924:web:1ee54d9b875514e48eef39"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        document.getElementById("cartCount").innerText = cart.reduce((a, b) => a + b.qty, 0);
-        const container = document.getElementById("productGrid");
-
-        if (products.length === 0) {
-            container.innerHTML = `<p class="col-span-full text-center text-[#8C857B] italic">Nenhum produto cadastrado no momento.</p>`;
+        function renderProducts() {
+            db.ref('products').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const products = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                const list = document.getElementById("productList");
+                
+                list.innerHTML = products.map(p => `
+                    <div class="group">
+                        <div class="relative overflow-hidden bg-gray-100 aspect-[3/4]">
+                            <img src="${p.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
+                            ${p.stock <= 0 ? '<div class="absolute inset-0 bg-white/60 flex items-center justify-center text-[10px] uppercase tracking-widest">Esgotado</div>' : ''}
+                        </div>
+                        <div class="mt-4 text-center">
+                            <h3 class="text-[11px] uppercase tracking-wider text-gray-500">${p.name}</h3>
+                            <p class="text-sm font-semibold mt-1">R$ ${p.price.toFixed(2)}</p>
+                            <button onclick="addToCart('${p.id}', '${p.name}', ${p.price}, '${p.image}')" 
+                                class="mt-4 text-[10px] uppercase tracking-widest border-b border-black pb-1 hover:text-[#A68966] hover:border-[#A68966] transition"
+                                ${p.stock <= 0 ? 'disabled style="opacity:0.3"' : ''}>
+                                Adicionar ao Carrinho
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            });
         }
 
-        products.forEach(p => {
-            const pixPrice = (p.price * (1 - pixDiscount / 100)).toFixed(2);
-            const installment = (p.price / maxInstallments).toFixed(2);
-
-            container.innerHTML += `
-                <div class="bg-white p-6 border border-[#E5E1DB] text-center space-y-4 shadow-sm hover:shadow-md transition">
-                    <img src="${p.image}" class="h-64 w-full object-contain mx-auto">
-                    <div class="space-y-1">
-                        <h3 class="font-serif text-lg uppercase tracking-tight">${p.name}</h3>
-                        <p class="text-[10px] text-[#8C857B] tracking-widest uppercase">SKU: ${p.sku || '---'}</p>
-                    </div>
-                    <div class="py-2">
-                        <p class="text-xs text-gray-400 line-through">R$ ${p.price.toFixed(2)}</p>
-                        <p class="text-[#A68966] font-bold text-xl">PIX R$ ${pixPrice}</p>
-                        <p class="text-[10px] text-[#8C857B] uppercase tracking-wider">ou ${maxInstallments}x de R$ ${installment}</p>
-                    </div>
-                    <button onclick="addToCart('${p.id}')" class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-3 hover:bg-[#333] transition">
-                        Adicionar ao Carrinho
-                    </button>
-                </div>`;
-        });
-
-        function addToCart(id) {
-            const p = products.find(x => x.id === id);
-            const cartItem = cart.find(x => x.id === id);
-            if (cartItem) { cartItem.qty++; } else { cart.push({ ...p, qty: 1 }); }
+        function addToCart(id, name, price, image) {
+            let cart = JSON.parse(localStorage.getItem("cart")) || [];
+            const index = cart.findIndex(item => item.id === id);
+            if (index > -1) cart[index].qty++;
+            else cart.push({ id, name, price, image, qty: 1 });
             localStorage.setItem("cart", JSON.stringify(cart));
-            document.getElementById("cartCount").innerText = cart.reduce((a, b) => a + b.qty, 0);
-            alert("Produto adicionado!");
+            alert("Joia adicionada ao carrinho!");
         }
+
+        renderProducts();
     </script>
 </body>
 </html>
