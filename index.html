@@ -18,11 +18,12 @@
         <p class="text-[10px] tracking-[0.3em] uppercase text-[#8C857B] mt-2">Luxo e Sofisticação</p>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 py-12 space-y-16">
-        <div id="catalogContainer">
-            <p class="text-center py-20 text-gray-400 uppercase tracking-widest text-xs">Carregando coleções...</p>
-        </div>
-    </main>
+    <a href="cart.html" class="fixed bottom-6 right-6 z-50 bg-black text-white p-4 rounded-full shadow-2xl flex items-center gap-2 hover:scale-110 transition">
+        <span class="text-[10px] uppercase tracking-widest font-bold">Carrinho</span>
+        <span id="cartCount" class="bg-[#A68966] text-[10px] px-2 py-1 rounded-full">0</span>
+    </a>
+
+    <main class="max-w-7xl mx-auto p-6 py-12 space-y-16" id="catalogContainer"></main>
 
     <script>
         const firebaseConfig = {
@@ -37,59 +38,56 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const categoriasOrder = ["Brincos", "Colares", "Pulseiras", "Aneis"];
+        let settings = { pixDiscount: 5, installments: 3 };
 
-        function renderProducts() {
-            db.ref('products').on('value', (snapshot) => {
-                const data = snapshot.val();
-                const products = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-                const container = document.getElementById("catalogContainer");
-                container.innerHTML = "";
+        db.ref('settings').on('value', s => { if(s.val()) settings = s.val(); });
 
-                categoriasOrder.forEach(cat => {
-                    const produtosDaCat = products.filter(p => p.category === cat);
-                    
-                    if (produtosDaCat.length > 0) {
-                        const section = document.createElement("section");
-                        section.className = "mb-16";
-                        section.innerHTML = `
-                            <h2 class="font-serif text-2xl uppercase tracking-widest mb-8 border-b pb-2 text-[#A68966]">${cat}</h2>
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                                ${produtosDaCat.map(p => `
-                                    <div class="group">
-                                        <div class="relative overflow-hidden bg-gray-100 aspect-[3/4]">
-                                            <img src="${p.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
-                                            ${p.stock <= 0 ? '<div class="absolute inset-0 bg-white/60 flex items-center justify-center text-[10px] uppercase tracking-widest">Esgotado</div>' : ''}
-                                        </div>
-                                        <div class="mt-4 text-center">
-                                            <h3 class="text-[11px] uppercase tracking-wider text-gray-500">${p.name}</h3>
-                                            <p class="text-sm font-semibold mt-1">R$ ${Number(p.price).toFixed(2)}</p>
-                                            <button onclick="addToCart('${p.id}', '${p.name}', ${p.price}, '${p.image}')" 
-                                                class="mt-4 text-[10px] uppercase tracking-widest border-b border-black pb-1 hover:text-[#A68966] transition"
-                                                ${p.stock <= 0 ? 'disabled style="opacity:0.3"' : ''}>
-                                                Adicionar ao Carrinho
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                        container.appendChild(section);
-                    }
-                });
+        db.ref('products').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const products = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            const container = document.getElementById("catalogContainer");
+            container.innerHTML = "";
+
+            ["Brincos", "Colares", "Pulseiras", "Aneis"].forEach(cat => {
+                const filtered = products.filter(p => p.category === cat);
+                if (filtered.length > 0) {
+                    const section = document.createElement("section");
+                    section.innerHTML = `<h2 class="font-serif text-2xl uppercase tracking-widest mb-8 border-b pb-2 text-[#A68966]">${cat}</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        ${filtered.map(p => {
+                            const pixPrice = p.price * (1 - settings.pixDiscount/100);
+                            return `
+                            <div class="group text-center">
+                                <div class="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
+                                    <img src="${p.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
+                                    ${p.stock <= 0 ? '<div class="absolute inset-0 bg-white/60 flex items-center justify-center text-[10px] uppercase">Esgotado</div>' : ''}
+                                </div>
+                                <h3 class="text-[10px] text-gray-400 uppercase font-mono">${p.sku}</h3>
+                                <h4 class="text-[11px] uppercase font-bold">${p.name}</h4>
+                                <p class="text-sm mt-1">R$ ${p.price.toFixed(2)}</p>
+                                <p class="text-[9px] text-green-600 font-bold uppercase">R$ ${pixPrice.toFixed(2)} no PIX</p>
+                                <p class="text-[9px] text-gray-400 uppercase">${settings.installments}x de R$ ${(p.price/settings.installments).toFixed(2)}</p>
+                                <button onclick="addToCart('${p.id}', '${p.name}', ${p.price}, '${p.image}', '${p.sku}')" class="mt-4 text-[10px] uppercase border-b border-black pb-1">Adicionar</button>
+                            </div>`;
+                        }).join('')}</div>`;
+                    container.appendChild(section);
+                }
             });
-        }
+        });
 
-        function addToCart(id, name, price, image) {
+        function addToCart(id, name, price, image, sku) {
             let cart = JSON.parse(localStorage.getItem("cart")) || [];
-            const index = cart.findIndex(item => item.id === id);
-            if (index > -1) cart[index].qty++;
-            else cart.push({ id, name, price, image, qty: 1 });
+            cart.push({ id, name, price, image, sku, qty: 1 });
             localStorage.setItem("cart", JSON.stringify(cart));
-            alert("Joia adicionada!");
+            updateCartCount();
+            alert("Adicionado!");
         }
 
-        renderProducts();
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem("cart")) || [];
+            document.getElementById("cartCount").innerText = cart.length;
+        }
+        updateCartCount();
     </script>
 </body>
 </html>
