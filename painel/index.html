@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Sincronizado | Marcinha Semijoias</title>
+    <title>Admin | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
@@ -13,34 +13,37 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-
-    <header class="max-w-4xl mx-auto mb-10 flex justify-between items-center">
-        <div>
-            <h1 class="font-serif text-2xl uppercase tracking-wider text-[#A68966]">Gestão em Tempo Real</h1>
-            <p id="status" class="text-[10px] text-orange-400 uppercase tracking-widest font-bold">Conectando ao banco...</p>
-        </div>
+    <header class="max-w-4xl mx-auto mb-10">
+        <h1 class="font-serif text-2xl uppercase text-[#A68966]">Gestão Sincronizada</h1>
+        <p id="status" class="text-[10px] text-green-500 font-bold uppercase tracking-widest">● Sistema Online</p>
     </header>
 
-    <main class="max-w-4xl mx-auto space-y-8">
-        <section class="bg-white p-6 border border-[#E5E1DB] shadow-sm">
-            <h2 class="font-serif text-lg mb-6 border-b pb-2">Cadastrar Nova Joia</h2>
+    <main class="max-w-4xl mx-auto space-y-12">
+        <section class="bg-white p-6 border border-[#E5E1DB]">
+            <h2 class="font-serif text-lg mb-6 border-b pb-2">Novo Produto</h2>
             <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="text" id="pName" placeholder="Nome da Peça" class="border p-3 text-sm" required>
                 <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm" required>
-                <input type="text" id="pImage" placeholder="URL da Imagem" class="border p-3 text-sm" required>
+                <input type="text" id="pImage" placeholder="Link da Imagem" class="border p-3 text-sm" required>
                 <input type="number" id="pStock" placeholder="Estoque" class="border p-3 text-sm" required>
-                <button type="submit" class="md:col-span-2 bg-[#111] text-white py-4 text-[10px] uppercase tracking-widest hover:bg-[#A68966] transition">Salvar na Nuvem</button>
+                <select id="pCategory" class="border p-3 text-sm bg-white md:col-span-2" required>
+                    <option value="" disabled selected>Escolha a Categoria</option>
+                    <option value="Brincos">Brincos</option>
+                    <option value="Colares">Colares</option>
+                    <option value="Pulseiras">Pulseiras</option>
+                    <option value="Aneis">Aneis</option>
+                </select>
+                <button type="submit" class="md:col-span-2 bg-black text-white py-4 text-[10px] uppercase tracking-widest">Salvar no Google Cloud</button>
             </form>
         </section>
 
         <section>
-            <h2 class="font-serif text-lg mb-4">Inventário Sincronizado</h2>
-            <div id="adminProductList" class="grid grid-cols-1 gap-2"></div>
+            <h2 class="font-serif text-lg mb-4">Produtos na Nuvem</h2>
+            <div id="adminProductList" class="space-y-2"></div>
         </section>
     </main>
 
     <script>
-        // Configuração do Firebase com suas chaves
         const firebaseConfig = {
             apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
             authDomain: "marcinha-semijoias.firebaseapp.com",
@@ -50,37 +53,26 @@
             messagingSenderId: "830107812924",
             appId: "1:830107812924:web:1ee54d9b875514e48eef39"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Referência para os produtos no banco
-        const productsRef = db.ref('products');
-
-        // Escutar mudanças em tempo real (Funciona no PC e Celular ao mesmo tempo)
-        productsRef.on('value', (snapshot) => {
+        db.ref('products').on('value', (snapshot) => {
             const data = snapshot.val();
             const products = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-            renderProducts(products);
-            document.getElementById('status').innerText = "● Conectado e Sincronizado";
-            document.getElementById('status').classList.replace('text-orange-400', 'text-green-500');
-        });
-
-        function renderProducts(products) {
             const list = document.getElementById("adminProductList");
-            list.innerHTML = products.map((p) => `
+            list.innerHTML = products.map(p => `
                 <div class="flex items-center justify-between bg-white p-4 border border-[#E5E1DB]">
                     <div class="flex items-center gap-4">
                         <img src="${p.image}" class="w-12 h-12 object-cover">
                         <div>
-                            <p class="text-xs font-bold uppercase">${p.name}</p>
-                            <p class="text-[10px] text-gray-400">R$ ${p.price.toFixed(2)} | Estoque: ${p.stock}</p>
+                            <p class="text-xs font-bold uppercase">${p.name} <span class="text-[9px] text-gray-400">(${p.category})</span></p>
+                            <p class="text-[10px] text-gray-400">R$ ${Number(p.price).toFixed(2)} | Estoque: ${p.stock}</p>
                         </div>
                     </div>
-                    <button onclick="deleteProduct('${p.id}')" class="text-red-300 hover:text-red-500 text-xs">Excluir</button>
+                    <button onclick="deleteProduct('${p.id}')" class="text-red-300 hover:text-red-500 text-xs uppercase tracking-widest">Excluir</button>
                 </div>
             `).join('');
-        }
+        });
 
         document.getElementById("productForm").addEventListener("submit", (e) => {
             e.preventDefault();
@@ -88,16 +80,15 @@
                 name: document.getElementById("pName").value,
                 price: parseFloat(document.getElementById("pPrice").value),
                 image: document.getElementById("pImage").value,
-                stock: parseInt(document.getElementById("pStock").value)
+                stock: parseInt(document.getElementById("pStock").value),
+                category: document.getElementById("pCategory").value
             };
-            productsRef.push(newProduct); // Salva direto no Google
+            db.ref('products').push(newProduct);
             e.target.reset();
         });
 
         function deleteProduct(id) {
-            if(confirm("Excluir produto da nuvem?")) {
-                db.ref('products/' + id).remove();
-            }
+            if(confirm("Excluir definitivamente?")) db.ref('products/' + id).remove();
         }
     </script>
 </body>
