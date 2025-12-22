@@ -20,7 +20,7 @@
 
     <main class="max-w-4xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div id="cartList" class="md:col-span-2 space-y-4">
-            <p class="text-xs text-gray-400">Carregando seus produtos...</p>
+            <p class="text-xs text-gray-400 text-center py-10">Carregando seus itens...</p>
         </div>
 
         <div class="bg-white p-6 border h-fit sticky top-6 shadow-sm">
@@ -31,29 +31,37 @@
                     <span>Subtotal</span>
                     <span id="subTotalDisplay">R$ 0,00</span>
                 </div>
-                <div class="flex justify-between text-green-600 font-bold">
+                <div id="pixRow" class="flex justify-between text-green-600 font-bold">
                     <span>Desconto PIX (<span id="pixPercentDisplay">0</span>%)</span>
                     <span id="discountDisplay">- R$ 0,00</span>
                 </div>
             </div>
 
+            <div class="mb-6">
+                <label class="text-[10px] uppercase text-gray-400 font-bold block mb-2 tracking-widest">Forma de Pagamento</label>
+                <select id="paymentMethod" onchange="renderCart()" class="w-full border p-3 text-xs bg-gray-50 focus:outline-none focus:border-black rounded-none">
+                    <option value="pix">PIX (com desconto)</option>
+                    <option value="cartao">Cartão de Crédito</option>
+                </select>
+            </div>
+
             <div class="mb-6 text-center">
-                <p class="text-[10px] uppercase text-gray-400 tracking-widest">Total no PIX</p>
-                <p id="totalPixDisplay" class="text-3xl font-serif text-[#A68966]">R$ 0,00</p>
+                <p id="labelTotal" class="text-[10px] uppercase text-gray-400 tracking-widest">Total no PIX</p>
+                <p id="totalDisplay" class="text-3xl font-serif text-[#A68966]">R$ 0,00</p>
                 <p id="installmentsDisplay" class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter"></p>
             </div>
 
             <div class="space-y-4">
-                <input type="text" id="customerName" placeholder="Digite seu nome completo" class="w-full border-b py-3 text-sm focus:outline-none focus:border-[#A68966] bg-transparent">
+                <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b py-3 text-sm focus:outline-none focus:border-[#A68966] bg-transparent">
                 <button onclick="sendOrder()" class="w-full bg-black text-white py-5 text-[10px] uppercase tracking-widest hover:bg-[#A68966] transition duration-300">Finalizar no WhatsApp</button>
             </div>
             
-            <p class="text-[8px] text-gray-400 text-center mt-4 uppercase">Sua reserva será confirmada via chat</p>
+            <p class="text-[8px] text-gray-400 text-center mt-4 uppercase">A reserva das peças será confirmada no chat</p>
         </div>
     </main>
 
     <script>
-        // CONFIGURAÇÃO FIREBASE INTEGRADA
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
             authDomain: "marcinha-semijoias.firebaseapp.com",
@@ -69,36 +77,33 @@
         let settings = { phone: '5511999999999', pixDiscount: 5, installments: 3 };
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-        // BUSCAR CONFIGURAÇÕES DA NUVEM
+        // Sincronizar Configurações e Renderizar
         db.ref('settings').on('value', snapshot => {
-            const data = snapshot.val();
-            if (data) settings = data;
+            if (snapshot.val()) settings = snapshot.val();
             renderCart();
         });
 
         function renderCart() {
             const list = document.getElementById("cartList");
             if (cart.length === 0) {
-                list.innerHTML = `
-                    <div class="text-center py-20 border-2 border-dashed border-gray-100">
-                        <p class="text-gray-400 text-sm">Seu carrinho está vazio.</p>
-                        <a href="index.html" class="text-[10px] uppercase underline mt-4 inline-block">Ver Joias</a>
-                    </div>`;
+                list.innerHTML = `<div class="text-center py-20 border-2 border-dashed border-gray-100">
+                    <p class="text-gray-400 text-sm italic">Seu carrinho está vazio.</p>
+                </div>`;
                 updateSummary(0);
                 return;
             }
 
             list.innerHTML = cart.map((item, index) => `
-                <div class="flex gap-4 bg-white p-4 border border-[#E5E1DB] items-center rounded-sm">
-                    <img src="${item.image}" class="w-20 h-20 object-cover rounded">
+                <div class="flex gap-4 bg-white p-4 border border-[#E5E1DB] items-center">
+                    <img src="${item.image}" class="w-16 h-16 object-cover">
                     <div class="flex-1">
-                        <p class="text-[9px] font-mono text-[#A68966] uppercase">${item.sku}</p>
-                        <h3 class="text-[11px] font-bold uppercase tracking-tight">${item.name}</h3>
-                        <p class="text-sm mt-1">R$ ${Number(item.price).toFixed(2)}</p>
+                        <p class="text-[8px] font-mono text-[#A68966] uppercase">${item.sku}</p>
+                        <h3 class="text-[10px] font-bold uppercase">${item.name}</h3>
+                        <p class="text-xs">R$ ${Number(item.price).toFixed(2)}</p>
                     </div>
-                    <button onclick="removeFromCart(${index})" class="text-red-300 hover:text-red-500 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="Weight-Trash m19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <button onclick="removeFromCart(${index})" class="text-red-300 hover:text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                     </button>
                 </div>
@@ -109,15 +114,25 @@
         }
 
         function updateSummary(total) {
+            const method = document.getElementById("paymentMethod").value;
             const discountPercent = Number(settings.pixDiscount);
             const discountValue = total * (discountPercent / 100);
-            const totalPix = total - discountValue;
-
+            
             document.getElementById("subTotalDisplay").innerText = `R$ ${total.toFixed(2)}`;
             document.getElementById("pixPercentDisplay").innerText = discountPercent;
             document.getElementById("discountDisplay").innerText = `- R$ ${discountValue.toFixed(2)}`;
-            document.getElementById("totalPixDisplay").innerText = `R$ ${totalPix.toFixed(2)}`;
-            document.getElementById("installmentsDisplay").innerText = `Ou R$ ${total.toFixed(2)} em até ${settings.installments}x s/ juros no cartão`;
+
+            if (method === 'pix') {
+                document.getElementById("pixRow").style.display = 'flex';
+                document.getElementById("labelTotal").innerText = "Total no PIX";
+                document.getElementById("totalDisplay").innerText = `R$ ${(total - discountValue).toFixed(2)}`;
+                document.getElementById("installmentsDisplay").innerText = "Desconto exclusivo para PIX";
+            } else {
+                document.getElementById("pixRow").style.display = 'none';
+                document.getElementById("labelTotal").innerText = "Total no Cartão";
+                document.getElementById("totalDisplay").innerText = `R$ ${total.toFixed(2)}`;
+                document.getElementById("installmentsDisplay").innerText = `Até ${settings.installments}x de R$ ${(total / settings.installments).toFixed(2)}`;
+            }
         }
 
         function removeFromCart(index) {
@@ -128,47 +143,40 @@
 
         async function sendOrder() {
             const name = document.getElementById("customerName").value;
-            if (!name) return alert("Por favor, digite seu nome para finalizar.");
-            if (cart.length === 0) return alert("Seu carrinho está vazio.");
+            const method = document.getElementById("paymentMethod").value;
+            if (!name) return alert("Por favor, informe seu nome.");
+            if (cart.length === 0) return alert("Carrinho vazio.");
 
-            const totalFinal = document.getElementById("totalPixDisplay").innerText;
-            const subtotal = document.getElementById("subTotalDisplay").innerText;
+            const totalFinal = document.getElementById("totalDisplay").innerText;
             
-            // 1. GERAR TEXTO PARA O WHATSAPP
             let message = `*NOVO PEDIDO - MARCINHA SEMIJOIAS*\n`;
             message += `*Cliente:* ${name}\n`;
+            message += `*Pagamento:* ${method.toUpperCase()}\n`;
             message += `----------------------------\n`;
             
-            let itemsString = "";
+            let itemsHTML = "";
             cart.forEach(item => {
                 message += `• ${item.sku} - ${item.name} (R$ ${Number(item.price).toFixed(2)})\n`;
-                itemsString += `${item.sku} - ${item.name}<br>`;
+                itemsHTML += `[${item.sku}] ${item.name}<br>`;
             });
 
             message += `----------------------------\n`;
-            message += `*Subtotal:* ${subtotal}\n`;
-            message += `*TOTAL NO PIX:* ${totalFinal}\n`;
-            message += `*Parcelamento:* ${settings.installments}x no Cartão\n\n`;
+            message += `*TOTAL:* ${totalFinal}\n\n`;
             message += `Aguardando sua confirmação!`;
 
-            // 2. SALVAR NO RELATÓRIO DO FIREBASE
             const orderData = {
                 customerName: name,
                 total: totalFinal.replace('R$ ', ''),
-                items: itemsString,
+                items: itemsHTML,
                 date: new Date().toLocaleString('pt-BR'),
-                payment: "A definir"
+                payment: method.toUpperCase()
             };
 
             try {
                 await db.ref('orders').push(orderData);
-                // Limpar carrinho após sucesso
                 localStorage.removeItem("cart");
-                // Redirecionar para WhatsApp
                 window.location.href = `https://api.whatsapp.com/send?phone=${settings.phone}&text=${encodeURIComponent(message)}`;
-            } catch (error) {
-                alert("Erro ao processar pedido. Tente novamente.");
-            }
+            } catch (e) { alert("Erro ao finalizar pedido."); }
         }
     </script>
 </body>
