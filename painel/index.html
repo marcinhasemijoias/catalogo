@@ -3,51 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Marcinha Semijoias</title>
+    <title>Painel Gestão Completa | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
-<body class="bg-[#FDFBF7] p-4">
-    <header class="max-w-5xl mx-auto mb-6 flex justify-between items-center">
-        <h1 class="font-serif text-xl uppercase">Gestão Marcinha</h1>
-        <nav class="flex gap-4">
-            <button onclick="show('prod')" class="text-[10px] font-bold uppercase border-b-2 border-black">Estoque</button>
-            <button onclick="show('conf')" class="text-[10px] font-bold uppercase border-b-2 border-transparent text-gray-400">Ajustes</button>
+<body class="p-4 md:p-8">
+
+    <header class="max-w-5xl mx-auto mb-10 border-b pb-6">
+        <h1 class="font-serif text-2xl uppercase tracking-widest text-[#A68966]">Marcinha Semijoias - Admin</h1>
+        <p id="status" class="text-[9px] text-green-500 font-bold uppercase mt-1">● Conectado ao Firebase</p>
+        
+        <nav class="flex gap-4 mt-6 overflow-x-auto pb-2">
+            <button onclick="openTab('produtos')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-[#A68966] pb-1">Estoque</button>
+            <button onclick="openTab('vendas')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1 text-gray-400">Vendas/Relatórios</button>
+            <button onclick="openTab('config')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1 text-gray-400">Configurações</button>
         </nav>
     </header>
 
     <main class="max-w-5xl mx-auto">
-        <div id="prodSection">
-            <form id="productForm" class="bg-white p-6 border mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="hidden" id="editingId">
-                <input type="text" id="pSKU" placeholder="SKU" class="border p-3 text-sm uppercase">
-                <input type="text" id="pName" placeholder="Nome" class="border p-3 text-sm">
-                <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm">
-                <input type="number" id="pStock" placeholder="Estoque" class="border p-3 text-sm">
-                <input type="file" id="pImageFile" accept="image/*" class="text-xs border p-3 md:col-span-2">
-                <select id="pCategory" class="border p-3 text-sm md:col-span-2">
-                    <option value="Brincos">Brincos</option>
-                    <option value="Colares">Colares</option>
-                    <option value="Pulseiras">Pulseiras</option>
-                    <option value="Aneis">Aneis</option>
-                </select>
-                <button type="submit" id="btnSave" class="bg-black text-white p-4 uppercase text-[10px] md:col-span-2">Salvar Produto</button>
-            </form>
-            <div id="adminProductList" class="space-y-2"></div>
+        
+        <div id="produtos" class="tab-content active space-y-8">
+            <section class="bg-white p-6 border border-[#E5E1DB]">
+                <h2 id="formTitle" class="font-serif text-lg mb-4">Adicionar Nova Peça</h2>
+                <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="editingId">
+                    <input type="text" id="pSKU" placeholder="SKU (Ex: BR-001)" class="border p-3 text-sm font-mono uppercase" required>
+                    <input type="text" id="pName" placeholder="Nome da Joia" class="border p-3 text-sm" required>
+                    <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm" required>
+                    <input type="number" id="pStock" placeholder="Quantidade" class="border p-3 text-sm" required>
+                    
+                    <div class="border p-3 bg-gray-50 rounded md:col-span-2">
+                        <label class="text-[9px] uppercase text-gray-400 block mb-1 font-bold">Imagem da Peça (Upload)</label>
+                        <input type="file" id="pImageFile" accept="image/*" class="text-[10px]">
+                        <p id="editImgMsg" class="hidden text-[9px] text-[#A68966] mt-1 italic">Deixe vazio para manter a foto atual</p>
+                    </div>
+
+                    <select id="pCategory" class="border p-3 text-sm bg-white md:col-span-2" required>
+                        <option value="Brincos">Brincos</option>
+                        <option value="Colares">Colares</option>
+                        <option value="Pulseiras">Pulseiras</option>
+                        <option value="Aneis">Anéis</option>
+                    </select>
+                    <div class="md:col-span-2 flex gap-2">
+                        <button type="submit" id="btnSave" class="flex-1 bg-black text-white py-4 text-[10px] uppercase tracking-widest hover:bg-[#A68966] transition">Salvar Produto</button>
+                        <button type="button" onclick="resetForm()" id="btnCancel" class="hidden bg-gray-200 text-gray-600 px-6 text-[10px] uppercase">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+            
+            <div id="adminProductList" class="grid grid-cols-1 gap-2"></div>
         </div>
 
-        <div id="confSection" class="hidden">
-            <form id="configForm" class="bg-white p-6 border space-y-4">
-                <input type="text" id="storePhone" placeholder="WhatsApp" class="w-full border p-3">
-                <input type="number" id="pixDiscount" placeholder="% Desconto PIX" class="w-full border p-3">
-                <input type="number" id="maxInstallments" placeholder="Max Parcelas" class="w-full border p-3">
-                <button type="submit" class="w-full bg-[#A68966] text-white p-4 uppercase text-[10px]">Atualizar Configurações</button>
-            </form>
+        <div id="vendas" class="tab-content space-y-8">
+            <section class="bg-white p-6 border border-[#E5E1DB]">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 class="font-serif text-lg">Pedidos via WhatsApp</h2>
+                    <button onclick="clearOrders()" class="text-[9px] text-red-300 uppercase underline">Limpar Histórico</button>
+                </div>
+                <div id="ordersList" class="space-y-4">
+                    <p class="text-xs text-gray-400">Carregando pedidos...</p>
+                </div>
+            </section>
         </div>
+
+        <div id="config" class="tab-content space-y-8">
+            <section class="bg-white p-6 border border-[#E5E1DB]">
+                <h2 class="font-serif text-lg mb-4">Ajustes da Loja</h2>
+                <form id="configForm" class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 font-bold">Número WhatsApp (Ex: 5511999999999)</label>
+                        <input type="text" id="storePhone" class="w-full border-b p-2 text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 font-bold">% Desconto no PIX</label>
+                        <input type="number" id="pixDiscount" class="w-full border-b p-2 text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-400 font-bold">Parcelamento Máximo no Cartão</label>
+                        <input type="number" id="maxInstallments" class="w-full border-b p-2 text-sm focus:outline-none">
+                    </div>
+                    <button type="submit" class="bg-[#A68966] text-white py-4 text-[10px] uppercase tracking-widest">Salvar Ajustes</button>
+                </form>
+            </section>
+        </div>
+
     </main>
 
     <script>
+        // CONFIGURAÇÃO FIREBASE (As mesmas que você já possui)
         const firebaseConfig = {
             apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
             authDomain: "marcinha-semijoias.firebaseapp.com",
@@ -60,13 +110,21 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function show(s) {
-            document.getElementById('prodSection').classList.toggle('hidden', s !== 'prod');
-            document.getElementById('confSection').classList.toggle('hidden', s !== 'conf');
+        // CONTROLE DE ABAS
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.replace('border-[#A68966]', 'border-transparent');
+                btn.classList.replace('text-black', 'text-gray-400');
+            });
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.replace('border-transparent', 'border-[#A68966]');
+            event.currentTarget.classList.replace('text-gray-400', 'text-black');
         }
 
+        // REDIMENSIONAR E CONVERTER IMAGEM
         async function resizeImage(file) {
-            return new Promise((r) => {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (e) => {
@@ -74,20 +132,28 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        canvas.width = 600; canvas.height = (img.height * 600) / img.width;
-                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                        r(canvas.toDataURL('image/jpeg', 0.7));
+                        const ctx = canvas.getContext('2d');
+                        const scale = 600 / img.width;
+                        canvas.width = 600;
+                        canvas.height = img.height * scale;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                 };
             });
         }
 
+        // SALVAR / EDITAR PRODUTO
         document.getElementById("productForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const id = document.getElementById("editingId").value;
+            const btn = document.getElementById("btnSave");
+            const editingId = document.getElementById("editingId").value;
             const file = document.getElementById("pImageFile").files[0];
             
-            let data = {
+            btn.innerText = "SALVANDO...";
+            btn.disabled = true;
+
+            let productData = {
                 sku: document.getElementById("pSKU").value.toUpperCase(),
                 name: document.getElementById("pName").value,
                 price: parseFloat(document.getElementById("pPrice").value),
@@ -95,42 +161,61 @@
                 category: document.getElementById("pCategory").value
             };
 
-            if(file) data.image = await resizeImage(file);
-            else if(id) {
-                const current = await db.ref('products/'+id).once('value');
-                data.image = current.val().image;
+            if (file) {
+                productData.image = await resizeImage(file);
+            } else if (editingId) {
+                // Se estiver editando e não enviou foto nova, mantém a antiga
+                const snap = await db.ref('products/' + editingId).once('value');
+                productData.image = snap.val().image;
+            } else {
+                alert("Por favor, selecione uma imagem!");
+                btn.innerText = "Salvar Produto";
+                btn.disabled = false;
+                return;
             }
 
-            if(id) db.ref('products/'+id).update(data);
-            else db.ref('products').push(data);
-            
-            e.target.reset();
-            document.getElementById("editingId").value = "";
-            alert("Pronto!");
+            if (editingId) {
+                db.ref('products/' + editingId).update(productData).then(() => {
+                    alert("Produto atualizado!");
+                    resetForm();
+                });
+            } else {
+                db.ref('products').push(productData).then(() => {
+                    alert("Produto cadastrado!");
+                    resetForm();
+                });
+            }
         });
 
+        // LISTAGEM DE PRODUTOS COM EDITAR/REMOVER
         db.ref('products').on('value', snap => {
             const list = document.getElementById("adminProductList");
-            list.innerHTML = "";
             const data = snap.val();
-            if(data) Object.keys(data).reverse().forEach(id => {
-                const p = data[id];
-                list.innerHTML += `
-                <div class="flex items-center justify-between bg-white p-3 border rounded">
-                    <div class="flex items-center gap-3">
-                        <img src="${p.image}" class="w-10 h-10 object-cover">
-                        <div><p class="text-[10px] font-bold">${p.sku} - ${p.name}</p></div>
-                    </div>
-                    <div class="flex gap-4">
-                        <button onclick="editProduct('${id}')" class="text-blue-500 text-[10px] uppercase">Editar</button>
-                        <button onclick="db.ref('products/${id}').remove()" class="text-red-300 text-[10px] uppercase">Remover</button>
-                    </div>
-                </div>`;
-            });
+            list.innerHTML = "";
+            if (data) {
+                Object.keys(data).reverse().forEach(id => {
+                    const p = data[id];
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between bg-white p-3 border border-[#E5E1DB] rounded">
+                            <div class="flex items-center gap-3">
+                                <img src="${p.image}" class="w-10 h-10 object-cover rounded">
+                                <div>
+                                    <p class="text-[9px] font-mono font-bold text-[#A68966]">${p.sku}</p>
+                                    <p class="text-[10px] font-bold uppercase">${p.name}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <button onclick="prepareEdit('${id}')" class="text-blue-500 text-[10px] uppercase font-bold">Editar</button>
+                                <button onclick="deleteProduct('${id}')" class="text-red-300 text-[10px] uppercase font-bold">Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
         });
 
-        window.editProduct = (id) => {
-            db.ref('products/'+id).once('value', s => {
+        window.prepareEdit = (id) => {
+            db.ref('products/' + id).once('value', s => {
                 const p = s.val();
                 document.getElementById("editingId").value = id;
                 document.getElementById("pSKU").value = p.sku;
@@ -138,9 +223,76 @@
                 document.getElementById("pPrice").value = p.price;
                 document.getElementById("pStock").value = p.stock;
                 document.getElementById("pCategory").value = p.category;
+                
+                document.getElementById("formTitle").innerText = "Editando Peça: " + p.sku;
+                document.getElementById("btnSave").innerText = "Atualizar Produto";
+                document.getElementById("btnCancel").classList.remove('hidden');
+                document.getElementById("editImgMsg").classList.remove('hidden');
                 window.scrollTo(0,0);
             });
         }
+
+        function resetForm() {
+            document.getElementById("productForm").reset();
+            document.getElementById("editingId").value = "";
+            document.getElementById("formTitle").innerText = "Adicionar Nova Peça";
+            document.getElementById("btnSave").innerText = "Salvar Produto";
+            document.getElementById("btnSave").disabled = false;
+            document.getElementById("btnCancel").classList.add('hidden');
+            document.getElementById("editImgMsg").classList.add('hidden');
+        }
+
+        function deleteProduct(id) { if(confirm("Deseja apagar esta peça do estoque?")) db.ref('products/'+id).remove(); }
+
+        // ABA VENDAS: HISTÓRICO DE PEDIDOS
+        db.ref('orders').on('value', snap => {
+            const list = document.getElementById("ordersList");
+            const data = snap.val();
+            list.innerHTML = "";
+            if (data) {
+                Object.keys(data).reverse().forEach(id => {
+                    const o = data[id];
+                    list.innerHTML += `
+                        <div class="p-4 border bg-white rounded-lg shadow-sm">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase text-[#A68966]">${o.date}</p>
+                                    <h4 class="text-sm font-bold uppercase">${o.customerName}</h4>
+                                </div>
+                                <span class="bg-green-100 text-green-700 text-[9px] px-2 py-1 rounded font-bold uppercase">${o.payment || 'WhatsApp'}</span>
+                            </div>
+                            <div class="text-[10px] text-gray-500 space-y-1 py-2 border-y border-gray-50 my-2">
+                                ${o.items || 'Itens não listados'}
+                            </div>
+                            <p class="text-xs font-bold text-right">Total: R$ ${o.total}</p>
+                        </div>
+                    `;
+                });
+            } else {
+                list.innerHTML = `<p class="text-xs text-gray-400">Nenhum pedido registrado ainda.</p>`;
+            }
+        });
+
+        function clearOrders() { if(confirm("Apagar todos os registros de vendas?")) db.ref('orders').remove(); }
+
+        // AJUSTES DA LOJA
+        db.ref('settings').on('value', s => {
+            const val = s.val();
+            if(val) {
+                document.getElementById('storePhone').value = val.phone || "";
+                document.getElementById('pixDiscount').value = val.pixDiscount || "";
+                document.getElementById('maxInstallments').value = val.installments || "";
+            }
+        });
+
+        document.getElementById("configForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            db.ref('settings').set({
+                phone: document.getElementById('storePhone').value,
+                pixDiscount: document.getElementById('pixDiscount').value,
+                installments: document.getElementById('maxInstallments').value
+            }).then(() => alert("Configurações atualizadas na nuvem!"));
+        });
     </script>
 </body>
 </html>
