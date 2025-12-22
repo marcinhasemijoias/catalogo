@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Carrinho | Marcinha Semijoias</title>
+    <title>Carrinho | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
@@ -14,69 +12,31 @@
 </head>
 <body>
     <header class="text-center py-10 border-b border-[#E5E1DB] bg-white">
-        <a href="index.html" class="text-[10px] tracking-widest uppercase text-[#8C857B]">← Voltar para a vitrine</a>
+        <a href="index.html" class="text-[10px] tracking-widest uppercase text-[#8C857B]">← Voltar</a>
         <h1 class="font-serif text-3xl uppercase mt-4">Meu Carrinho</h1>
     </header>
 
     <main class="max-w-4xl mx-auto p-6 lg:py-12">
         <div id="cartContent" class="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div class="lg:col-span-2 space-y-4" id="cartList"></div>
-            
             <div class="lg:col-span-1">
                 <div class="bg-white border p-6 sticky top-6">
                     <h2 class="font-serif text-xl mb-6">Resumo</h2>
-                    <div class="space-y-3 text-sm mb-6 border-b pb-4">
-                        <div class="flex justify-between text-gray-500"><span>Subtotal</span><span id="subtotalDisplay">R$ 0,00</span></div>
-                        <div id="discountRow" class="flex justify-between text-green-600 font-bold" style="display:none">
-                            <span>Desconto PIX</span><span id="pixSavings">- R$ 0,00</span>
-                        </div>
-                    </div>
-                    <div class="mb-6">
-                        <span id="totalDisplay" class="text-2xl font-serif text-[#A68966]">R$ 0,00</span>
-                        <div id="installmentsRow" class="text-[10px] text-gray-400 mt-1" style="display:none">
-                            ou <span id="installmentDetail"></span>
-                        </div>
-                    </div>
-
-                    <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b py-2 mb-6 focus:outline-none">
-                    
-                    <div class="mb-6">
-                        <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-3">Pagamento:</p>
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="paymentMethod" value="PIX" checked onchange="updateTotals()"> <span class="text-xs uppercase">PIX (Desconto)</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="paymentMethod" value="CARTÃO" onchange="updateTotals()"> <span class="text-xs uppercase">Cartão de Crédito</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button onclick="checkout()" class="w-full bg-black text-white text-[10px] py-4 uppercase tracking-[0.2em]">Finalizar no WhatsApp</button>
+                    <div class="flex justify-between text-sm mb-4"><span>Total</span><span id="totalDisplay" class="text-xl font-bold text-[#A68966]">R$ 0,00</span></div>
+                    <input type="text" id="customerName" placeholder="Seu Nome" class="w-full border-b py-2 mb-6 focus:outline-none">
+                    <button onclick="checkout()" class="w-full bg-black text-white text-[10px] py-4 uppercase tracking-widest">Finalizar WhatsApp</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-            authDomain: "marcinha-semijoias.firebaseapp.com",
-            databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-            projectId: "marcinha-semijoias",
-            storageBucket: "marcinha-semijoias.firebasestorage.app",
-            messagingSenderId: "830107812924",
-            appId: "1:830107812924:web:1ee54d9b875514e48eef39"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
         function renderCart() {
             const list = document.getElementById("cartList");
             if (cart.length === 0) {
-                document.getElementById("cartContent").innerHTML = "<p class='text-center py-20 w-full col-span-full'>Carrinho vazio.</p>";
+                document.getElementById("cartContent").innerHTML = "<p class='text-center py-20 w-full'>Vazio.</p>";
                 return;
             }
             list.innerHTML = cart.map((item, index) => `
@@ -84,66 +44,30 @@
                     <img src="${item.image}" class="w-20 h-20 object-cover">
                     <div class="flex-1">
                         <h3 class="text-xs uppercase font-bold">${item.name}</h3>
-                        <p class="text-xs text-gray-400 mt-1">R$ ${item.price.toFixed(2)}</p>
-                        <div class="flex items-center gap-4 mt-2">
-                            <button onclick="changeQty(${index}, -1)">-</button>
-                            <span class="text-xs font-bold">${item.qty}</span>
-                            <button onclick="changeQty(${index}, 1)">+</button>
-                        </div>
+                        <p class="text-xs text-gray-400">R$ ${Number(item.price).toFixed(2)}</p>
+                        <button onclick="remove(${index})" class="text-[9px] text-red-300 mt-2 underline">REMOVER</button>
                     </div>
                 </div>
             `).join('');
-            updateTotals();
+            const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+            document.getElementById("totalDisplay").innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        function updateTotals() {
-            const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-            const method = document.querySelector('input[name="paymentMethod"]:checked').value;
-            
-            // Busca configurações padrão (ou usa fixo 5% e 3x se não houver painel de config ainda)
-            const pixDiscount = 5; 
-            const installments = 3;
-
-            document.getElementById("subtotalDisplay").innerText = `R$ ${subtotal.toFixed(2)}`;
-
-            if (method === "PIX") {
-                const savings = subtotal * (pixDiscount / 100);
-                document.getElementById("discountRow").style.display = "flex";
-                document.getElementById("installmentsRow").style.display = "none";
-                document.getElementById("pixSavings").innerText = `- R$ ${savings.toFixed(2)}`;
-                document.getElementById("totalDisplay").innerText = `R$ ${(subtotal - savings).toFixed(2)}`;
-            } else {
-                document.getElementById("discountRow").style.display = "none";
-                document.getElementById("installmentsRow").style.display = "block";
-                document.getElementById("totalDisplay").innerText = `R$ ${subtotal.toFixed(2)}`;
-                document.getElementById("installmentDetail").innerText = `${installments}x de R$ ${(subtotal/installments).toFixed(2)} sem juros`;
-            }
-        }
-
-        function changeQty(index, delta) {
-            cart[index].qty += delta;
-            if (cart[index].qty < 1) cart.splice(index, 1);
+        function remove(index) {
+            cart.splice(index, 1);
             localStorage.setItem("cart", JSON.stringify(cart));
             renderCart();
         }
 
-        async function checkout() {
+        function checkout() {
             const name = document.getElementById("customerName").value;
-            if (!name) return alert("Digite seu nome.");
-            
-            const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+            if (!name) return alert("Seu nome?");
             let msg = `*Novo Pedido - ${name}*\n\n`;
-            cart.forEach(i => msg += `• ${i.qty}x ${i.name}\n`);
-            msg += `\n*Pagamento:* ${method}\n*Total:* ${document.getElementById("totalDisplay").innerText}`;
+            cart.forEach(i => msg += `• ${i.qty}x ${i.name} - R$ ${i.price.toFixed(2)}\n`);
             
-            // Aqui você coloca seu número do WhatsApp (ex: 5511999999999)
-            const whatsapp = "5511999999999"; 
-            
-            // Limpa carrinho e envia
-            localStorage.removeItem("cart");
-            window.location.href = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msg)}`;
+            // COLOQUE SEU NUMERO ABAIXO
+            window.location.href = `https://api.whatsapp.com/send?phone=5511999999999&text=${encodeURIComponent(msg)}`;
         }
-
         renderCart();
     </script>
 </body>
