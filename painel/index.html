@@ -3,77 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Gestão | Marcinha Semijoias</title>
+    <title>Admin | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
 </head>
-<body class="p-4 md:p-8">
-
-    <header class="max-w-5xl mx-auto mb-10 border-b pb-6 text-center md:text-left">
-        <h1 class="font-serif text-2xl uppercase tracking-widest text-[#A68966]">Marcinha Semijoias</h1>
-        <p id="status" class="text-[9px] text-green-500 font-bold uppercase mt-1">● Conectado à Nuvem</p>
-        
-        <nav class="flex justify-center md:justify-start gap-4 mt-6 overflow-x-auto pb-2">
-            <button onclick="openTab('produtos')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-[#A68966] pb-1 whitespace-nowrap">Estoque</button>
-            <button onclick="openTab('vendas')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1 whitespace-nowrap text-gray-400">Pedidos</button>
-            <button onclick="openTab('config')" class="tab-btn text-[10px] uppercase tracking-widest font-bold border-b-2 border-transparent pb-1 whitespace-nowrap text-gray-400">Ajustes</button>
+<body class="bg-[#FDFBF7] p-4">
+    <header class="max-w-5xl mx-auto mb-6 flex justify-between items-center">
+        <h1 class="font-serif text-xl uppercase">Gestão Marcinha</h1>
+        <nav class="flex gap-4">
+            <button onclick="show('prod')" class="text-[10px] font-bold uppercase border-b-2 border-black">Estoque</button>
+            <button onclick="show('conf')" class="text-[10px] font-bold uppercase border-b-2 border-transparent text-gray-400">Ajustes</button>
         </nav>
     </header>
 
     <main class="max-w-5xl mx-auto">
-        
-        <div id="produtos" class="tab-content active space-y-8">
-            <section class="bg-white p-6 border border-[#E5E1DB]">
-                <h2 class="font-serif text-lg mb-4">Cadastrar Peça</h2>
-                <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="pSKU" placeholder="SKU / Ref (Ex: BR-001)" class="border p-3 text-sm font-mono uppercase" required>
-                    <input type="text" id="pName" placeholder="Nome da Joia" class="border p-3 text-sm" required>
-                    <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm" required>
-                    <input type="number" id="pStock" placeholder="Qtd em Estoque" class="border p-3 text-sm" required>
-                    
-                    <div class="border p-3 bg-gray-50 rounded md:col-span-2">
-                        <label class="text-[9px] uppercase text-gray-400 block mb-1 font-bold">Foto da Peça (Upload)</label>
-                        <input type="file" id="pImageFile" accept="image/*" class="text-[10px]" required>
-                    </div>
-
-                    <select id="pCategory" class="border p-3 text-sm bg-white md:col-span-2" required>
-                        <option value="" disabled selected>Escolha a Categoria</option>
-                        <option value="Brincos">Brincos</option>
-                        <option value="Colares">Colares</option>
-                        <option value="Pulseiras">Pulseiras</option>
-                        <option value="Aneis">Anéis</option>
-                    </select>
-                    <button type="submit" id="btnSave" class="md:col-span-2 bg-black text-white py-4 text-[10px] uppercase tracking-widest hover:bg-[#A68966] transition">Salvar Produto</button>
-                </form>
-            </section>
-            
-            <div id="adminProductList" class="grid grid-cols-1 gap-2"></div>
+        <div id="prodSection">
+            <form id="productForm" class="bg-white p-6 border mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="editingId">
+                <input type="text" id="pSKU" placeholder="SKU" class="border p-3 text-sm uppercase">
+                <input type="text" id="pName" placeholder="Nome" class="border p-3 text-sm">
+                <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm">
+                <input type="number" id="pStock" placeholder="Estoque" class="border p-3 text-sm">
+                <input type="file" id="pImageFile" accept="image/*" class="text-xs border p-3 md:col-span-2">
+                <select id="pCategory" class="border p-3 text-sm md:col-span-2">
+                    <option value="Brincos">Brincos</option>
+                    <option value="Colares">Colares</option>
+                    <option value="Pulseiras">Pulseiras</option>
+                    <option value="Aneis">Aneis</option>
+                </select>
+                <button type="submit" id="btnSave" class="bg-black text-white p-4 uppercase text-[10px] md:col-span-2">Salvar Produto</button>
+            </form>
+            <div id="adminProductList" class="space-y-2"></div>
         </div>
 
-        <div id="vendas" class="tab-content space-y-8">
-            <section class="bg-white p-6 border border-[#E5E1DB]">
-                <h2 class="font-serif text-lg mb-4">Últimas Vendas</h2>
-                <div id="ordersList" class="space-y-4 text-xs text-gray-400">Carregando...</div>
-            </section>
-        </div>
-
-        <div id="config" class="tab-content space-y-8">
-            <section class="bg-white p-6 border border-[#E5E1DB]">
-                <h2 class="font-serif text-lg mb-4">Configuração da Loja</h2>
-                <form id="configForm" class="grid grid-cols-1 gap-6">
-                    <input type="text" id="storePhone" placeholder="WhatsApp (5511999999999)" class="border-b p-2 text-sm focus:outline-none">
-                    <input type="number" id="pixDiscount" placeholder="% Desconto PIX" class="border-b p-2 text-sm focus:outline-none">
-                    <input type="number" id="maxInstallments" placeholder="Max Parcelas" class="border-b p-2 text-sm focus:outline-none">
-                    <button type="submit" class="bg-[#A68966] text-white py-4 text-[10px] uppercase tracking-widest">Salvar Alterações</button>
-                </form>
-            </section>
+        <div id="confSection" class="hidden">
+            <form id="configForm" class="bg-white p-6 border space-y-4">
+                <input type="text" id="storePhone" placeholder="WhatsApp" class="w-full border p-3">
+                <input type="number" id="pixDiscount" placeholder="% Desconto PIX" class="w-full border p-3">
+                <input type="number" id="maxInstallments" placeholder="Max Parcelas" class="w-full border p-3">
+                <button type="submit" class="w-full bg-[#A68966] text-white p-4 uppercase text-[10px]">Atualizar Configurações</button>
+            </form>
         </div>
     </main>
 
@@ -90,19 +60,13 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function openTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.replace('border-[#A68966]', 'border-transparent');
-                btn.classList.replace('text-black', 'text-gray-400');
-            });
-            document.getElementById(tabName).classList.add('active');
-            event.currentTarget.classList.replace('border-transparent', 'border-[#A68966]');
-            event.currentTarget.classList.replace('text-gray-400', 'text-black');
+        function show(s) {
+            document.getElementById('prodSection').classList.toggle('hidden', s !== 'prod');
+            document.getElementById('confSection').classList.toggle('hidden', s !== 'conf');
         }
 
         async function resizeImage(file) {
-            return new Promise((resolve) => {
+            return new Promise((r) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (e) => {
@@ -110,12 +74,9 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const scale = 600 / img.width;
-                        canvas.width = 600;
-                        canvas.height = img.height * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        canvas.width = 600; canvas.height = (img.height * 600) / img.width;
+                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                        r(canvas.toDataURL('image/jpeg', 0.7));
                     };
                 };
             });
@@ -123,74 +84,63 @@
 
         document.getElementById("productForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const btn = document.getElementById("btnSave");
-            btn.innerText = "PROCESSANDO...";
-            btn.disabled = true;
-
+            const id = document.getElementById("editingId").value;
             const file = document.getElementById("pImageFile").files[0];
-            const base64 = await resizeImage(file);
-
-            const product = {
+            
+            let data = {
                 sku: document.getElementById("pSKU").value.toUpperCase(),
                 name: document.getElementById("pName").value,
                 price: parseFloat(document.getElementById("pPrice").value),
                 stock: parseInt(document.getElementById("pStock").value),
-                category: document.getElementById("pCategory").value,
-                image: base64
+                category: document.getElementById("pCategory").value
             };
 
-            db.ref('products').push(product).then(() => {
-                alert("Peça cadastrada com sucesso!");
-                e.target.reset();
-                btn.innerText = "SALVAR PRODUTO";
-                btn.disabled = false;
+            if(file) data.image = await resizeImage(file);
+            else if(id) {
+                const current = await db.ref('products/'+id).once('value');
+                data.image = current.val().image;
+            }
+
+            if(id) db.ref('products/'+id).update(data);
+            else db.ref('products').push(data);
+            
+            e.target.reset();
+            document.getElementById("editingId").value = "";
+            alert("Pronto!");
+        });
+
+        db.ref('products').on('value', snap => {
+            const list = document.getElementById("adminProductList");
+            list.innerHTML = "";
+            const data = snap.val();
+            if(data) Object.keys(data).reverse().forEach(id => {
+                const p = data[id];
+                list.innerHTML += `
+                <div class="flex items-center justify-between bg-white p-3 border rounded">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image}" class="w-10 h-10 object-cover">
+                        <div><p class="text-[10px] font-bold">${p.sku} - ${p.name}</p></div>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="editProduct('${id}')" class="text-blue-500 text-[10px] uppercase">Editar</button>
+                        <button onclick="db.ref('products/${id}').remove()" class="text-red-300 text-[10px] uppercase">Remover</button>
+                    </div>
+                </div>`;
             });
         });
 
-        db.ref('products').on('value', (snapshot) => {
-            const data = snapshot.val();
-            const list = document.getElementById("adminProductList");
-            list.innerHTML = "";
-            if (data) {
-                Object.keys(data).reverse().forEach(id => {
-                    const p = data[id];
-                    list.innerHTML += `
-                        <div class="flex items-center justify-between bg-white p-3 border border-[#E5E1DB] rounded">
-                            <div class="flex items-center gap-3">
-                                <img src="${p.image}" class="w-12 h-12 object-cover rounded">
-                                <div>
-                                    <p class="text-[10px] font-mono font-bold text-[#A68966]">${p.sku}</p>
-                                    <p class="text-[11px] font-bold uppercase">${p.name}</p>
-                                    <p class="text-[9px] text-gray-400">Estoque: ${p.stock} | R$ ${p.price.toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <button onclick="deleteProduct('${id}')" class="text-red-300 text-[10px] uppercase font-bold px-2">Remover</button>
-                        </div>
-                    `;
-                });
-            }
-        });
-
-        function deleteProduct(id) { if(confirm("Apagar esta joia?")) db.ref('products/'+id).remove(); }
-
-        // Pedidos e Settings funcionam em background
-        db.ref('settings').on('value', (s) => {
-            const val = s.val();
-            if(val) {
-                document.getElementById('storePhone').value = val.phone;
-                document.getElementById('pixDiscount').value = val.pixDiscount;
-                document.getElementById('maxInstallments').value = val.installments;
-            }
-        });
-
-        document.getElementById("configForm").addEventListener("submit", (e) => {
-            e.preventDefault();
-            db.ref('settings').set({
-                phone: document.getElementById('storePhone').value,
-                pixDiscount: document.getElementById('pixDiscount').value,
-                installments: document.getElementById('maxInstallments').value
-            }).then(() => alert("Ajustes salvos!"));
-        });
+        window.editProduct = (id) => {
+            db.ref('products/'+id).once('value', s => {
+                const p = s.val();
+                document.getElementById("editingId").value = id;
+                document.getElementById("pSKU").value = p.sku;
+                document.getElementById("pName").value = p.name;
+                document.getElementById("pPrice").value = p.price;
+                document.getElementById("pStock").value = p.stock;
+                document.getElementById("pCategory").value = p.category;
+                window.scrollTo(0,0);
+            });
+        }
     </script>
 </body>
 </html>
