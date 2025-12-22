@@ -3,205 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrinho | Marcinha Semijoias</title>
+    <title>Meu Carrinho | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #111111; }
-        /* Esconde setas do input number */
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
     </style>
 </head>
 <body>
-
     <header class="text-center py-10 border-b border-[#E5E1DB] bg-white">
-        <a href="index.html" class="text-[10px] tracking-widest uppercase text-[#8C857B] hover:text-[#111111]">← Voltar para a vitrine</a>
-        <h1 class="font-serif text-3xl tracking-wide uppercase mt-4">Meu Carrinho</h1>
+        <a href="index.html" class="text-[10px] tracking-widest uppercase text-[#8C857B]">← Voltar para a vitrine</a>
+        <h1 class="font-serif text-3xl uppercase mt-4">Meu Carrinho</h1>
     </header>
 
     <main class="max-w-4xl mx-auto p-6 lg:py-12">
         <div id="cartContent" class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <div class="lg:col-span-2 space-y-6">
-                <div id="cartList" class="space-y-4"></div>
-            </div>
+            <div class="lg:col-span-2 space-y-4" id="cartList"></div>
+            
+            <div class="lg:col-span-1">
+                <div class="bg-white border p-6 sticky top-6">
+                    <h2 class="font-serif text-xl mb-6">Resumo</h2>
+                    <div class="space-y-3 text-sm mb-6 border-b pb-4">
+                        <div class="flex justify-between text-gray-500"><span>Subtotal</span><span id="subtotalDisplay">R$ 0,00</span></div>
+                        <div id="discountRow" class="flex justify-between text-green-600 font-bold" style="display:none">
+                            <span>Desconto PIX</span><span id="pixSavings">- R$ 0,00</span>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <span id="totalDisplay" class="text-2xl font-serif text-[#A68966]">R$ 0,00</span>
+                        <div id="installmentsRow" class="text-[10px] text-gray-400 mt-1" style="display:none">
+                            ou <span id="installmentDetail"></span>
+                        </div>
+                    </div>
 
-            <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white border border-[#E5E1DB] p-6 shadow-sm sticky top-6">
-                    <h2 class="font-serif text-xl mb-4">Resumo</h2>
+                    <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b py-2 mb-6 focus:outline-none">
                     
-                    <div class="space-y-2 text-sm border-b border-[#FDFBF7] pb-4 mb-4">
-                        <div class="flex justify-between">
-                            <span class="text-[#8C857B]">Subtotal</span>
-                            <span id="subtotal">R$ 0,00</span>
-                        </div>
-
-                        <div id="discountRow" class="flex justify-between text-green-600 font-medium">
-                            <span>Desconto PIX</span>
-                            <span id="pixSavings">- R$ 0,00</span>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-end mb-6">
-                        <span class="text-xs uppercase tracking-widest">Total</span>
-                        <div class="text-right">
-                            <span id="total" class="text-2xl font-serif text-[#A68966]">R$ 0,00</span>
-                            <div id="installmentsRow" class="text-[10px] text-gray-400" style="display: none;">
-                                ou em até <span id="installmentDetail">3x de R$ 0,00 sem juros</span>
-                            </div>
+                    <div class="mb-6">
+                        <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-3">Pagamento:</p>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="PIX" checked onchange="updateTotals()"> <span class="text-xs uppercase">PIX (Desconto)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="paymentMethod" value="CARTÃO" onchange="updateTotals()"> <span class="text-xs uppercase">Cartão de Crédito</span>
+                            </label>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
-                        <input type="text" id="customerName" placeholder="Seu Nome Completo" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none focus:border-[#A68966] bg-transparent">
-
-                        <div class="py-4 border-t border-[#FDFBF7] mt-2">
-                            <p class="text-[10px] uppercase tracking-[0.1em] text-gray-400 mb-3">Forma de Pagamento:</p>
-                            <div class="flex flex-col gap-3">
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="radio" name="paymentMethod" value="PIX" checked class="accent-[#A68966] w-4 h-4">
-                                    <span class="text-[11px] uppercase tracking-wider text-gray-600">PIX (com desconto)</span>
-                                </label>
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="radio" name="paymentMethod" value="CARTÃO" class="accent-[#A68966] w-4 h-4">
-                                    <span class="text-[11px] uppercase tracking-wider text-gray-600">Cartão de Crédito</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <button onclick="checkout()" class="w-full bg-[#111111] text-white text-[10px] tracking-[0.2em] uppercase py-4 hover:bg-[#333] transition">
-                            Finalizar via WhatsApp
-                        </button>
-                    </div>
+                    <button onclick="checkout()" class="w-full bg-black text-white text-[10px] py-4 uppercase tracking-[0.2em]">Finalizar no WhatsApp</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+            authDomain: "marcinha-semijoias.firebaseapp.com",
+            databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
+            projectId: "marcinha-semijoias",
+            storageBucket: "marcinha-semijoias.firebasestorage.app",
+            messagingSenderId: "830107812924",
+            appId: "1:830107812924:web:1ee54d9b875514e48eef39"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
-        const settings = JSON.parse(localStorage.getItem('storeSettings') || '{}');
 
         function renderCart() {
             const list = document.getElementById("cartList");
             if (cart.length === 0) {
-                document.getElementById("cartContent").innerHTML = `
-                    <div class="col-span-full text-center py-20">
-                        <p class="font-serif text-xl text-[#8C857B]">Seu carrinho está vazio.</p>
-                        <a href="index.html" class="mt-4 inline-block text-[10px] tracking-widest uppercase border border-[#111111] px-6 py-2">Explorar Joias</a>
-                    </div>`;
+                document.getElementById("cartContent").innerHTML = "<p class='text-center py-20 w-full col-span-full'>Carrinho vazio.</p>";
                 return;
             }
-
             list.innerHTML = cart.map((item, index) => `
-                <div class="flex items-center gap-4 bg-white p-4 border border-[#E5E1DB]">
-                    <img src="${item.image}" class="w-20 h-20 object-cover border border-[#FDFBF7]">
+                <div class="flex gap-4 bg-white p-4 border">
+                    <img src="${item.image}" class="w-20 h-20 object-cover">
                     <div class="flex-1">
-                        <h3 class="text-xs uppercase font-bold tracking-tight">${item.name}</h3>
-                        <p class="text-[10px] text-[#8C857B]">R$ ${item.price.toFixed(2)} / un</p>
-                        <div class="flex items-center gap-3 mt-2">
-                            <button onclick="updateQty(${index}, -1)" class="text-lg hover:text-[#A68966] transition">-</button>
-                            <span class="text-xs font-semibold w-4 text-center">${item.qty}</span>
-                            <button onclick="updateQty(${index}, 1)" class="text-lg hover:text-[#A68966] transition">+</button>
+                        <h3 class="text-xs uppercase font-bold">${item.name}</h3>
+                        <p class="text-xs text-gray-400 mt-1">R$ ${item.price.toFixed(2)}</p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <button onclick="changeQty(${index}, -1)">-</button>
+                            <span class="text-xs font-bold">${item.qty}</span>
+                            <button onclick="changeQty(${index}, 1)">+</button>
                         </div>
                     </div>
-                    <button onclick="removeItem(${index})" class="text-gray-300 hover:text-red-500 transition px-2">✕</button>
                 </div>
             `).join('');
-
-            updateDisplayValues();
+            updateTotals();
         }
 
-        function updateDisplayValues() {
-            const pixDiscountPercent = Number(settings.pixDiscount) || 0;
-            const maxInstallments = Number(settings.installments) || 3;
-            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "PIX";
-            
+        function updateTotals() {
             const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-            const savings = subtotal * (pixDiscountPercent / 100);
+            const method = document.querySelector('input[name="paymentMethod"]:checked').value;
             
-            // Atualiza Subtotal
-            document.getElementById("subtotal").innerText = `R$ ${subtotal.toFixed(2)}`;
+            // Busca configurações padrão (ou usa fixo 5% e 3x se não houver painel de config ainda)
+            const pixDiscount = 5; 
+            const installments = 3;
 
-            if (paymentMethod === "PIX") {
-                document.getElementById('discountRow').style.display = 'flex';
-                document.getElementById('installmentsRow').style.display = 'none';
+            document.getElementById("subtotalDisplay").innerText = `R$ ${subtotal.toFixed(2)}`;
+
+            if (method === "PIX") {
+                const savings = subtotal * (pixDiscount / 100);
+                document.getElementById("discountRow").style.display = "flex";
+                document.getElementById("installmentsRow").style.display = "none";
                 document.getElementById("pixSavings").innerText = `- R$ ${savings.toFixed(2)}`;
-                document.getElementById("total").innerText = `R$ ${(subtotal - savings).toFixed(2)}`;
+                document.getElementById("totalDisplay").innerText = `R$ ${(subtotal - savings).toFixed(2)}`;
             } else {
-                document.getElementById('discountRow').style.display = 'none';
-                document.getElementById('installmentsRow').style.display = 'block';
-                document.getElementById("total").innerText = `R$ ${subtotal.toFixed(2)}`;
-                const installmentValue = subtotal / maxInstallments;
-                document.getElementById("installmentDetail").innerText = `${maxInstallments}x de R$ ${installmentValue.toFixed(2)} sem juros`;
+                document.getElementById("discountRow").style.display = "none";
+                document.getElementById("installmentsRow").style.display = "block";
+                document.getElementById("totalDisplay").innerText = `R$ ${subtotal.toFixed(2)}`;
+                document.getElementById("installmentDetail").innerText = `${installments}x de R$ ${(subtotal/installments).toFixed(2)} sem juros`;
             }
         }
 
-        function updateQty(index, change) {
-            cart[index].qty += change;
-            if (cart[index].qty < 1) return removeItem(index);
+        function changeQty(index, delta) {
+            cart[index].qty += delta;
+            if (cart[index].qty < 1) cart.splice(index, 1);
             localStorage.setItem("cart", JSON.stringify(cart));
             renderCart();
         }
 
-        function removeItem(index) {
-            if(confirm("Remover este item?")) {
-                cart.splice(index, 1);
-                localStorage.setItem("cart", JSON.stringify(cart));
-                renderCart();
-            }
-        }
-
-        function checkout() {
+        async function checkout() {
             const name = document.getElementById("customerName").value;
-            if (!name) return alert("Por favor, digite seu nome completo.");
-
-            const whatsapp = settings.phone || localStorage.getItem("whatsapp");
-            if (!whatsapp) return alert("Erro: WhatsApp não configurado no painel.");
-
-            const payment = document.querySelector('input[name="paymentMethod"]:checked').value;
-            const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-            const pixDiscountPercent = Number(settings.pixDiscount) || 0;
-            const savings = payment === "PIX" ? (subtotal * (pixDiscountPercent / 100)) : 0;
-            const finalTotal = (subtotal - savings).toFixed(2);
-
-            // 1. Salva o pedido no Admin
-            const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-            orders.unshift({ 
-                customerName: name, 
-                date: new Date().toLocaleString('pt-BR'), 
-                itemCount: cart.reduce((a, b) => a + b.qty, 0), 
-                total: finalTotal,
-                payment: payment,
-                items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price }))
-            });
-            localStorage.setItem("orders", JSON.stringify(orders));
-
-            // 2. Baixa no Estoque
-            let products = JSON.parse(localStorage.getItem("products") || "[]");
-            cart.forEach(cItem => {
-                const pIdx = products.findIndex(p => p.id === cItem.id);
-                if (pIdx !== -1) products[pIdx].stock = Math.max(0, products[pIdx].stock - cItem.qty);
-            });
-            localStorage.setItem("products", JSON.stringify(products));
-
-            // 3. Monta Mensagem WhatsApp
-            let msg = `*Novo Pedido - ${name}*\n`;
-            msg += `--------------------------\n`;
-            cart.forEach(i => msg += `${i.qty}x ${i.name} - R$ ${(i.price * i.qty).toFixed(2)}\n`);
-            msg += `--------------------------\n`;
-            msg += `*Pagamento:* ${payment}\n`;
-            msg += `*Total: R$ ${finalTotal}*`;
-            if(payment === "CARTÃO") msg += `\n\n_Aguardo o link para pagamento no cartão._`;
-
-            // 4. Limpa e Envia
+            if (!name) return alert("Digite seu nome.");
+            
+            const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+            let msg = `*Novo Pedido - ${name}*\n\n`;
+            cart.forEach(i => msg += `• ${i.qty}x ${i.name}\n`);
+            msg += `\n*Pagamento:* ${method}\n*Total:* ${document.getElementById("totalDisplay").innerText}`;
+            
+            // Aqui você coloca seu número do WhatsApp (ex: 5511999999999)
+            const whatsapp = "5511999999999"; 
+            
+            // Limpa carrinho e envia
             localStorage.removeItem("cart");
-            window.location.href = `https://api.whatsapp.com/send?phone=55${whatsapp}&text=${encodeURIComponent(msg)}`;
+            window.location.href = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(msg)}`;
         }
-
-        // Listener para atualizar valores ao trocar rádio
-        document.addEventListener('change', (e) => {
-            if (e.target.name === 'paymentMethod') updateDisplayValues();
-        });
 
         renderCart();
     </script>
