@@ -3,269 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin | Marcinha Semijoias</title>
+    <title>Painel Sincronizado | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; color: #111111; }
-        @media print { .no-print { display: none !important; } .print-only { display: block !important; } body { background: white; } }
-        .print-only { display: none; }
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-    <nav class="border-b border-[#E5E1DB] bg-white px-6 py-4 flex justify-between items-center no-print">
-        <h1 class="font-serif text-xl tracking-tighter uppercase">Gestão <span class="text-[#A68966]">Boutique</span></h1>
-        <div class="flex gap-4">
-            <a href="../index.html" class="text-[10px] tracking-widest uppercase border border-[#111111] px-4 py-2 hover:bg-[#111111] hover:text-white transition">Ver Loja Online</a>
+    <header class="max-w-4xl mx-auto mb-10 flex justify-between items-center">
+        <div>
+            <h1 class="font-serif text-2xl uppercase tracking-wider text-[#A68966]">Gestão em Tempo Real</h1>
+            <p id="status" class="text-[10px] text-orange-400 uppercase tracking-widest font-bold">Conectando ao banco...</p>
         </div>
-    </nav>
+    </header>
 
-    <div class="max-w-6xl mx-auto p-6 space-y-12 no-print">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <section class="lg:col-span-1 space-y-6">
-                <h2 class="font-serif text-xl border-b border-[#A68966] pb-2">Marca & Regras</h2>
-                <div class="space-y-3 bg-white p-5 border border-[#E5E1DB] shadow-sm">
-                    <input type="text" id="storeName" class="w-full bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="Nome da Loja">
-                    <input type="number" id="whatsapp" class="w-full bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="WhatsApp (DDD)">
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="number" id="pixDiscount" class="bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="Desc. PIX %">
-                        <input type="number" id="maxInstallments" class="bg-transparent border-b border-[#E5E1DB] py-2 text-sm focus:outline-none" placeholder="Parcelas">
-                    </div>
-                    <button onclick="saveSettings()" class="w-full bg-[#111111] text-white text-[10px] tracking-widest uppercase py-3 mt-2 hover:bg-[#333] transition">Atualizar Configurações</button>
-                </div>
-            </section>
-
-            <section class="lg:col-span-2 space-y-6">
-                <h2 class="font-serif text-xl border-b border-[#A68966] pb-2" id="formTitle">Novo Produto</h2>
-                <div class="bg-white border border-[#E5E1DB] p-6 shadow-sm">
-                    <input type="hidden" id="editId">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="pName" placeholder="Nome da Joia" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
-                        <input type="text" id="pSku" placeholder="SKU (Ex: AN-001)" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
-                        <input type="number" id="pPrice" placeholder="Preço" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
-                        <input type="number" id="pStock" placeholder="Estoque" class="w-full border-b border-[#E5E1DB] py-2 text-sm focus:outline-none">
-                    </div>
-                    <div class="mt-4 flex items-center gap-4">
-                        <input type="file" id="pImage" accept="image/*" class="text-xs">
-                        <div id="imgPreview" class="w-14 h-14 border hidden bg-center bg-cover"></div>
-                    </div>
-                    <div class="flex gap-2 mt-6">
-                        <button onclick="addProduct()" id="btnSave" class="flex-1 bg-[#111111] text-white text-[10px] uppercase py-4">Salvar no Catálogo</button>
-                        <button onclick="resetForm()" id="btnCancel" class="hidden px-6 border text-[10px] uppercase">Cancelar</button>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2">Estoque</h2>
-            <div class="bg-white border border-[#E5E1DB]">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="bg-[#FDFBF7] text-[10px] uppercase text-[#8C857B] border-b">
-                            <th class="p-4">Produto</th>
-                            <th class="p-4">Preço</th>
-                            <th class="p-4 text-center">Estoque</th>
-                            <th class="p-4 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productList" class="text-sm"></tbody>
-                </table>
-            </div>
+    <main class="max-w-4xl mx-auto space-y-8">
+        <section class="bg-white p-6 border border-[#E5E1DB] shadow-sm">
+            <h2 class="font-serif text-lg mb-6 border-b pb-2">Cadastrar Nova Joia</h2>
+            <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="pName" placeholder="Nome da Peça" class="border p-3 text-sm" required>
+                <input type="number" id="pPrice" placeholder="Preço" step="0.01" class="border p-3 text-sm" required>
+                <input type="text" id="pImage" placeholder="URL da Imagem" class="border p-3 text-sm" required>
+                <input type="number" id="pStock" placeholder="Estoque" class="border p-3 text-sm" required>
+                <button type="submit" class="md:col-span-2 bg-[#111] text-white py-4 text-[10px] uppercase tracking-widest hover:bg-[#A68966] transition">Salvar na Nuvem</button>
+            </form>
         </section>
 
-        <section class="space-y-6">
-            <h2 class="font-serif text-2xl border-b border-[#A68966] pb-2">Vendas</h2>
-            <div class="bg-white border border-[#E5E1DB]">
-                <table class="w-full text-left">
-                    <tbody id="ordersTable" class="text-xs"></tbody>
-                </table>
-            </div>
+        <section>
+            <h2 class="font-serif text-lg mb-4">Inventário Sincronizado</h2>
+            <div id="adminProductList" class="grid grid-cols-1 gap-2"></div>
         </section>
-    </div>
-
-    <div id="printArea" class="print-only"></div>
+    </main>
 
     <script>
-        window.onload = () => {
-            ['storeName', 'whatsapp', 'pixDiscount', 'maxInstallments'].forEach(id => {
-                document.getElementById(id).value = localStorage.getItem(id) || '';
-            });
-            renderProducts();
-            renderOrders();
+        // Configuração do Firebase com suas chaves
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+            authDomain: "marcinha-semijoias.firebaseapp.com",
+            databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
+            projectId: "marcinha-semijoias",
+            storageBucket: "marcinha-semijoias.firebasestorage.app",
+            messagingSenderId: "830107812924",
+            appId: "1:830107812924:web:1ee54d9b875514e48eef39"
         };
 
-        function saveSettings() {
-            ['storeName', 'whatsapp', 'pixDiscount', 'maxInstallments'].forEach(id => {
-                localStorage.setItem(id, document.getElementById(id).value);
-            });
-            alert("Salvo!");
-            location.reload();
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Referência para os produtos no banco
+        const productsRef = db.ref('products');
+
+        // Escutar mudanças em tempo real (Funciona no PC e Celular ao mesmo tempo)
+        productsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const products = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            renderProducts(products);
+            document.getElementById('status').innerText = "● Conectado e Sincronizado";
+            document.getElementById('status').classList.replace('text-orange-400', 'text-green-500');
+        });
+
+        function renderProducts(products) {
+            const list = document.getElementById("adminProductList");
+            list.innerHTML = products.map((p) => `
+                <div class="flex items-center justify-between bg-white p-4 border border-[#E5E1DB]">
+                    <div class="flex items-center gap-4">
+                        <img src="${p.image}" class="w-12 h-12 object-cover">
+                        <div>
+                            <p class="text-xs font-bold uppercase">${p.name}</p>
+                            <p class="text-[10px] text-gray-400">R$ ${p.price.toFixed(2)} | Estoque: ${p.stock}</p>
+                        </div>
+                    </div>
+                    <button onclick="deleteProduct('${p.id}')" class="text-red-300 hover:text-red-500 text-xs">Excluir</button>
+                </div>
+            `).join('');
         }
 
-        let currentImgBase64 = "";
-        document.getElementById('pImage').onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                currentImgBase64 = ev.target.result;
-                const prev = document.getElementById('imgPreview');
-                prev.style.backgroundImage = `url(${currentImgBase64})`;
-                prev.classList.remove('hidden');
+        document.getElementById("productForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const newProduct = {
+                name: document.getElementById("pName").value,
+                price: parseFloat(document.getElementById("pPrice").value),
+                image: document.getElementById("pImage").value,
+                stock: parseInt(document.getElementById("pStock").value)
             };
-            reader.readAsDataURL(e.target.files[0]);
-        };
+            productsRef.push(newProduct); // Salva direto no Google
+            e.target.reset();
+        });
 
-        function addProduct() {
-            const id = document.getElementById('editId').value;
-            const name = document.getElementById('pName').value;
-            const price = parseFloat(document.getElementById('pPrice').value);
-            const stock = parseInt(document.getElementById('pStock').value) || 0;
-            const sku = document.getElementById('pSku').value;
-
-            if (!name || isNaN(price)) return alert("Preencha os campos!");
-
-            let products = JSON.parse(localStorage.getItem('products') || '[]');
-            if (id) {
-                const idx = products.findIndex(p => p.id === id);
-                products[idx] = { ...products[idx], name, sku, price, stock, image: currentImgBase64 || products[idx].image };
-            } else {
-                products.push({ id: Date.now().toString(), name, sku, price, stock, image: currentImgBase64 });
+        function deleteProduct(id) {
+            if(confirm("Excluir produto da nuvem?")) {
+                db.ref('products/' + id).remove();
             }
-            localStorage.setItem('products', JSON.stringify(products));
-            resetForm(); renderProducts();
         }
-
-       function renderProducts() {
-    const list = document.getElementById('productList');
-    const products = JSON.parse(localStorage.getItem('products') || '[]');
-    
-    list.innerHTML = products.map(p => `
-        <tr class="hover:bg-[#FDFBF7] transition border-b border-[#FDFBF7]">
-            <td class="p-4 flex items-center gap-3">
-                <img src="${p.image}" class="w-10 h-10 object-cover rounded border border-[#FDFBF7]">
-                <span class="font-medium">${p.name}</span>
-            </td>
-            <td class="p-4 text-[10px] text-gray-400 font-mono">${p.sku || '--'}</td>
-            <td class="p-4 font-serif">R$ ${Number(p.price).toFixed(2)}</td>
-            <td class="p-4 text-center">
-                <span class="px-2 py-1 ${p.stock <= 3 ? 'bg-red-50 text-red-500 font-bold' : 'bg-gray-50 text-gray-600'} rounded text-[10px]">
-                    ${p.stock || 0} un
-                </span>
-            </td>
-            <td class="p-4 text-right space-x-4">
-                <button onclick="editProduct('${p.id}')" class="text-[#A68966] text-[10px] uppercase tracking-tighter hover:underline font-semibold">Editar</button>
-                <button onclick="removeProduct('${p.id}')" class="text-red-300 text-[10px] uppercase hover:text-red-500 transition">Excluir</button>
-            </td>
-        </tr>
-    `).join('');
-}
-
-        function editProduct(id) {
-            const p = JSON.parse(localStorage.getItem('products')).find(x => x.id === id);
-            document.getElementById('editId').value = p.id;
-            document.getElementById('pName').value = p.name;
-            document.getElementById('pPrice').value = p.price;
-            document.getElementById('pStock').value = p.stock;
-            document.getElementById('pSku').value = p.sku;
-            document.getElementById('formTitle').innerText = "Editando...";
-            document.getElementById('btnCancel').classList.remove('hidden');
-        }
-
-        function resetForm() {
-            document.getElementById('editId').value = '';
-            document.getElementById('pName').value = '';
-            document.getElementById('pPrice').value = '';
-            document.getElementById('pStock').value = '';
-            document.getElementById('pSku').value = '';
-            document.getElementById('imgPreview').classList.add('hidden');
-            currentImgBase64 = "";
-        }
-
-        function removeProduct(id) {
-    if(confirm("Excluir este produto?")) {
-        let products = JSON.parse(localStorage.getItem('products') || '[]');
-        // Filtra para remover o item com o ID clicado
-        products = products.filter(p => p.id === id ? false : true); 
-        // OU: products = products.filter(p => String(p.id) !== String(id));
-        
-        localStorage.setItem('products', JSON.stringify(products));
-        renderProducts();
-    }
-}
-      function renderOrders() {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const container = document.getElementById('ordersTable');
-    
-    container.innerHTML = orders.map((o, i) => `
-        <tr class="border-b border-[#FDFBF7] hover:bg-[#FDFBF7] transition">
-            <td class="p-4">
-                <b class="text-[#111]">${o.customerName}</b>
-                <div class="text-[9px] text-gray-400 uppercase tracking-tighter">${o.date}</div>
-            </td>
-            <td class="p-4 font-serif text-[#111]">R$ ${o.total}</td>
-            <td class="p-4 text-right space-x-3">
-                <button onclick="printOrder(${i})" class="no-print border border-[#A68966] text-[#A68966] px-3 py-1 rounded-sm text-[9px] uppercase hover:bg-[#A68966] hover:text-white transition font-semibold">
-                    Imprimir
-                </button>
-                <button onclick="deleteOrder(${i})" class="no-print text-gray-300 hover:text-red-500 transition text-sm">✕</button>
-            </td>
-        </tr>`).join('');
-}
-
-function printOrder(index) {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const order = orders[index];
-    const store = localStorage.getItem('storeName') || 'Marcinha Semijoias';
-    
-    const itemsHtml = order.items.map(i => `
-        <div style="display:flex; justify-content:space-between; font-size:13px; padding:10px 0; border-bottom:1px solid #f0f0f0">
-            <span>${i.qty}x ${i.name}</span>
-            <span>R$ ${(i.price * i.qty).toFixed(2)}</span>
-        </div>
-    `).join('');
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html>
-            <head><title>Pedido - ${order.customerName}</title></head>
-            <body style="font-family:sans-serif; padding:40px; color:#111; line-height:1.6">
-                <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:20px; margin-bottom:30px">
-                    <h1 style="text-transform:uppercase; letter-spacing:5px; margin:0; font-size:24px">${store}</h1>
-                    <p style="font-size:11px; color:#666; margin-top:10px">COMPROVANTE DE PEDIDO</p>
-                </div>
-                <div style="margin-bottom:30px">
-                    <p><strong>CLIENTE:</strong> ${order.customerName}</p>
-                    <p><strong>DATA:</strong> ${order.date}</p>
-                </div>
-                <div style="margin-bottom:30px">
-                    <p style="font-size:11px; border-bottom:1px solid #111; padding-bottom:5px; font-weight:bold">DESCRIÇÃO DOS ITENS</p>
-                    ${itemsHtml}
-                </div>
-                <div style="text-align:right; font-size:22px; margin-top:20px; border-top:2px solid #111; padding-top:10px">
-                    <strong>TOTAL: R$ ${order.total}</strong>
-                </div>
-                <script>window.onload = function() { window.print(); window.close(); }<\/script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-}
-
-function deleteOrder(i) {
-    if(confirm("Excluir este registro de venda?")) {
-        let o = JSON.parse(localStorage.getItem('orders') || '[]');
-        o.splice(i, 1);
-        localStorage.setItem('orders', JSON.stringify(o));
-        renderOrders();
-    }
-}
-
-// Inicialização ao carregar a página
-window.onload = function() {
-    renderProducts();
-    renderOrders();
-};
-</script>
+    </script>
 </body>
 </html>
