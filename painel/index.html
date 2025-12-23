@@ -1,125 +1,214 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Painel Administrativo | Marcinha Semijoias</title>
+  <meta charset="UTF-8" />
+  <title>Painel Admin | Marcinha Semijoias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Georgia", serif;
+      background: #faf7f2;
+      color: #333;
+    }
 
-<!-- PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    header {
+      padding: 20px 40px;
+      border-bottom: 1px solid #d6b48c;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-<style>
-body{
-  font-family: Arial, sans-serif;
-  background:#f6f6f6;
-  margin:0;
-  padding:20px;
-}
-h1{text-align:center;margin-bottom:30px}
+    header h1 {
+      margin: 0;
+      font-weight: normal;
+      letter-spacing: 2px;
+    }
 
-.order{
-  background:#fff;
-  border:1px solid #ddd;
-  padding:15px;
-  margin-bottom:15px;
-}
+    nav a {
+      margin-left: 20px;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #b48b5a;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 4px;
+    }
 
-.badge{
-  display:inline-block;
-  padding:4px 8px;
-  font-size:11px;
-  font-weight:bold;
-  text-transform:uppercase;
-  margin-bottom:8px;
-}
+    nav a.active {
+      border-color: #b48b5a;
+    }
 
-.novo{background:#eee;color:#333}
-.pago{background:#d1fae5;color:#065f46}
-.entregue{background:#e0e7ff;color:#3730a3}
-.cancelado{background:#fee2e2;color:#991b1b}
+    main {
+      padding: 40px;
+      max-width: 1000px;
+      margin: auto;
+    }
 
-select,button{
-  padding:6px;
-  margin-top:6px;
-}
-button{
-  background:#000;
-  color:#fff;
-  border:0;
-  cursor:pointer;
-}
-button:hover{opacity:.85}
-small{color:#666}
-</style>
+    h2 {
+      font-weight: normal;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #d6b48c;
+      padding-bottom: 10px;
+    }
+
+    .tab {
+      display: none;
+    }
+
+    .tab.active {
+      display: block;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      margin-top: 30px;
+      padding: 12px 30px;
+      background: #b48b5a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .info {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>Painel Administrativo</h1>
+<header>
+  <h1>Marcinha Semijoias</h1>
+  <nav>
+    <a onclick="showTab('vendas')" class="active">Vendas</a>
+    <a onclick="showTab('produtos')">Produtos</a>
+    <a onclick="showTab('config')">Config</a>
+  </nav>
+</header>
 
-<div id="orders">Carregando pedidos...</div>
+<main>
 
-<!-- PDF (OCULTO) -->
-<div id="pdf" style="display:none;padding:30px;font-family:Arial">
-  <h2 style="text-align:center">Marcinha Semijoias</h2>
-  <p id="pdfCliente"></p>
-  <p id="pdfData"></p>
-  <p id="pdfStatus"></p>
-  <hr>
-  <div id="pdfItens"></div>
-  <hr>
-  <p><strong>Total:</strong> R$ <span id="pdfTotal"></span></p>
-  <p style="margin-top:40px">
-    Assinatura: _______________________________
-  </p>
-</div>
+  <!-- VENDAS -->
+  <section id="vendas" class="tab active">
+    <h2>Pedidos</h2>
+    <p class="info">Os pedidos aparecerão aqui automaticamente.</p>
+  </section>
 
-<script>
-/* 🔥 FIREBASE CONFIG */
-<script>
-const firebaseConfig={
-  apiKey:"AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-  authDomain:"marcinha-semijoias.firebaseapp.com",
-  databaseURL:"https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId:"marcinha-semijoias"
-};
+  <!-- PRODUTOS -->
+  <section id="produtos" class="tab">
+    <h2>Produtos</h2>
+    <p class="info">Cadastro e edição de produtos (próximo passo).</p>
+  </section>
 
-firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
+  <!-- CONFIG -->
+  <section id="config" class="tab">
+    <h2>Configurações da Loja</h2>
 
-db.ref('orders').on('value', snap=>{
-  const box=document.getElementById('orders');
-  box.innerHTML='';
+    <label>
+      Nome da Loja
+      <input id="cfgNome" placeholder="Ex: Marcinha Semijoias" />
+    </label>
 
-  if(!snap.exists()){
-    box.innerHTML='<p>Nenhum pedido.</p>';
-    return;
+    <label>
+      WhatsApp (somente números)
+      <input id="cfgWhats" placeholder="5599999999999" />
+    </label>
+
+    <label>
+      Desconto PIX (%)
+      <input id="cfgPix" type="number" placeholder="5" />
+    </label>
+
+    <label>
+      Estoque mínimo (alerta)
+      <input id="cfgEstoque" type="number" placeholder="3" />
+    </label>
+
+    <button onclick="salvarConfig()">Salvar Configurações</button>
+
+    <p class="info" id="status"></p>
+  </section>
+
+</main>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "SUA_API_KEY",
+    authDomain: "SEU_DOMINIO.firebaseapp.com",
+    projectId: "SEU_PROJECT_ID",
+    storageBucket: "SEU_BUCKET.appspot.com",
+    messagingSenderId: "SEU_SENDER_ID",
+    appId: "SEU_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.showTab = function(tab){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+
+    document.getElementById(tab).classList.add('active');
+    event.target.classList.add('active');
   }
 
-  snap.forEach(o=>{
-    const v=o.val();
-    const status = v.status || 'novo';
+  async function carregarConfig(){
+    const ref = doc(db, "config", "loja");
+    const snap = await getDoc(ref);
 
-    box.innerHTML+=`
-      <div class="order">
-        <strong>Cliente:</strong> ${v.customer || '---'}<br>
-        <strong>Total:</strong> R$ ${v.total || 0}<br><br>
+    if(snap.exists()){
+      const c = snap.data();
+      cfgNome.value = c.nome || "";
+      cfgWhats.value = c.whatsapp || "";
+      cfgPix.value = c.descontoPix || "";
+      cfgEstoque.value = c.estoqueMin || "";
+    }
+  }
 
-        <label>Status:</label>
-        <select onchange="updateStatus('${o.key}', this.value)">
-          <option value="novo" ${status==='novo'?'selected':''}>Novo</option>
-          <option value="pago" ${status==='pago'?'selected':''}>Pago</option>
-          <option value="entregue" ${status==='entregue'?'selected':''}>Entregue</option>
-          <option value="cancelado" ${status==='cancelado'?'selected':''}>Cancelado</option>
-        </select>
-      </div>
-    `;
-  });
-});
+  window.salvarConfig = async function(){
+    await setDoc(doc(db, "config", "loja"), {
+      nome: cfgNome.value,
+      whatsapp: cfgWhats.value,
+      descontoPix: Number(cfgPix.value),
+      estoqueMin: Number(cfgEstoque.value)
+    });
 
-function updateStatus(id, status){
-  db.ref('orders/' + id).update({ status });
-}
+    status.innerText = "Configurações salvas com sucesso ✔";
+  }
+
+  carregarConfig();
 </script>
+
+</body>
+</html>
