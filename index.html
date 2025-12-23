@@ -12,56 +12,61 @@
 <style>
 body{background:#F8F6F2}
 .font-serif{font-family:'Cinzel',serif}
-.price{color:#A68966;font-weight:600;font-size:18px}
+.gold{color:#A68966}
 </style>
 </head>
 
 <body>
 
-<header class="bg-white p-6 border-b text-center">
-<h1 class="font-serif text-2xl tracking-widest text-[#A68966]">
-Marcinha Semijoias
-</h1>
+<header class="bg-white border-b px-8 py-6 text-center">
+  <h1 class="font-serif text-3xl gold tracking-widest">Marcinha Semijoias</h1>
+  <p class="text-xs tracking-widest text-gray-400 uppercase mt-1">
+    Catálogo Exclusivo
+  </p>
 </header>
 
-<main class="max-w-6xl mx-auto p-6 grid md:grid-cols-3 gap-8">
+<main class="max-w-7xl mx-auto p-8 grid md:grid-cols-4 gap-10">
 
-<section id="products" class="md:col-span-2 grid sm:grid-cols-2 gap-6"></section>
+<!-- CATÁLOGO -->
+<section class="md:col-span-3">
+  <div id="produtos" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10"></div>
+</section>
 
-<aside class="bg-white border p-6 space-y-6">
-<h2 class="font-serif text-lg">Carrinho</h2>
+<!-- CARRINHO -->
+<aside class="bg-white border p-6 space-y-6 sticky top-6 h-fit">
+  <h2 class="font-serif text-xl gold">Carrinho</h2>
 
-<div id="cartItems" class="space-y-4"></div>
+  <div id="carrinho" class="space-y-4 text-sm"></div>
 
-<hr>
+  <div class="border-t pt-4 space-y-3">
+    <div class="flex justify-between">
+      <span>Total:</span>
+      <strong id="total">R$ 0,00</strong>
+    </div>
 
-<div class="text-sm space-y-1">
-<p>Subtotal: R$ <span id="subtotal">0.00</span></p>
-<p id="pixDiscount" class="text-green-600 hidden"></p>
-<p class="font-bold">Total: R$ <span id="total">0.00</span></p>
-</div>
+    <!-- PAGAMENTO -->
+    <div class="space-y-2">
+      <label class="flex items-center gap-2">
+        <input type="radio" name="pagamento" value="PIX" checked>
+        <span class="text-green-700 font-semibold">
+          💰 PIX <small id="pixInfo"></small>
+        </span>
+      </label>
 
-<hr>
+      <label class="flex items-center gap-2">
+        <input type="radio" name="pagamento" value="CARTAO">
+        <span class="text-gray-800 font-semibold">
+          💳 Cartão
+        </span>
+      </label>
 
-<div class="space-y-3">
-<label class="flex items-center gap-3">
-<input type="radio" name="pay" value="pix" checked>
-<img id="iconPix" class="h-6 hidden">
-<span>PIX</span>
-</label>
+      <select id="parcelas" class="border p-2 w-full hidden"></select>
+    </div>
 
-<label class="flex items-center gap-3">
-<input type="radio" name="pay" value="card">
-<img id="iconCard" class="h-6 hidden">
-<span>Cartão</span>
-</label>
-
-<p id="parcelasInfo" class="text-xs text-gray-500"></p>
-</div>
-
-<button onclick="checkout()" class="w-full bg-black text-white py-3 uppercase tracking-widest text-xs">
-Finalizar no WhatsApp
-</button>
+    <button onclick="finalizar()" class="bg-black text-white w-full py-3 tracking-widest text-xs uppercase">
+      Finalizar no WhatsApp
+    </button>
+  </div>
 </aside>
 
 </main>
@@ -73,109 +78,103 @@ firebase.initializeApp({
  projectId:"marcinha-semijoias"
 });
 
-const db=firebase.database();
-let cart=[],settings={};
+const db = firebase.database();
 
-const subtotalEl=document.getElementById('subtotal');
-const totalEl=document.getElementById('total');
-const pixDiscount=document.getElementById('pixDiscount');
+let produtos = {};
+let carrinho = [];
+let settings = {};
+let pagamento = 'PIX';
 
+/* SETTINGS */
 db.ref('settings').once('value').then(s=>{
- settings=s.val()||{};
- if(settings.iconPix){iconPix.src=settings.iconPix;iconPix.classList.remove('hidden')}
- if(settings.iconCard){iconCard.src=settings.iconCard;iconCard.classList.remove('hidden')}
- if(settings.parcelas)parcelasInfo.innerText=`Até ${settings.parcelas}x no cartão`;
-});
-
-db.ref('products').on('value',snap=>{
- products.innerHTML='';
- snap.forEach(s=>{
-  const p=s.val(); p.id=s.key;
-  products.innerHTML+=`
-  <div class="bg-white border p-4 space-y-3">
-   <img src="${p.image}" class="w-full h-48 object-cover">
-   <h3 class="font-serif">${p.name}</h3>
-   <p class="price">R$ ${p.price.toFixed(2)}</p>
-   <button onclick='addCart(${JSON.stringify(p)})'
-   class="w-full border py-2 text-xs uppercase">Adicionar</button>
-  </div>`;
- });
-});
-
-function addCart(p){
- const i=cart.find(x=>x.id===p.id);
- i?i.qty++:cart.push({...p,qty:1});
- renderCart();
-}
-
-function changeQty(id,d){
- const i=cart.find(x=>x.id===id);
- i.qty+=d;
- if(i.qty<=0)cart=cart.filter(x=>x.id!==id);
- renderCart();
-}
-
-function renderCart(){
- cartItems.innerHTML='';
- let subtotal=0;
- cart.forEach(i=>{
-  subtotal+=i.price*i.qty;
-  cartItems.innerHTML+=`
-  <div class="flex justify-between">
-   <div>
-    <strong>${i.name}</strong>
-    <div class="flex gap-2 mt-1">
-     <button onclick="changeQty('${i.id}',-1)">➖</button>
-     <span>${i.qty}</span>
-     <button onclick="changeQty('${i.id}',1)">➕</button>
-    </div>
-   </div>
-   <span>R$ ${(i.price*i.qty).toFixed(2)}</span>
-  </div>`;
- });
-
- subtotalEl.innerText=subtotal.toFixed(2);
- let total=subtotal;
- pixDiscount.classList.add('hidden');
-
- if(document.querySelector('[name=pay]:checked').value==='pix'){
-  const d=settings.pix||0;
-  if(d>0){
-   const desc=subtotal*d/100;
-   total-=desc;
-   pixDiscount.innerText=`Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
-   pixDiscount.classList.remove('hidden');
-  }
+ settings = s.val();
+ pixInfo.innerText = `(${settings.pix}% OFF)`;
+ for(let i=1;i<=settings.parcelas;i++){
+  parcelas.innerHTML+=`<option>${i}x sem juros</option>`;
  }
- totalEl.innerText=total.toFixed(2);
+});
+
+/* PRODUTOS */
+db.ref('products').on('value',snap=>{
+ produtos = snap.val() || {};
+ renderProdutos();
+});
+
+function renderProdutos(){
+ const el = document.getElementById('produtos');
+ el.innerHTML='';
+ Object.entries(produtos).forEach(([id,p])=>{
+  el.innerHTML+=`
+  <div class="bg-white border p-4 space-y-3">
+    <img src="${p.image}" class="h-56 w-full object-cover">
+    <h3 class="font-serif">${p.name}</h3>
+    <p class="gold text-lg font-semibold">R$ ${p.price.toFixed(2)}</p>
+    <button onclick="add('${id}')" class="border w-full py-2 text-xs tracking-widest uppercase">
+      Adicionar
+    </button>
+  </div>`;
+ });
 }
 
-document.querySelectorAll('[name=pay]').forEach(r=>r.onchange=renderCart);
+/* CARRINHO */
+function add(id){
+ const item = carrinho.find(i=>i.id===id);
+ if(item) item.qty++;
+ else carrinho.push({id,qty:1});
+ renderCarrinho();
+}
 
-function checkout(){
- if(!cart.length)return alert('Carrinho vazio');
+function renderCarrinho(){
+ carrinhoDiv.innerHTML='';
+ let total = 0;
 
- const pay=document.querySelector('[name=pay]:checked').value;
- const total=parseFloat(totalEl.innerText);
-
- db.ref('orders').push({
-  date:new Date().toLocaleString(),
-  payment:pay,
-  items:cart,
-  total
+ carrinho.forEach(i=>{
+  const p = produtos[i.id];
+  total += p.price * i.qty;
+  carrinhoDiv.innerHTML+=`
+  <div class="flex justify-between items-center">
+    <div>
+      ${i.qty}x ${p.name}<br>
+      <span class="text-xs gold">R$ ${(p.price*i.qty).toFixed(2)}</span>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="i.qty--; if(i.qty<=0) carrinho=carrinho.filter(x=>x!=i); renderCarrinho()">−</button>
+      <button onclick="i.qty++; renderCarrinho()">+</button>
+    </div>
+  </div>`;
  });
 
- cart.forEach(i=>{
-  db.ref(`products/${i.id}/stock`).transaction(s=>s-i.qty);
+ if(pagamento==='PIX'){
+  total *= (1 - settings.pix/100);
+ }
+
+ totalEl.innerText = `R$ ${total.toFixed(2)}`;
+}
+
+/* PAGAMENTO */
+document.querySelectorAll('input[name=pagamento]').forEach(r=>{
+ r.onchange=e=>{
+  pagamento=e.target.value;
+  parcelas.classList.toggle('hidden', pagamento!=='CARTAO');
+  renderCarrinho();
+ };
+});
+
+/* FINALIZAR */
+function finalizar(){
+ let msg = `🛍️ *Novo Pedido*\n\n`;
+ carrinho.forEach(i=>{
+  const p=produtos[i.id];
+  msg+=`${i.qty}x ${p.name}\n`;
  });
+ msg+=`\nPagamento: ${pagamento}`;
+ if(pagamento==='CARTAO') msg+=`\nParcelas: ${parcelas.value}`;
+ msg+=`\nTotal: ${totalEl.innerText}`;
 
- let msg='Pedido:%0A';
- cart.forEach(i=>msg+=`${i.qty}x ${i.name}%0A`);
- msg+=`Total: R$ ${total.toFixed(2)}%0APagamento: ${pay.toUpperCase()}`;
-
- window.open(`https://wa.me/55${settings.whatsapp}?text=${msg}`);
+ window.open(`https://wa.me/55${settings.whatsapp}?text=${encodeURIComponent(msg)}`);
 }
 </script>
 
 </body>
 </html>
+
