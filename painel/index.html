@@ -2,116 +2,56 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel Admin | Semijoias</title>
+<title>Catálogo | Semijoias</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
 <style>
-body { background:#F8F6F2 }
-.tab{display:none}
-.tab.active{display:block}
+body{background:#F8F6F2}
+button{transition:.2s}
 </style>
 </head>
 
-<body class="p-8">
+<body class="p-6 max-w-5xl mx-auto">
 
 <!-- HEADER -->
-<header class="flex justify-between items-center mb-8">
-  <div>
-    <h1 class="font-serif text-2xl text-[#A68966] tracking-widest">
-      Painel Administrativo
-    </h1>
-    <p class="text-xs uppercase tracking-widest text-gray-500">
-      Controle Geral da Loja
-    </p>
-  </div>
-
-  <nav class="flex gap-6 text-xs uppercase tracking-widest font-bold">
-    <button onclick="showTab('empresa')">Empresa</button>
-    <button onclick="showTab('produtos')">Produtos</button>
-    <button onclick="showTab('pedidos')">Pedidos</button>
-    <button onclick="showTab('relatorio')">Relatório</button>
-  </nav>
+<header class="mb-10 text-center">
+  <h1 id="storeName" class="font-serif text-3xl text-[#A68966] tracking-widest">
+    Loja
+  </h1>
+  <p class="uppercase text-xs tracking-widest text-gray-500 mt-2">
+    Catálogo Exclusivo
+  </p>
 </header>
 
-<!-- EMPRESA -->
-<section id="empresa" class="tab active max-w-md bg-white border p-6">
-  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Empresa</h2>
-
-  <input id="empNome" class="border p-2 w-full mb-2" placeholder="Nome da Loja">
-  <input id="empWhats" class="border p-2 w-full mb-2" placeholder="WhatsApp (55DDD...)">
-  <input id="empPix" type="number" class="border p-2 w-full mb-2" placeholder="% Desconto PIX">
-  <input id="empParcelas" type="number" class="border p-2 w-full mb-4" placeholder="Parcelas Cartão">
-
-  <button onclick="saveEmpresa()" class="bg-black text-white w-full py-2 uppercase text-xs">
-    Salvar
-  </button>
-</section>
-
 <!-- PRODUTOS -->
-<section id="produtos" class="tab">
-  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Produtos</h2>
+<section id="products" class="grid md:grid-cols-3 gap-6 mb-12"></section>
 
-  <div class="grid md:grid-cols-2 gap-6">
+<!-- CARRINHO -->
+<section class="max-w-md mx-auto bg-white border p-6">
+  <h2 class="font-serif text-xl mb-4 text-[#A68966] text-center">
+    Carrinho
+  </h2>
 
-    <!-- FORM -->
-    <div class="bg-white border p-4">
-      <input id="pSku" class="border p-2 w-full mb-2" placeholder="SKU">
-      <input id="pNome" class="border p-2 w-full mb-2" placeholder="Nome">
-      <input id="pValor" type="number" class="border p-2 w-full mb-2" placeholder="Valor">
-      <input id="pEstoque" type="number" class="border p-2 w-full mb-2" placeholder="Estoque">
+  <div id="cartItems" class="space-y-3 mb-4"></div>
 
-      <input id="pImagem" type="file" accept="image/*" class="mb-3">
-
-      <img id="preview" class="hidden w-32 mb-3 border">
-
-      <button onclick="saveProduto()" class="bg-black text-white w-full py-2 uppercase text-xs">
-        Salvar Produto
-      </button>
-    </div>
-
-    <!-- LISTA -->
-    <div id="listaProdutos" class="space-y-2"></div>
-  </div>
-</section>
-
-<!-- PEDIDOS -->
-<section id="pedidos" class="tab">
-  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Pedidos</h2>
-  <div id="listaPedidos" class="space-y-4"></div>
-</section>
-
-<!-- RELATÓRIO -->
-<section id="relatorio" class="tab">
-  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Relatório Mensal</h2>
-
-  <input type="month" id="mes" class="border p-2 mb-4">
-
-  <div class="grid md:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white border p-4 text-center">
-      <p class="text-xs text-gray-400">Pedidos</p>
-      <p id="rQtd" class="text-2xl font-bold">0</p>
-    </div>
-    <div class="bg-white border p-4 text-center">
-      <p class="text-xs text-gray-400">Total</p>
-      <p id="rTotal" class="text-2xl font-bold">R$ 0</p>
-    </div>
-    <div class="bg-white border p-4 text-center">
-      <p class="text-xs text-gray-400">PIX</p>
-      <p id="rPix" class="text-2xl font-bold text-green-600">R$ 0</p>
-    </div>
-    <div class="bg-white border p-4 text-center">
-      <p class="text-xs text-gray-400">Cartão</p>
-      <p id="rCard" class="text-2xl font-bold">R$ 0</p>
-    </div>
+  <div class="border-t pt-4 text-sm space-y-1">
+    <p>Total: <strong id="total">R$ 0</strong></p>
+    <p id="pixInfo" class="text-green-600 hidden"></p>
   </div>
 
-  <div id="listaRelatorio" class="space-y-2"></div>
+  <!-- PAGAMENTO -->
+  <div class="mt-6 space-y-3">
+    <button onclick="checkout('pix')" class="w-full border py-3 flex justify-center gap-2">
+      💰 PIX
+    </button>
+    <button onclick="checkout('card')" class="w-full border py-3 flex justify-center gap-2">
+      💳 Cartão
+    </button>
+  </div>
 </section>
 
 <script>
@@ -120,82 +60,110 @@ firebase.initializeApp({
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
   authDomain: "marcinha-semijoias.firebaseapp.com",
   databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias",
-  storageBucket: "marcinha-semijoias.appspot.com"
+  projectId: "marcinha-semijoias"
 });
-
 const db = firebase.database();
-const storage = firebase.storage();
 
-/* TABS */
-function showTab(id){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+let cart = {};
+let settings = {};
 
-/* EMPRESA */
-function saveEmpresa(){
-  db.ref('settings').set({
-    name: empNome.value,
-    whatsapp: empWhats.value,
-    pix: empPix.value,
-    parcelas: empParcelas.value
-  });
-  alert('Salvo');
-}
-
-db.ref('settings').on('value',s=>{
-  if(!s.val())return;
-  empNome.value=s.val().name||'';
-  empWhats.value=s.val().whatsapp||'';
-  empPix.value=s.val().pix||'';
-  empParcelas.value=s.val().parcelas||'';
+/* SETTINGS */
+db.ref('settings').once('value').then(s=>{
+  settings = s.val() || {};
+  storeName.innerText = settings.name || 'Loja';
 });
 
-/* PREVIEW */
-pImagem.onchange=()=>{
-  const f=pImagem.files[0];
-  if(!f)return;
-  preview.src=URL.createObjectURL(f);
-  preview.classList.remove('hidden');
-}
-
-/* PRODUTO */
-function saveProduto(){
-  const file=pImagem.files[0];
-  if(!file){ alert('Selecione a imagem'); return; }
-
-  const ref=storage.ref('produtos/'+Date.now()+'-'+file.name);
-  ref.put(file).then(()=>{
-    ref.getDownloadURL().then(url=>{
-      db.ref('products').push({
-        sku:pSku.value,
-        name:pNome.value,
-        price:+pValor.value,
-        stock:+pEstoque.value,
-        image:url
-      });
-      alert('Produto salvo');
-    });
-  });
-}
-
-db.ref('products').on('value',snap=>{
-  listaProdutos.innerHTML='';
+/* PRODUTOS */
+db.ref('products').on('value', snap=>{
+  products.innerHTML='';
   snap.forEach(p=>{
     const d=p.val();
-    listaProdutos.innerHTML+=`
-      <div class="bg-white border p-2 flex gap-2 items-center">
-        <img src="${d.image}" class="w-12 h-12 object-cover border">
-        <div>
-          <strong>${d.name}</strong><br>
-          R$ ${d.price} | Estoque ${d.stock}
-        </div>
+    products.innerHTML+=`
+      <div class="bg-white border p-4">
+        <img src="${d.image}" class="w-full h-48 object-cover mb-3">
+        <h3 class="font-serif">${d.name}</h3>
+        <p class="text-sm mb-3">R$ ${d.price}</p>
+        <button onclick='add("${p.key}",${JSON.stringify(d)})'
+          class="border w-full py-2">
+          Adicionar
+        </button>
       </div>`;
   });
 });
+
+/* CARRINHO */
+function add(id,p){
+  if(!cart[id]) cart[id]={...p,qty:0};
+  cart[id].qty++;
+  renderCart();
+}
+
+function change(id,val){
+  cart[id].qty+=val;
+  if(cart[id].qty<=0) delete cart[id];
+  renderCart();
+}
+
+function renderCart(){
+  cartItems.innerHTML='';
+  let total=0;
+
+  Object.entries(cart).forEach(([id,p])=>{
+    total+=p.price*p.qty;
+    cartItems.innerHTML+=`
+      <div class="flex justify-between items-center">
+        <div>
+          <strong>${p.name}</strong><br>
+          R$ ${p.price} x ${p.qty}
+        </div>
+        <div class="flex gap-2">
+          <button onclick="change('${id}',-1)">➖</button>
+          <button onclick="change('${id}',1)">➕</button>
+        </div>
+      </div>`;
+  });
+
+  totalEl=total;
+  totalTxt.innerText='R$ '+total.toFixed(2);
+
+  if(settings.pix){
+    const pixTotal=total*(1-settings.pix/100);
+    pixInfo.innerText=`PIX com ${settings.pix}% OFF: R$ ${pixTotal.toFixed(2)}`;
+    pixInfo.classList.remove('hidden');
+  }
+}
+
+const totalTxt=document.getElementById('total');
+const pixInfo=document.getElementById('pixInfo');
+
+/* CHECKOUT */
+function checkout(type){
+  if(Object.keys(cart).length===0){
+    alert('Carrinho vazio');
+    return;
+  }
+
+  let msg=`🛍 *NOVO PEDIDO*\n\n`;
+  let total=0;
+
+  Object.values(cart).forEach(p=>{
+    msg+=`• ${p.name} (${p.qty}x) — R$ ${(p.price*p.qty).toFixed(2)}\n`;
+    total+=p.price*p.qty;
+  });
+
+  if(type==='pix'){
+    const desconto=settings.pix||0;
+    const final=total*(1-desconto/100);
+    msg+=`\n💰 *PIX (${desconto}% OFF)*\nTotal: R$ ${final.toFixed(2)}`;
+  }else{
+    msg+=`\n💳 *Cartão*\nParcelas: ${settings.parcelas||1}x\nTotal: R$ ${total.toFixed(2)}`;
+  }
+
+  const phone=settings.whatsapp;
+  const url=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+}
 </script>
 
 </body>
 </html>
-
