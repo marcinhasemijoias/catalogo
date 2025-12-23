@@ -47,28 +47,71 @@ const db=firebase.database();
 let cart=[];
 
 function addToCart(p){
+ if(p.stock <= 0) return alert("Produto sem estoque");
  cart.push(p);
- alert("Adicionado ao carrinho");
+ alert("Produto adicionado");
 }
 
 function checkout(){
  if(!cart.length) return alert("Carrinho vazio");
 
- let msg="*Pedido Marcinha Semijoias*%0A%0A";
- let total=0;
+ const name = prompt("Nome do cliente:");
+ if(!name) return;
 
- cart.forEach(p=>{
-  msg+=`• ${p.name} - R$ ${p.price}%0A`;
-  total+=p.price;
+ db.ref('settings').once('value', s=>{
+  const pixDiscount = s.val()?.pix || 0;
+
+  let itemsText = "";
+  let total = 0;
+
+  cart.forEach(p=>{
+   itemsText += `${p.name} (${p.sku}) - R$ ${p.price}\n`;
+   total += p.price;
+  });
+
+  const discount = total * (pixDiscount / 100);
+  const totalPix = total - discount;
+  const date = new Date().toLocaleDateString('pt-BR');
+
+  // 🔹 SALVAR PEDIDO
+  const orderRef = db.ref('orders').push({
+   customerName: name,
+   items: itemsText,
+   total: totalPix.toFixed(2),
+   originalTotal: total.toFixed(2),
+   payment: "PIX",
+   date
+  });
+
+  // 🔹 BAIXAR ESTOQUE
+  cart.forEach(p=>{
+   db.ref('products').orderByChild('sku').equalTo(p.sku)
+   .once('value', snap=>{
+    snap.forEach(prod=>{
+     const stock = prod.val().stock - 1;
+     prod.ref.update({ stock });
+    });
+   });
+  });
+
+  // 🔹 WHATSAPP
+  let msg = `*Pedido Marcinha Semijoias*%0A%0A`;
+  msg += `Cliente: ${name}%0A%0A`;
+  msg += itemsText.replace(/\n/g,'%0A');
+  msg += `%0A*Total:* R$ ${total}`;
+  msg += `%0A*PIX (${pixDiscount}% OFF):* R$ ${totalPix.toFixed(2)}`;
+
+  window.open(`https://wa.me/55SEUNUMEROAQUI?text=${msg}`, "_blank");
+
+  cart = [];
  });
-
- msg+=`%0A*Total:* R$ ${total}`;
- window.open("https://wa.me/55SEUNUMEROAQUI?text="+msg,"_blank");
 }
 
-db.ref('products').on('value',s=>{
+db.ref('products').on('value', s=>{
+ const catalog=document.getElementById('catalog');
  catalog.innerHTML='';
  if(!s.val()) return;
+
  Object.values(s.val()).forEach(p=>{
   catalog.innerHTML+=`
    <div class="bg-white border p-4">
@@ -76,6 +119,7 @@ db.ref('products').on('value',s=>{
     <h3 class="font-serif text-lg">${p.name}</h3>
     <p class="text-sm text-gray-500">${p.category}</p>
     <strong class="block mt-2 text-lg">R$ ${p.price}</strong>
+    <p class="text-xs text-gray-400">Estoque: ${p.stock}</p>
     <button onclick='addToCart(${JSON.stringify(p)})'
      class="mt-3 w-full bg-black text-white text-xs py-2 uppercase">
      Adicionar
@@ -84,6 +128,3 @@ db.ref('products').on('value',s=>{
  });
 });
 </script>
-
-</body>
-</html>
