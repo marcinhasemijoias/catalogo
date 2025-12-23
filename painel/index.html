@@ -18,20 +18,38 @@ body{
   margin:0;
   padding:20px;
 }
-h1{text-align:center}
+h1{text-align:center;margin-bottom:30px}
+
 .order{
   background:#fff;
   border:1px solid #ddd;
   padding:15px;
   margin-bottom:15px;
 }
+
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  font-size:11px;
+  font-weight:bold;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+.novo{background:#eee;color:#333}
+.pago{background:#d1fae5;color:#065f46}
+.entregue{background:#e0e7ff;color:#3730a3}
+.cancelado{background:#fee2e2;color:#991b1b}
+
+select,button{
+  padding:6px;
+  margin-top:6px;
+}
 button{
   background:#000;
   color:#fff;
   border:0;
-  padding:8px 12px;
   cursor:pointer;
-  margin-top:10px;
 }
 button:hover{opacity:.85}
 small{color:#666}
@@ -43,11 +61,12 @@ small{color:#666}
 
 <div id="orders">Carregando pedidos...</div>
 
-<!-- MODELO DO PDF (OCULTO) -->
+<!-- PDF (OCULTO) -->
 <div id="pdf" style="display:none;padding:30px;font-family:Arial">
   <h2 style="text-align:center">Marcinha Semijoias</h2>
   <p id="pdfCliente"></p>
   <p id="pdfData"></p>
+  <p id="pdfStatus"></p>
   <hr>
   <div id="pdfItens"></div>
   <hr>
@@ -58,7 +77,7 @@ small{color:#666}
 </div>
 
 <script>
-/* 🔥 CONFIG FIREBASE */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig={
   apiKey:"SUA_API_KEY",
   authDomain:"SEU_AUTH",
@@ -66,11 +85,10 @@ const firebaseConfig={
   projectId:"SEU_PROJECT",
   storageBucket:"SEU_BUCKET"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-/* 📦 CARREGAR PEDIDOS */
+/* 📦 LISTAR PEDIDOS */
 db.ref('orders').on('value', snap=>{
   const box=document.getElementById('orders');
   box.innerHTML='';
@@ -82,15 +100,25 @@ db.ref('orders').on('value', snap=>{
 
   snap.forEach(o=>{
     const v=o.val();
+    const status=v.status || 'novo';
     const data=new Date(v.createdAt || Date.now()).toLocaleDateString();
 
     box.innerHTML+=`
       <div class="order">
+        <div class="badge ${status}">${status}</div><br>
+
         <strong>Cliente:</strong> ${v.customer}<br>
         <small>Data: ${data}</small><br><br>
 
-        <strong>Total:</strong> R$ ${v.total}<br>
-        <strong>Status:</strong> ${v.status || 'novo'}<br>
+        <strong>Total:</strong> R$ ${v.total}<br><br>
+
+        <label>Status:</label><br>
+        <select onchange="updateStatus('${o.key}',this.value)">
+          <option value="novo" ${status==='novo'?'selected':''}>Novo</option>
+          <option value="pago" ${status==='pago'?'selected':''}>Pago</option>
+          <option value="entregue" ${status==='entregue'?'selected':''}>Entregue</option>
+          <option value="cancelado" ${status==='cancelado'?'selected':''}>Cancelado</option>
+        </select><br>
 
         <button onclick="gerarPDF('${o.key}')">
           Gerar PDF / Romaneio
@@ -100,20 +128,24 @@ db.ref('orders').on('value', snap=>{
   });
 });
 
-/* 🧾 GERAR PDF A4 */
+/* 🔄 ATUALIZAR STATUS */
+function updateStatus(id,status){
+  db.ref('orders/'+id).update({status});
+}
+
+/* 🧾 GERAR PDF */
 function gerarPDF(id){
   db.ref('orders/'+id).once('value', snap=>{
     const o=snap.val();
 
     pdfCliente.innerText="Cliente: "+o.customer;
     pdfData.innerText="Data: "+new Date(o.createdAt).toLocaleDateString();
+    pdfStatus.innerText="Status: "+(o.status||'novo');
     pdfTotal.innerText=o.total;
 
     pdfItens.innerHTML='';
     o.items.forEach(i=>{
-      pdfItens.innerHTML+=`
-        <p>${i.name} — R$ ${i.price}</p>
-      `;
+      pdfItens.innerHTML+=`<p>${i.name} — R$ ${i.price}</p>`;
     });
 
     html2pdf().set({
