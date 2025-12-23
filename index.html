@@ -2,130 +2,181 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Marcinha Semijoias</title>
+<title>Catálogo | Marcinha Semijoias</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<style>
+body{background:#F8F6F2;color:#1a1a1a}
+.price{color:#A68966;font-size:1.2rem;font-weight:600}
+</style>
 </head>
 
-<body class="bg-[#F8F6F2] text-[#1a1a1a]">
+<body class="max-w-6xl mx-auto px-6 py-10">
 
-<header class="bg-white p-6 text-center border-b">
-  <h1 class="text-2xl tracking-widest font-serif text-[#A68966]">Marcinha Semijoias</h1>
+<!-- HEADER -->
+<header class="text-center mb-12">
+  <h1 id="storeName" class="font-serif text-4xl tracking-widest text-[#A68966]">
+    Marcinha Semijoias
+  </h1>
+  <p class="uppercase text-xs tracking-widest text-gray-500 mt-2">
+    Catálogo Exclusivo
+  </p>
 </header>
 
-<main class="max-w-5xl mx-auto p-6">
-  <div id="products" class="grid md:grid-cols-3 gap-6"></div>
+<!-- PRODUTOS -->
+<section id="products" class="grid md:grid-cols-3 gap-8 mb-16"></section>
 
-  <div class="mt-12 bg-white p-6 border">
-    <h2 class="font-serif text-xl mb-4">Carrinho</h2>
-    <div id="cart"></div>
+<!-- CARRINHO -->
+<section class="bg-white border p-8 max-w-2xl mx-auto">
+  <h2 class="font-serif text-2xl mb-6 text-[#A68966]">
+    Carrinho
+  </h2>
 
-    <div class="mt-4 space-y-1 text-right">
-      <p>Total: <strong id="total">R$ 0</strong></p>
-      <p class="text-green-600">PIX (-10%): <strong id="pixTotal">R$ 0</strong></p>
-      <p class="text-xs text-gray-500">Cartão: até 3x sem juros</p>
-    </div>
+  <div id="cartItems" class="space-y-4 mb-6"></div>
 
-    <input id="customer" placeholder="Nome da cliente" class="border p-2 w-full mt-4">
+  <div class="border-t pt-4 text-right space-y-1">
+    <p class="text-lg">
+      Total:
+      <strong id="total">R$ 0,00</strong>
+    </p>
+    <p id="pixInfo" class="text-green-600 font-medium hidden"></p>
+    <p id="cardInfo" class="text-gray-500 text-sm hidden"></p>
+  </div>
 
-    <button onclick="checkout()" class="w-full mt-4 bg-black text-white py-3 uppercase tracking-widest">
-      Finalizar no WhatsApp
+  <!-- PAGAMENTO -->
+  <div class="mt-8 space-y-4">
+    <button onclick="checkout('pix')" class="w-full border py-4 flex items-center justify-center gap-3 hover:bg-gray-50">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/PIX_logo.svg" class="h-6">
+      <span class="tracking-widest text-sm font-medium">FINALIZAR NO PIX</span>
+    </button>
+
+    <button onclick="checkout('card')" class="w-full border py-4 flex items-center justify-center gap-3 hover:bg-gray-50">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <rect x="2" y="5" width="20" height="14" rx="2"/>
+        <line x1="2" y1="10" x2="22" y2="10"/>
+      </svg>
+      <span class="tracking-widest text-sm font-medium">FINALIZAR NO CARTÃO</span>
     </button>
   </div>
-</main>
+</section>
 
 <script>
-const firebaseConfig = {
+/* FIREBASE */
+firebase.initializeApp({
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
   authDomain: "marcinha-semijoias.firebaseapp.com",
   databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias",
-};
-firebase.initializeApp(firebaseConfig);
+  projectId: "marcinha-semijoias"
+});
 const db = firebase.database();
 
-let cart = [];
-let productsCache = {};
+let cart = {};
+let settings = {};
 
-db.ref('products').on('value', snap => {
-  const el = document.getElementById('products');
-  el.innerHTML = '';
-  snap.forEach(p => {
-    const d = p.val();
-    if(d.stock <= 0) return;
+/* SETTINGS */
+db.ref('settings').once('value').then(s=>{
+  settings = s.val() || {};
+  storeName.innerText = settings.name || 'Semijoias';
+});
 
-    productsCache[p.key] = d;
-
-    el.innerHTML += `
-      <div class="bg-white border p-4">
-        <img src="${d.image}" class="h-40 w-full object-cover mb-3">
-        <h3 class="font-bold">${d.name}</h3>
-        <p>R$ ${d.price}</p>
-        <p class="text-xs text-gray-500">Estoque: ${d.stock}</p>
-        <button onclick="add('${p.key}')" class="mt-2 border px-3 py-1 text-xs">
+/* PRODUTOS */
+db.ref('products').on('value', snap=>{
+  products.innerHTML='';
+  snap.forEach(p=>{
+    const d=p.val();
+    products.innerHTML+=`
+      <div class="bg-white border p-5">
+        <img src="${d.image}" class="w-full h-56 object-cover mb-4">
+        <h3 class="font-serif text-lg mb-1">${d.name}</h3>
+        <p class="price mb-3">R$ ${d.price.toFixed(2)}</p>
+        <button onclick='add("${p.key}",${JSON.stringify(d)})'
+          class="border w-full py-2 hover:bg-gray-50">
           Adicionar
         </button>
       </div>`;
   });
 });
 
-function add(id){
-  const p = productsCache[id];
-  if(p.stock <= 0) return alert("Sem estoque");
-  cart.push({id, ...p});
+/* CARRINHO */
+function add(id,p){
+  if(!cart[id]) cart[id]={...p,qty:0};
+  cart[id].qty++;
+  renderCart();
+}
+
+function change(id,val){
+  cart[id].qty+=val;
+  if(cart[id].qty<=0) delete cart[id];
   renderCart();
 }
 
 function renderCart(){
-  const el = document.getElementById('cart');
-  let total = 0;
-  el.innerHTML = cart.map(p=>{
-    total += p.price;
-    return `<p class="text-sm">${p.name} — R$ ${p.price}</p>`;
-  }).join('');
-  document.getElementById('total').innerText = `R$ ${total.toFixed(2)}`;
-  document.getElementById('pixTotal').innerText = `R$ ${(total*0.9).toFixed(2)}`;
-}
+  cartItems.innerHTML='';
+  let total=0;
 
-function checkout(){
-  if(cart.length === 0) return alert('Carrinho vazio');
-  const name = document.getElementById('customer').value;
-  if(!name) return alert('Nome da cliente');
-
-  const updates = {};
-  cart.forEach(p=>{
-    updates[`products/${p.id}/stock`] = p.stock - 1;
+  Object.entries(cart).forEach(([id,p])=>{
+    total+=p.price*p.qty;
+    cartItems.innerHTML+=`
+      <div class="flex justify-between items-center">
+        <div>
+          <strong>${p.name}</strong><br>
+          <span class="text-sm">R$ ${p.price.toFixed(2)} x ${p.qty}</span>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="change('${id}',-1)">➖</button>
+          <button onclick="change('${id}',1)">➕</button>
+        </div>
+      </div>`;
   });
 
-  const total = cart.reduce((s,p)=>s+p.price,0);
+  totalEl=total;
+  totalTxt.innerText='R$ '+total.toFixed(2).replace('.',',');
 
-  const order = {
-    customerName: name,
-    items: cart.map(p=>p.name).join('\n'),
-    total: total.toFixed(2),
-    pixTotal: (total*0.9).toFixed(2),
-    date: new Date().toLocaleDateString('pt-BR')
-  };
+  if(settings.pix){
+    const pixTotal=total*(1-settings.pix/100);
+    pixInfo.innerText=`PIX (-${settings.pix}%): R$ ${pixTotal.toFixed(2).replace('.',',')}`;
+    pixInfo.classList.remove('hidden');
+  }
 
-  updates[`orders/${Date.now()}`] = order;
+  if(settings.parcelas){
+    cardInfo.innerText=`Cartão: até ${settings.parcelas}x sem juros`;
+    cardInfo.classList.remove('hidden');
+  }
+}
 
-  db.ref().update(updates);
+const totalTxt=document.getElementById('total');
+const pixInfo=document.getElementById('pixInfo');
+const cardInfo=document.getElementById('cardInfo');
 
-  const msg =
-`Pedido Marcinha Semijoias
-Cliente: ${name}
+/* CHECKOUT */
+function checkout(type){
+  if(Object.keys(cart).length===0){
+    alert('Carrinho vazio');
+    return;
+  }
 
-${order.items}
+  let msg=`🛍 *NOVO PEDIDO*\n\n`;
+  let total=0;
 
-Total: R$ ${order.total}
-PIX: R$ ${order.pixTotal}`;
+  Object.values(cart).forEach(p=>{
+    msg+=`• ${p.name} (${p.qty}x) — R$ ${(p.price*p.qty).toFixed(2)}\n`;
+    total+=p.price*p.qty;
+  });
 
-  window.open(`https://wa.me/55SEUNUMERO?text=${encodeURIComponent(msg)}`);
+  if(type==='pix'){
+    const desconto=settings.pix||0;
+    const final=total*(1-desconto/100);
+    msg+=`\n💰 *PIX (-${desconto}%)*\nTotal: R$ ${final.toFixed(2)}`;
+  }else{
+    msg+=`\n💳 *Cartão*\nParcelas: ${settings.parcelas||1}x\nTotal: R$ ${total.toFixed(2)}`;
+  }
 
-  cart = [];
-  renderCart();
+  const url=`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
 }
 </script>
 
