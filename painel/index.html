@@ -180,7 +180,7 @@ db.ref('products').on('value',snap=>{
   });
 });
 
-/* PEDIDOS (INALTERADO) */
+/* PEDIDOS */
 db.ref('orders').on('value',snap=>{
   listaPedidos.innerHTML='';
   snap.forEach(s=>{
@@ -204,15 +204,31 @@ db.ref('orders').on('value',snap=>{
         `).join('')}
       </div>
 
-      <div class="flex justify-between">
+      <div class="flex justify-between items-center">
         <strong>R$ ${o.total.toFixed(2)}</strong>
-        <button onclick='imprimirRomaneio(${JSON.stringify(o)})' class="underline text-xs">
-          Romaneio
-        </button>
+
+        <div class="flex gap-4 text-xs">
+          <button onclick='imprimirRomaneio(${JSON.stringify(o)})' class="underline">
+            Romaneio
+          </button>
+
+          <!-- ✅ NOVO BOTÃO EXCLUIR -->
+          <button onclick="excluirPedido('${id}')" class="text-red-600 underline">
+            Excluir
+          </button>
+        </div>
       </div>
     </div>`;
   });
 });
+
+/* ✅ FUNÇÃO EXCLUIR PEDIDO */
+function excluirPedido(id){
+  if(!confirm('Deseja excluir este pedido?')) return;
+
+  db.ref('orders/'+id).remove()
+    .then(()=>alert('Pedido excluído com sucesso'));
+}
 
 /* ROMANEIO */
 function imprimirRomaneio(o){
@@ -236,4 +252,3 @@ function imprimirRomaneio(o){
 
 </body>
 </html>
-
