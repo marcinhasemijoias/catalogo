@@ -30,54 +30,9 @@ body{background:#F8F6F2}
 
 <main class="max-w-7xl mx-auto p-8 grid lg:grid-cols-3 gap-10">
 
-<!-- PRODUTOS -->
-<section class="lg:col-span-2 grid sm:grid-cols-2 gap-8" id="produtos"></section>
+  <!-- PRODUTOS -->
+  <section class="lg:col-span-3 grid sm:grid-cols-2 gap-8" id="produtos"></section>
 
-<!-- CARRINHO DESKTOP -->
-<aside id="cartBox" class="bg-white border p-6 space-y-6 hidden lg:block">
-
-<h2 class="font-serif text-lg gold">Carrinho</h2>
-
-<div class="space-y-2">
-  <label class="text-xs tracking-widest">NOME DO CLIENTE</label>
-  <input id="clienteNome" class="border p-2 w-full" placeholder="Digite seu nome">
-</div>
-
-<div id="carrinho" class="space-y-4"></div>
-
-<hr>
-
-<div class="text-sm space-y-1">
-  <p>Subtotal: <strong>R$ <span id="subtotal">0.00</span></strong></p>
-  <p id="descontoPix" class="text-green-600 hidden"></p>
-  <p class="text-lg font-semibold">Total: R$ <span id="total">0.00</span></p>
-</div>
-
-<hr>
-
-<div class="space-y-3">
-<label class="flex items-center gap-2">
-  <input type="radio" name="pagamento" value="PIX" checked>
-  <span class="gold font-medium">PIX</span>
-</label>
-
-<label class="flex items-center gap-2">
-  <input type="radio" name="pagamento" value="CARTAO">
-  <span class="font-medium">Cartão</span>
-</label>
-
-<select id="parcelas" class="border p-2 w-full hidden">
-  <option value="1x">1x sem juros</option>
-  <option value="2x">2x sem juros</option>
-  <option value="3x">3x sem juros</option>
-</select>
-</div>
-
-<button onclick="finalizarPedido()" class="w-full bg-black text-white py-3 tracking-widest text-xs">
-FINALIZAR NO WHATSAPP
-</button>
-
-</aside>
 </main>
 
 <!-- BOTÃO FLUTUANTE MOBILE -->
@@ -87,49 +42,47 @@ FINALIZAR NO WHATSAPP
   🛒 Carrinho
 </button>
 
-<!-- MODAL CARRINHO MOBILE -->
-<div id="modalCarrinho" class="fixed inset-0 bg-black/50 hidden z-50 lg:hidden">
-  <div class="bg-white w-11/12 max-w-md mx-auto mt-20 p-6 rounded shadow-lg relative">
-    <button id="fecharModal" class="absolute top-2 right-2 text-black font-bold text-lg">✕</button>
-    <h2 class="font-serif text-lg gold mb-4">Carrinho</h2>
+<!-- TELA FULLSCREEN CARRINHO -->
+<div id="telaCarrinho" class="fixed inset-0 bg-white hidden z-50 p-6 overflow-y-auto">
+  <button id="voltarCompras" class="mb-4 bg-gray-200 px-3 py-1 rounded text-sm">← Voltar às compras</button>
+  <h2 class="font-serif text-lg gold mb-4">Carrinho</h2>
 
-    <div class="space-y-2">
-      <label class="text-xs tracking-widest">NOME DO CLIENTE</label>
-      <input id="clienteNomeMobile" class="border p-2 w-full" placeholder="Digite seu nome">
-    </div>
-
-    <div id="carrinhoMobile" class="space-y-4 max-h-80 overflow-y-auto mb-4"></div>
-
-    <div class="text-sm space-y-1">
-      <p>Subtotal: <strong>R$ <span id="subtotalMobile">0.00</span></strong></p>
-      <p id="descontoPixMobile" class="text-green-600 hidden"></p>
-      <p class="text-lg font-semibold">Total: R$ <span id="totalMobile">0.00</span></p>
-    </div>
-
-    <hr class="my-2">
-
-    <div class="space-y-3">
-      <label class="flex items-center gap-2">
-        <input type="radio" name="pagamentoMobile" value="PIX" checked>
-        <span class="gold font-medium">PIX</span>
-      </label>
-
-      <label class="flex items-center gap-2">
-        <input type="radio" name="pagamentoMobile" value="CARTAO">
-        <span class="font-medium">Cartão</span>
-      </label>
-
-      <select id="parcelasMobile" class="border p-2 w-full hidden">
-        <option value="1x">1x sem juros</option>
-        <option value="2x">2x sem juros</option>
-        <option value="3x">3x sem juros</option>
-      </select>
-    </div>
-
-    <button onclick="finalizarPedidoMobile()" class="w-full bg-black text-white py-3 tracking-widest text-xs mt-3">
-      FINALIZAR NO WHATSAPP
-    </button>
+  <div class="space-y-2">
+    <label class="text-xs tracking-widest">NOME DO CLIENTE</label>
+    <input id="clienteNomeFull" class="border p-2 w-full" placeholder="Digite seu nome">
   </div>
+
+  <div id="carrinhoFull" class="space-y-4 max-h-[60vh] overflow-y-auto mb-4"></div>
+
+  <div class="text-sm space-y-1">
+    <p>Subtotal: <strong>R$ <span id="subtotalFull">0.00</span></strong></p>
+    <p id="descontoPixFull" class="text-green-600 hidden"></p>
+    <p class="text-lg font-semibold">Total: R$ <span id="totalFull">0.00</span></p>
+  </div>
+
+  <hr class="my-2">
+
+  <div class="space-y-3">
+    <label class="flex items-center gap-2">
+      <input type="radio" name="pagamentoFull" value="PIX" checked>
+      <span class="gold font-medium">PIX</span>
+    </label>
+
+    <label class="flex items-center gap-2">
+      <input type="radio" name="pagamentoFull" value="CARTAO">
+      <span class="font-medium">Cartão</span>
+    </label>
+
+    <select id="parcelasFull" class="border p-2 w-full hidden">
+      <option value="1x">1x sem juros</option>
+      <option value="2x">2x sem juros</option>
+      <option value="3x">3x sem juros</option>
+    </select>
+  </div>
+
+  <button onclick="finalizarPedidoFull()" class="w-full bg-black text-white py-3 tracking-widest text-xs mt-3">
+    FINALIZAR NO WHATSAPP
+  </button>
 </div>
 
 <script>
@@ -143,34 +96,25 @@ firebase.initializeApp({
 const db = firebase.database();
 
 const produtosEl = document.getElementById('produtos');
-const carrinhoEl = document.getElementById('carrinho');
-const subtotalEl = document.getElementById('subtotal');
-const totalEl = document.getElementById('total');
-const descontoPix = document.getElementById('descontoPix');
-const parcelas = document.getElementById('parcelas');
-const clienteNome = document.getElementById('clienteNome');
-const cartBox = document.getElementById('cartBox');
+
+const telaCarrinho = document.getElementById('telaCarrinho');
+const carrinhoFullEl = document.getElementById('carrinhoFull');
+const subtotalFullEl = document.getElementById('subtotalFull');
+const totalFullEl = document.getElementById('totalFull');
+const descontoPixFull = document.getElementById('descontoPixFull');
+const parcelasFull = document.getElementById('parcelasFull');
+const clienteNomeFull = document.getElementById('clienteNomeFull');
+const voltarCompras = document.getElementById('voltarCompras');
+
 const btnCarrinhoMobile = document.getElementById('btnCarrinhoMobile');
 const btnCarrinhoDesktop = document.getElementById('btnCarrinhoDesktop');
-
-// Modal mobile
-const modalCarrinho = document.getElementById('modalCarrinho');
-const carrinhoMobileEl = document.getElementById('carrinhoMobile');
-const subtotalMobileEl = document.getElementById('subtotalMobile');
-const totalMobileEl = document.getElementById('totalMobile');
-const descontoPixMobile = document.getElementById('descontoPixMobile');
-const parcelasMobile = document.getElementById('parcelasMobile');
-const clienteNomeMobile = document.getElementById('clienteNomeMobile');
-const fecharModal = document.getElementById('fecharModal');
 
 let produtos = {};
 let carrinho = [];
 let config = {};
 
 /* CONFIG */
-db.ref('settings').once('value').then(s=>{
-  config = s.val() || {};
-});
+db.ref('settings').once('value').then(s=>{ config = s.val()||{}; });
 
 /* PRODUTOS */
 db.ref('products').on('value', snap=>{
@@ -195,104 +139,62 @@ db.ref('products').on('value', snap=>{
   });
 
   document.querySelectorAll('.btn-adicionar').forEach(btn=>{
-    btn.addEventListener('click', function(){
-      const id = this.dataset.id;
-      adicionar(id);
-    });
+    btn.addEventListener('click', ()=>adicionar(btn.dataset.id));
   });
 });
 
-/* CARRINHO FUNCIONAL */
+/* CARRINHO */
 function adicionar(id){
   const item = carrinho.find(i=>i.id===id);
   if(item) item.qty++;
   else carrinho.push({id,qty:1});
-  renderCarrinho();
+  renderCarrinhoFull();
 }
 
 function alterarQtd(id,delta){
   const item = carrinho.find(i=>i.id===id);
   item.qty += delta;
   if(item.qty<=0) carrinho = carrinho.filter(i=>i.id!==id);
-  renderCarrinho();
+  renderCarrinhoFull();
 }
 
-function renderCarrinho(){
-  // Desktop
-  carrinhoEl.innerHTML='';
+function renderCarrinhoFull(){
+  carrinhoFullEl.innerHTML='';
   let subtotal=0;
 
   carrinho.forEach(i=>{
     const p = produtos[i.id];
-    subtotal += Number(p.price) * i.qty;
-
-    carrinhoEl.innerHTML += `
+    subtotal += Number(p.price)*i.qty;
+    carrinhoFullEl.innerHTML += `
     <div class="border-b pb-3 flex gap-4 items-start">
-
       <img src="${p.image}" class="w-16 h-16 object-cover rounded border">
-
       <div class="flex-1">
         <p class="font-medium leading-tight">${p.name}</p>
         <p class="text-xs text-gray-400">SKU: ${p.sku || '-'}</p>
-
         <div class="mt-2 inline-flex items-center border rounded">
           <button onclick="alterarQtd('${i.id}',-1)" class="px-3 py-1">➖</button>
           <span class="px-4 text-sm">${i.qty}</span>
           <button onclick="alterarQtd('${i.id}',1)" class="px-3 py-1">➕</button>
         </div>
       </div>
-
       <div class="text-right font-medium whitespace-nowrap">
-        R$ ${(Number(p.price) * i.qty).toFixed(2)}
+        R$ ${(Number(p.price)*i.qty).toFixed(2)}
       </div>
     </div>`;
   });
 
-  subtotalEl.textContent = subtotal.toFixed(2);
-  totalEl.textContent = calcularTotal(subtotal, descontoPix);
-  
-  // Mobile
-  carrinhoMobileEl.innerHTML='';
-  let subtotalMobile = 0;
-  carrinho.forEach(i=>{
-    const p = produtos[i.id];
-    subtotalMobile += Number(p.price) * i.qty;
-
-    carrinhoMobileEl.innerHTML += `
-    <div class="border-b pb-3 flex gap-4 items-start">
-
-      <img src="${p.image}" class="w-16 h-16 object-cover rounded border">
-
-      <div class="flex-1">
-        <p class="font-medium leading-tight">${p.name}</p>
-        <p class="text-xs text-gray-400">SKU: ${p.sku || '-'}</p>
-
-        <div class="mt-2 inline-flex items-center border rounded">
-          <button onclick="alterarQtd('${i.id}',-1)" class="px-3 py-1">➖</button>
-          <span class="px-4 text-sm">${i.qty}</span>
-          <button onclick="alterarQtd('${i.id}',1)" class="px-3 py-1">➕</button>
-        </div>
-      </div>
-
-      <div class="text-right font-medium whitespace-nowrap">
-        R$ ${(Number(p.price) * i.qty).toFixed(2)}
-      </div>
-    </div>`;
-  });
-
-  subtotalMobileEl.textContent = subtotalMobile.toFixed(2);
-  totalMobileEl.textContent = calcularTotal(subtotalMobile, descontoPixMobile, true);
+  subtotalFullEl.textContent = subtotal.toFixed(2);
+  totalFullEl.textContent = calcularTotalFull(subtotal, descontoPixFull);
 }
 
-function calcularTotal(sub, descontoEl, mobile=false){
+function calcularTotalFull(sub, descontoEl){
   descontoEl.classList.add('hidden');
   let total = sub;
-  const name = mobile ? 'pagamentoMobile' : 'pagamento';
-  if(document.querySelector(`[name=${name}]:checked`).value==='PIX'){
-    const d = config.pix || 0;
+  if(document.querySelector('[name=pagamentoFull]:checked').value==='PIX'){
+    const d = config.pix||0;
     if(d>0){
       const desc = sub*(d/100);
-      total = sub - desc;
+      total = sub-desc;
       descontoEl.textContent = `Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
       descontoEl.classList.remove('hidden');
     }
@@ -301,45 +203,31 @@ function calcularTotal(sub, descontoEl, mobile=false){
 }
 
 /* PAGAMENTO */
-document.querySelectorAll('[name=pagamento]').forEach(r=>{
-  r.onchange = ()=> renderCarrinho();
-});
-document.querySelectorAll('[name=pagamentoMobile]').forEach(r=>{
-  r.onchange = ()=> renderCarrinho();
-});
-document.getElementById('parcelasMobile').classList.add('hidden');
-document.querySelectorAll('[name=pagamentoMobile]').forEach(r=>{
+document.querySelectorAll('[name=pagamentoFull]').forEach(r=>{
   r.onchange = ()=>{
-    parcelasMobile.classList.toggle('hidden', r.value!=='CARTAO');
-    renderCarrinho();
+    parcelasFull.classList.toggle('hidden', r.value!=='CARTAO');
+    renderCarrinhoFull();
   };
 });
 
 /* CHECKOUT */
-function finalizarPedido(){
-  checkout(carrinho, clienteNome, totalEl);
-}
-function finalizarPedidoMobile(){
-  checkout(carrinho, clienteNomeMobile, totalMobileEl);
-}
-
-function checkout(carrinhoArr, nomeInput, totalElement){
-  if(carrinhoArr.length===0) return alert('Carrinho vazio');
-  const nome = nomeInput.value.trim();
+function finalizarPedidoFull(){
+  if(carrinho.length===0) return alert('Carrinho vazio');
+  const nome = clienteNomeFull.value.trim();
   if(!nome) return alert('Informe seu nome');
 
-  const pagamento = document.querySelector(`[name=${nomeInput===clienteNome?'pagamento':'pagamentoMobile'}]:checked`).value;
-  const total = parseFloat(totalElement.textContent);
+  const pagamento = document.querySelector('[name=pagamentoFull]:checked').value;
+  const total = parseFloat(totalFullEl.textContent);
 
   const pedido = {
     cliente: nome,
     customer: nome,
     data: new Date().toLocaleString('pt-BR'),
-    status: 'Novo',
+    status:'Novo',
     pagamento,
-    parcelas: pagamento==='CARTAO' ? (nomeInput===clienteNome? parcelas.value : parcelasMobile.value) : 'À vista',
+    parcelas: pagamento==='CARTAO'? parcelasFull.value:'À vista',
     total,
-    itens: carrinhoArr.map(i=>({
+    itens:carrinho.map(i=>({
       nome: produtos[i.id].name,
       sku: produtos[i.id].sku,
       qtd: i.qty,
@@ -348,10 +236,8 @@ function checkout(carrinhoArr, nomeInput, totalElement){
   };
 
   db.ref('orders').push(pedido);
-
-  carrinhoArr.forEach(i=>{
-    db.ref('products/'+i.id+'/stock')
-      .transaction(s=>s-i.qty);
+  carrinho.forEach(i=>{
+    db.ref('products/'+i.id+'/stock').transaction(s=>s-i.qty);
   });
 
   let msg = `Olá! Pedido de *${nome}*:%0A%0A`;
@@ -359,24 +245,14 @@ function checkout(carrinhoArr, nomeInput, totalElement){
     msg += `${i.qtd}x ${i.nome} (SKU ${i.sku})%0A`;
   });
   msg += `%0ATotal: R$ ${total.toFixed(2)}%0APagamento: ${pedido.pagamento}`;
-
   window.open(`https://wa.me/55${config.whatsapp}?text=${msg}`);
 }
 
-/* MOBILE MODAL */
-btnCarrinhoMobile.addEventListener('click', ()=>{
-  modalCarrinho.classList.remove('hidden');
-});
-fecharModal.addEventListener('click', ()=>{
-  modalCarrinho.classList.add('hidden');
-});
-
-/* DESKTOP */
-btnCarrinhoDesktop.addEventListener('click', ()=>{
-  cartBox.classList.toggle('hidden');
-});
+/* ABRIR CARRINHO */
+btnCarrinhoMobile.addEventListener('click', ()=> telaCarrinho.classList.remove('hidden'));
+btnCarrinhoDesktop.addEventListener('click', ()=> telaCarrinho.classList.remove('hidden'));
+voltarCompras.addEventListener('click', ()=> telaCarrinho.classList.add('hidden'));
 </script>
 
 </body>
 </html>
-
