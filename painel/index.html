@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel | Pedidos</title>
+<title>Painel | Estoque</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -11,9 +11,9 @@
 
 <body class="bg-[#F8F6F2] p-8">
 
-<h1 class="font-serif text-2xl mb-6 text-[#A68966]">Pedidos</h1>
+<h1 class="font-serif text-2xl mb-6 text-[#A68966]">Produtos & Estoque</h1>
 
-<div id="orders" class="space-y-4"></div>
+<div id="products" class="grid md:grid-cols-2 gap-4"></div>
 
 <script>
 const firebaseConfig = {
@@ -25,18 +25,18 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-db.ref('orders').on('value', snap=>{
-  const el = document.getElementById('orders');
+db.ref('products').on('value', snap=>{
+  const el = document.getElementById('products');
   el.innerHTML='';
-  snap.forEach(o=>{
-    const d=o.val();
+  snap.forEach(p=>{
+    const d=p.val();
     el.innerHTML+=`
       <div class="bg-white border p-4">
-        <p class="text-xs text-gray-500">${d.date}</p>
-        <h3 class="font-bold">${d.customerName}</h3>
-        <pre class="text-sm">${d.items}</pre>
-        <p><strong>Total:</strong> R$ ${d.total}</p>
-        <p class="text-green-600"><strong>PIX:</strong> R$ ${d.pixTotal}</p>
+        <h3 class="font-bold">${d.name}</h3>
+        <p>R$ ${d.price}</p>
+        <p class="${d.stock<=3?'text-red-500':'text-gray-600'}">
+          Estoque: ${d.stock}
+        </p>
       </div>`;
   });
 });
