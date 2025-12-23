@@ -76,7 +76,7 @@ SALVAR
   <input type="file" id="pImagem" class="border p-3 md:col-span-2">
 </div>
 
-<button onclick="salvarProduto()" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
+<button id="btnSalvarProduto" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
 SALVAR PRODUTO
 </button>
 
@@ -148,37 +148,93 @@ db.ref('settings').once('value').then(s=>{
 });
 
 /* PRODUTOS */
+let editarId = null;
+
 function salvarProduto(){
   const img = pImagem.files[0];
-  if(!img) return alert('Imagem obrigatória');
 
-  const ref = storage.ref('products/'+Date.now()+img.name);
-  ref.put(img).then(()=>{
-    ref.getDownloadURL().then(url=>{
-      db.ref('products').push({
-        name:pNome.value,
-        sku:pSku.value,
-        price:parseFloat(pPreco.value),
-        stock:parseInt(pEstoque.value),
-        image:url
-      }).then(()=>alert('Produto salvo'));
-    });
-  });
+  if(!editarId && !img) return alert('Imagem obrigatória');
+
+  const salvarNoFirebase = (url) => {
+    const produto = {
+      name: pNome.value,
+      sku: pSku.value,
+      price: parseFloat(pPreco.value),
+      stock: parseInt(pEstoque.value),
+    };
+    if(url) produto.image = url;
+
+    if(editarId){
+      db.ref('products/'+editarId).update(produto).then(()=>{
+        alert('Produto atualizado');
+        resetFormProduto();
+      });
+    } else {
+      db.ref('products').push(produto).then(()=>{
+        alert('Produto salvo');
+        resetFormProduto();
+      });
+    }
+  };
+
+  if(img){
+    const ref = storage.ref('products/'+Date.now()+img.name);
+    ref.put(img).then(()=> ref.getDownloadURL().then(url => salvarNoFirebase(url)));
+  } else {
+    salvarNoFirebase();
+  }
 }
 
-db.ref('products').on('value',snap=>{
-  listaProdutos.innerHTML='';
-  snap.forEach(s=>{
-    const p=s.val();
-    listaProdutos.innerHTML+=`
+function resetFormProduto(){
+  pNome.value = '';
+  pSku.value = '';
+  pPreco.value = '';
+  pEstoque.value = '';
+  pImagem.value = '';
+  editarId = null;
+  btnSalvarProduto.textContent = 'SALVAR PRODUTO';
+}
+
+const btnSalvarProduto = document.getElementById('btnSalvarProduto');
+btnSalvarProduto.onclick = salvarProduto;
+
+db.ref('products').on('value', snap => {
+  listaProdutos.innerHTML = '';
+  snap.forEach(s => {
+    const p = s.val();
+    const id = s.key;
+    listaProdutos.innerHTML += `
     <div class="bg-white border p-4">
       <img src="${p.image}" class="h-40 w-full object-cover">
       <p class="font-medium mt-2">${p.name}</p>
       <p class="text-xs text-gray-400">SKU: ${p.sku}</p>
       <p class="gold font-semibold">R$ ${p.price.toFixed(2)}</p>
+      <div class="flex gap-2 mt-2 text-xs">
+        <button onclick="editarProduto('${id}')" class="bg-blue-500 text-white px-2 py-1">Editar</button>
+        <button onclick="excluirProduto('${id}')" class="bg-red-500 text-white px-2 py-1">Excluir</button>
+      </div>
     </div>`;
   });
 });
+
+function excluirProduto(id){
+  if(!confirm('Deseja excluir este produto?')) return;
+  db.ref('products/'+id).remove()
+    .then(()=>alert('Produto excluído com sucesso'));
+}
+
+function editarProduto(id){
+  db.ref('products/'+id).once('value').then(snap=>{
+    const p = snap.val();
+    pNome.value = p.name;
+    pSku.value = p.sku;
+    pPreco.value = p.price;
+    pEstoque.value = p.stock;
+    // imagem não será preenchida automaticamente
+    editarId = id;
+    btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
+  });
+}
 
 /* PEDIDOS */
 db.ref('orders').on('value',snap=>{
@@ -222,10 +278,8 @@ db.ref('orders').on('value',snap=>{
   });
 });
 
-/* ✅ FUNÇÃO EXCLUIR PEDIDO */
 function excluirPedido(id){
   if(!confirm('Deseja excluir este pedido?')) return;
-
   db.ref('orders/'+id).remove()
     .then(()=>alert('Pedido excluído com sucesso'));
 }
