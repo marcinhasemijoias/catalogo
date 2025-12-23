@@ -41,9 +41,9 @@ body{background:#F8F6F2}
 
 <div class="bg-white border p-8 grid md:grid-cols-2 gap-6">
   <input id="empresaNome" class="border p-4" placeholder="Nome da Empresa">
-  <input id="empresaWhatsapp" class="border p-4" placeholder="WhatsApp (somente números)">
+  <input id="empresaWhatsapp" class="border p-4" placeholder="WhatsApp">
   <input id="empresaPix" type="number" class="border p-4" placeholder="% Desconto PIX">
-  <input id="empresaParcelas" type="number" class="border p-4" placeholder="Parcelas no Cartão">
+  <input id="empresaParcelas" type="number" class="border p-4" placeholder="Parcelas Cartão">
 </div>
 
 <button onclick="salvarEmpresa()" class="bg-black text-white px-10 py-3 tracking-widest uppercase text-xs">
@@ -92,6 +92,7 @@ const st = firebase.storage();
 let editId = null;
 let editImage = null;
 
+/* TABS */
 function openTab(id){
  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
  document.getElementById(id).classList.add('active');
@@ -102,17 +103,17 @@ function salvarEmpresa(){
  db.ref('settings').set({
   name: empresaNome.value,
   whatsapp: empresaWhatsapp.value,
-  pix: parseInt(empresaPix.value||0),
-  parcelas: parseInt(empresaParcelas.value||1)
- }).then(()=>alert('Empresa salva'));
+  pix: empresaPix.value,
+  parcelas: empresaParcelas.value
+ }).then(()=>alert('✅ Empresa salva com sucesso'));
 }
 
 db.ref('settings').once('value').then(s=>{
  if(!s.val()) return;
  empresaNome.value=s.val().name||'';
  empresaWhatsapp.value=s.val().whatsapp||'';
- empresaPix.value=s.val().pix||0;
- empresaParcelas.value=s.val().parcelas||1;
+ empresaPix.value=s.val().pix||'';
+ empresaParcelas.value=s.val().parcelas||'';
 });
 
 /* PRODUTOS */
@@ -125,7 +126,9 @@ function salvarProduto(){
     ref.put(img).then(()=>ref.getDownloadURL().then(url=>{
       atualizarProduto(url);
     }));
-  } else atualizarProduto(editImage);
+  } else {
+    atualizarProduto(editImage);
+  }
  } else {
   if(!img) return alert('Selecione a imagem');
   const ref=st.ref('products/'+Date.now());
@@ -136,7 +139,7 @@ function salvarProduto(){
       price:parseFloat(produtoPreco.value),
       stock:parseInt(produtoEstoque.value),
       image:url
-    });
+    }).then(()=>alert('✅ Produto cadastrado'));
   }));
  }
 }
@@ -149,7 +152,9 @@ function atualizarProduto(url){
   stock:parseInt(produtoEstoque.value),
   image:url
  }).then(()=>{
+  alert('✅ Produto atualizado com sucesso!');
   editId=null;
+  editImage=null;
   btnSalvarProduto.textContent='Salvar Produto';
  });
 }
@@ -165,7 +170,7 @@ db.ref('products').on('value',snap=>{
     <p class="text-xs">SKU: ${p.sku}</p>
     <p class="gold font-semibold">R$ ${p.price.toFixed(2)}</p>
     <div class="flex justify-between text-xs">
-      <button onclick="editarProduto('${s.key}',${JSON.stringify(p).replace(/"/g,'&quot;')})" class="underline">Editar</button>
+      <button onclick='editarProduto("${s.key}", ${JSON.stringify(p)})' class="underline">Editar</button>
       <button onclick="db.ref('products/${s.key}').remove()" class="text-red-600 underline">Excluir</button>
     </div>
   </div>`;
@@ -191,11 +196,11 @@ db.ref('orders').on('value',snap=>{
   listaPedidos.innerHTML+=`
   <div class="bg-white border p-4 flex justify-between items-center">
     <div>
-      <strong>${o.date}</strong><br>
-      <span class="text-xs">R$ ${o.total}</span>
+      <strong>${o.client?.name || 'Cliente não informado'}</strong><br>
+      <span class="text-xs">${o.client?.phone || ''}</span>
     </div>
     <div class="flex gap-4">
-      <button onclick="romaneio(${JSON.stringify(o).replace(/"/g,'&quot;')})" class="underline text-xs">Romaneio</button>
+      <button onclick='romaneio(${JSON.stringify(o)})' class="underline text-xs">Romaneio</button>
       <button onclick="db.ref('orders/${s.key}').remove()" class="text-red-600 underline text-xs">Excluir</button>
     </div>
   </div>`;
@@ -205,10 +210,17 @@ db.ref('orders').on('value',snap=>{
 function romaneio(o){
  const w=window.open('','', 'width=800,height=900');
  w.document.write(`
- <h2 style="font-family:Cinzel;color:#A68966">Marcinha Semijoias</h2>
- <p><strong>Data:</strong> ${o.date}</p>
+ <style>
+ body{font-family:serif}
+ h1{color:#A68966}
+ </style>
+
+ <h1>Marcinha Semijoias</h1>
+ <p><strong>Cliente:</strong> ${o.client?.name || '-'}</p>
+ <p><strong>WhatsApp:</strong> ${o.client?.phone || '-'}</p>
+ <p><strong>Pagamento:</strong> ${o.payment || '-'}</p>
  <hr>
- ${o.items.map(i=>`${i.qty}x ${i.name}`).join('<br>')}
+ ${o.items.map(i=>`${i.qty}x ${i.name} - R$ ${i.price}`).join('<br>')}
  <hr>
  <h3>Total: R$ ${o.total}</h3>
  `);
@@ -218,3 +230,4 @@ function romaneio(o){
 
 </body>
 </html>
+
