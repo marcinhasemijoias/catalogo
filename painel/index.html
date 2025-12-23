@@ -2,126 +2,198 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel | Relatório Mensal</title>
+<title>Painel Admin | Semijoias</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
 <style>
-  body { background:#F8F6F2; }
+body { background:#F8F6F2 }
+.tab{display:none}
+.tab.active{display:block}
 </style>
 </head>
 
-<body class="p-8 text-[#1a1a1a]">
+<body class="p-8">
 
-<header class="mb-8">
-  <h1 class="font-serif text-2xl text-[#A68966] tracking-widest">
-    Relatório Mensal de Vendas
-  </h1>
-  <p class="text-xs uppercase tracking-widest text-gray-500 mt-1">
-    Controle financeiro
-  </p>
+<!-- HEADER -->
+<header class="flex justify-between items-center mb-8">
+  <div>
+    <h1 class="font-serif text-2xl text-[#A68966] tracking-widest">
+      Painel Administrativo
+    </h1>
+    <p class="text-xs uppercase tracking-widest text-gray-500">
+      Controle Geral da Loja
+    </p>
+  </div>
+
+  <nav class="flex gap-6 text-xs uppercase tracking-widest font-bold">
+    <button onclick="showTab('empresa')">Empresa</button>
+    <button onclick="showTab('produtos')">Produtos</button>
+    <button onclick="showTab('pedidos')">Pedidos</button>
+    <button onclick="showTab('relatorio')">Relatório</button>
+  </nav>
 </header>
 
-<section class="bg-white border p-6 mb-6 max-w-xl">
-  <label class="text-xs uppercase tracking-widest text-gray-500 block mb-2">
-    Selecionar Mês
-  </label>
-  <input type="month" id="month" class="border p-2 w-full">
+<!-- EMPRESA -->
+<section id="empresa" class="tab active max-w-md bg-white border p-6">
+  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Empresa</h2>
+
+  <input id="empNome" class="border p-2 w-full mb-2" placeholder="Nome da Loja">
+  <input id="empWhats" class="border p-2 w-full mb-2" placeholder="WhatsApp (55DDD...)">
+  <input id="empPix" type="number" class="border p-2 w-full mb-2" placeholder="% Desconto PIX">
+  <input id="empParcelas" type="number" class="border p-2 w-full mb-4" placeholder="Parcelas Cartão">
+
+  <button onclick="saveEmpresa()" class="bg-black text-white w-full py-2 uppercase text-xs">
+    Salvar
+  </button>
 </section>
 
-<section class="grid md:grid-cols-4 gap-4 mb-8 max-w-5xl">
+<!-- PRODUTOS -->
+<section id="produtos" class="tab">
+  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Produtos</h2>
 
-  <div class="bg-white border p-4 text-center">
-    <p class="text-xs uppercase text-gray-400">Pedidos</p>
-    <p id="qtd" class="text-2xl font-bold">0</p>
+  <div class="grid md:grid-cols-2 gap-6">
+
+    <!-- FORM -->
+    <div class="bg-white border p-4">
+      <input id="pSku" class="border p-2 w-full mb-2" placeholder="SKU">
+      <input id="pNome" class="border p-2 w-full mb-2" placeholder="Nome">
+      <input id="pValor" type="number" class="border p-2 w-full mb-2" placeholder="Valor">
+      <input id="pEstoque" type="number" class="border p-2 w-full mb-2" placeholder="Estoque">
+
+      <input id="pImagem" type="file" accept="image/*" class="mb-3">
+
+      <img id="preview" class="hidden w-32 mb-3 border">
+
+      <button onclick="saveProduto()" class="bg-black text-white w-full py-2 uppercase text-xs">
+        Salvar Produto
+      </button>
+    </div>
+
+    <!-- LISTA -->
+    <div id="listaProdutos" class="space-y-2"></div>
   </div>
-
-  <div class="bg-white border p-4 text-center">
-    <p class="text-xs uppercase text-gray-400">Total Vendido</p>
-    <p id="total" class="text-2xl font-bold">R$ 0</p>
-  </div>
-
-  <div class="bg-white border p-4 text-center">
-    <p class="text-xs uppercase text-gray-400">PIX</p>
-    <p id="pix" class="text-2xl font-bold text-green-600">R$ 0</p>
-  </div>
-
-  <div class="bg-white border p-4 text-center">
-    <p class="text-xs uppercase text-gray-400">Cartão</p>
-    <p id="card" class="text-2xl font-bold">R$ 0</p>
-  </div>
-
 </section>
 
-<section class="max-w-5xl">
-  <h2 class="font-serif text-xl mb-4 text-[#A68966]">
-    Pedidos do Mês
-  </h2>
+<!-- PEDIDOS -->
+<section id="pedidos" class="tab">
+  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Pedidos</h2>
+  <div id="listaPedidos" class="space-y-4"></div>
+</section>
 
-  <div id="orders" class="space-y-4"></div>
+<!-- RELATÓRIO -->
+<section id="relatorio" class="tab">
+  <h2 class="font-serif text-xl mb-4 text-[#A68966]">Relatório Mensal</h2>
+
+  <input type="month" id="mes" class="border p-2 mb-4">
+
+  <div class="grid md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white border p-4 text-center">
+      <p class="text-xs text-gray-400">Pedidos</p>
+      <p id="rQtd" class="text-2xl font-bold">0</p>
+    </div>
+    <div class="bg-white border p-4 text-center">
+      <p class="text-xs text-gray-400">Total</p>
+      <p id="rTotal" class="text-2xl font-bold">R$ 0</p>
+    </div>
+    <div class="bg-white border p-4 text-center">
+      <p class="text-xs text-gray-400">PIX</p>
+      <p id="rPix" class="text-2xl font-bold text-green-600">R$ 0</p>
+    </div>
+    <div class="bg-white border p-4 text-center">
+      <p class="text-xs text-gray-400">Cartão</p>
+      <p id="rCard" class="text-2xl font-bold">R$ 0</p>
+    </div>
+  </div>
+
+  <div id="listaRelatorio" class="space-y-2"></div>
 </section>
 
 <script>
-const firebaseConfig = {
+/* FIREBASE */
+firebase.initializeApp({
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
   authDomain: "marcinha-semijoias.firebaseapp.com",
   databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias"
-};
-firebase.initializeApp(firebaseConfig);
+  projectId: "marcinha-semijoias",
+  storageBucket: "marcinha-semijoias.appspot.com"
+});
+
 const db = firebase.database();
+const storage = firebase.storage();
 
-document.getElementById('month').addEventListener('change', loadReport);
+/* TABS */
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-function loadReport(){
-  const month = document.getElementById('month').value;
-  if(!month) return;
+/* EMPRESA */
+function saveEmpresa(){
+  db.ref('settings').set({
+    name: empNome.value,
+    whatsapp: empWhats.value,
+    pix: empPix.value,
+    parcelas: empParcelas.value
+  });
+  alert('Salvo');
+}
 
-  let total = 0;
-  let pix = 0;
-  let card = 0;
-  let qtd = 0;
+db.ref('settings').on('value',s=>{
+  if(!s.val())return;
+  empNome.value=s.val().name||'';
+  empWhats.value=s.val().whatsapp||'';
+  empPix.value=s.val().pix||'';
+  empParcelas.value=s.val().parcelas||'';
+});
 
-  const list = document.getElementById('orders');
-  list.innerHTML = '';
+/* PREVIEW */
+pImagem.onchange=()=>{
+  const f=pImagem.files[0];
+  if(!f)return;
+  preview.src=URL.createObjectURL(f);
+  preview.classList.remove('hidden');
+}
 
-  db.ref('orders').once('value', snap=>{
-    snap.forEach(o=>{
-      const d = o.val();
+/* PRODUTO */
+function saveProduto(){
+  const file=pImagem.files[0];
+  if(!file){ alert('Selecione a imagem'); return; }
 
-      // formato esperado: DD/MM/AAAA
-      const parts = d.date.split('/');
-      const orderMonth = `${parts[2]}-${parts[1]}`;
-
-      if(orderMonth === month){
-        qtd++;
-        total += parseFloat(d.total);
-        pix += parseFloat(d.pixTotal);
-        card += (parseFloat(d.total) - parseFloat(d.pixTotal));
-
-        list.innerHTML += `
-          <div class="bg-white border p-4">
-            <p class="text-xs text-gray-400">${d.date}</p>
-            <h3 class="font-bold">${d.customerName}</h3>
-            <pre class="text-sm mt-2">${d.items}</pre>
-            <div class="flex justify-between mt-2 text-sm">
-              <span>Total: R$ ${d.total}</span>
-              <span class="text-green-600">PIX: R$ ${d.pixTotal}</span>
-            </div>
-          </div>
-        `;
-      }
+  const ref=storage.ref('produtos/'+Date.now()+'-'+file.name);
+  ref.put(file).then(()=>{
+    ref.getDownloadURL().then(url=>{
+      db.ref('products').push({
+        sku:pSku.value,
+        name:pNome.value,
+        price:+pValor.value,
+        stock:+pEstoque.value,
+        image:url
+      });
+      alert('Produto salvo');
     });
-
-    document.getElementById('qtd').innerText = qtd;
-    document.getElementById('total').innerText = `R$ ${total.toFixed(2)}`;
-    document.getElementById('pix').innerText = `R$ ${pix.toFixed(2)}`;
-    document.getElementById('card').innerText = `R$ ${card.toFixed(2)}`;
   });
 }
+
+db.ref('products').on('value',snap=>{
+  listaProdutos.innerHTML='';
+  snap.forEach(p=>{
+    const d=p.val();
+    listaProdutos.innerHTML+=`
+      <div class="bg-white border p-2 flex gap-2 items-center">
+        <img src="${d.image}" class="w-12 h-12 object-cover border">
+        <div>
+          <strong>${d.name}</strong><br>
+          R$ ${d.price} | Estoque ${d.stock}
+        </div>
+      </div>`;
+  });
+});
 </script>
 
 </body>
