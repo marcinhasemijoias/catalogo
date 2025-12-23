@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
@@ -18,226 +19,214 @@ body{background:#F8F6F2}
 
 <body>
 
-<header class="bg-white border-b px-8 py-6 text-center">
-  <h1 class="font-serif text-3xl gold tracking-widest">Marcinha Semijoias</h1>
-  <p class="text-xs tracking-widest text-gray-400 uppercase mt-1">
-    Catálogo Exclusivo
-  </p>
+<header class="bg-white p-8 border-b text-center">
+  <h1 class="font-serif text-3xl tracking-widest gold">Marcinha Semijoias</h1>
+  <p class="text-xs tracking-widest text-gray-400 mt-1">CATÁLOGO EXCLUSIVO</p>
 </header>
 
-<main class="max-w-7xl mx-auto p-8 grid md:grid-cols-4 gap-10">
+<main class="max-w-7xl mx-auto p-8 grid lg:grid-cols-3 gap-10">
 
-<!-- CATÁLOGO -->
-<section class="md:col-span-3">
-  <div id="produtos" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10"></div>
-</section>
+<!-- PRODUTOS -->
+<section class="lg:col-span-2 grid sm:grid-cols-2 gap-8" id="produtos"></section>
 
 <!-- CARRINHO -->
-<aside class="bg-white border p-6 space-y-6 sticky top-6 h-fit">
-  <h2 class="font-serif text-xl gold">Carrinho</h2>
+<aside class="bg-white border p-6 space-y-6">
 
-  <div id="carrinho" class="space-y-4 text-sm"></div>
+<h2 class="font-serif text-lg gold">Carrinho</h2>
 
-  <div class="border-t pt-4 space-y-2 text-sm">
-    <label class="block text-xs uppercase tracking-widest text-gray-500">
-      Nome do Cliente
-    </label>
-    <input id="clienteNome" class="border p-2 w-full" placeholder="Digite seu nome">
-  </div>
+<div class="space-y-2">
+  <label class="text-xs tracking-widest">NOME DO CLIENTE</label>
+  <input id="clienteNome" class="border p-2 w-full" placeholder="Digite seu nome">
+</div>
 
-  <div class="border-t pt-4 space-y-3 text-sm">
-    <p>Subtotal: <strong id="subtotal">R$ 0,00</strong></p>
-    <p id="pixLinha" class="text-green-700 hidden"></p>
-    <p class="text-lg">Total: <strong id="total">R$ 0,00</strong></p>
+<div id="carrinho" class="space-y-4"></div>
 
-    <div class="space-y-2 pt-2">
-      <label class="flex items-center gap-2">
-        <input type="radio" name="pagamento" value="PIX" checked>
-        <span class="text-green-700 font-semibold">💰 PIX</span>
-      </label>
+<hr>
 
-      <label class="flex items-center gap-2">
-        <input type="radio" name="pagamento" value="CARTAO">
-        <span class="font-semibold">💳 Cartão</span>
-      </label>
+<div class="text-sm space-y-1">
+  <p>Subtotal: <strong>R$ <span id="subtotal">0.00</span></strong></p>
+  <p id="descontoPix" class="text-green-600 hidden"></p>
+  <p class="text-lg font-semibold">Total: R$ <span id="total">0.00</span></p>
+</div>
 
-      <select id="parcelas" class="border p-2 w-full hidden text-sm"></select>
-      <p id="parcelamentoInfo" class="text-xs text-gray-500"></p>
-    </div>
+<hr>
 
-    <button onclick="finalizarPedido()" class="bg-black text-white w-full py-3 tracking-widest text-xs uppercase">
-      Finalizar no WhatsApp
-    </button>
-  </div>
+<div class="space-y-3">
+<label class="flex items-center gap-2">
+  <input type="radio" name="pagamento" value="PIX" checked>
+  <span class="gold font-medium">PIX</span>
+</label>
+
+<label class="flex items-center gap-2">
+  <input type="radio" name="pagamento" value="CARTAO">
+  <span class="font-medium">Cartão</span>
+</label>
+
+<select id="parcelas" class="border p-2 w-full hidden">
+  <option value="1x">1x sem juros</option>
+  <option value="2x">2x sem juros</option>
+  <option value="3x">3x sem juros</option>
+</select>
+</div>
+
+<button onclick="finalizarPedido()" class="w-full bg-black text-white py-3 tracking-widest text-xs">
+FINALIZAR NO WHATSAPP
+</button>
+
 </aside>
-
 </main>
 
 <script>
 firebase.initializeApp({
- apiKey:"AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
- databaseURL:"https://marcinha-semijoias-default-rtdb.firebaseio.com",
- projectId:"marcinha-semijoias"
+  apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+  authDomain: "marcinha-semijoias.firebaseapp.com",
+  databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
+  projectId: "marcinha-semijoias"
 });
 
 const db = firebase.database();
-
-const produtosEl = document.getElementById('produtos'); // ✅ AJUSTE AQUI
-const carrinhoEl = document.getElementById('carrinho');
-const subtotalEl = document.getElementById('subtotal');
-const totalEl = document.getElementById('total');
-const pixLinha = document.getElementById('pixLinha');
-const parcelas = document.getElementById('parcelas');
-const parcelamentoInfo = document.getElementById('parcelamentoInfo');
-const clienteNome = document.getElementById('clienteNome');
-
 let produtos = {};
 let carrinho = [];
-let settings = {};
-let pagamento = 'PIX';
+let config = {};
 
-/* SETTINGS */
+/* CONFIG */
 db.ref('settings').once('value').then(s=>{
- settings = s.val() || {};
- parcelas.innerHTML='';
- for(let i=1;i<=settings.parcelas;i++){
-  parcelas.innerHTML+=`<option value="${i}">${i}x sem juros</option>`;
- }
+  config = s.val() || {};
 });
 
 /* PRODUTOS */
-db.ref('products').on('value',snap=>{
- produtos = snap.val() || {};
- renderProdutos();
+db.ref('products').on('value', snap=>{
+  produtos = {};
+  produtosEl.innerHTML = '';
+  snap.forEach(s=>{
+    const p = s.val();
+    p.id = s.key;
+    produtos[p.id] = p;
+
+    produtosEl.innerHTML += `
+    <div class="bg-white border p-4 space-y-3">
+      <img src="${p.image}" class="w-full h-52 object-cover">
+      <h3 class="font-serif">${p.name}</h3>
+      <p class="text-xs text-gray-400 tracking-widest">SKU: ${p.sku || '-'}</p>
+      <p class="gold text-lg font-semibold">R$ ${p.price.toFixed(2)}</p>
+      <button onclick="adicionar('${p.id}')" class="w-full border py-2 text-xs tracking-widest">
+        ADICIONAR
+      </button>
+    </div>`;
+  });
 });
 
-function renderProdutos(){
- produtosEl.innerHTML='';
- Object.entries(produtos).forEach(([id,p])=>{
-  const pixPrice = settings.pix ? (p.price * (1 - settings.pix/100)) : p.price;
-  produtosEl.innerHTML+=`
-  <div class="bg-white border p-4 space-y-3">
-    <img src="${p.image}" class="h-56 w-full object-cover">
-    <h3 class="font-serif">${p.name}</h3>
-    <p class="gold text-lg font-semibold">R$ ${p.price.toFixed(2)}</p>
-    ${settings.pix ? `<p class="text-green-700 text-sm">PIX: R$ ${pixPrice.toFixed(2)}</p>` : ''}
-    <button onclick="addCarrinho('${id}')" class="border w-full py-2 text-xs tracking-widest uppercase">
-      Adicionar ao carrinho
-    </button>
-  </div>`;
- });
-}
-
 /* CARRINHO */
-function addCarrinho(id){
- const item = carrinho.find(i=>i.id===id);
- if(item) item.qty++;
- else carrinho.push({id,qty:1});
- renderCarrinho();
+function adicionar(id){
+  const item = carrinho.find(i=>i.id===id);
+  if(item) item.qty++;
+  else carrinho.push({id,qty:1});
+  renderCarrinho();
 }
 
 function alterarQtd(id,delta){
- const item = carrinho.find(i=>i.id===id);
- item.qty += delta;
- if(item.qty<=0) carrinho = carrinho.filter(i=>i.id!==id);
- renderCarrinho();
+  const item = carrinho.find(i=>i.id===id);
+  item.qty += delta;
+  if(item.qty<=0) carrinho = carrinho.filter(i=>i.id!==id);
+  renderCarrinho();
 }
 
 function renderCarrinho(){
- carrinhoEl.innerHTML='';
- let subtotal = 0;
+  carrinhoEl.innerHTML='';
+  let subtotal=0;
 
- carrinho.forEach(i=>{
-  const p = produtos[i.id];
-  subtotal += p.price * i.qty;
-  carrinhoEl.innerHTML+=`
-  <div class="flex justify-between items-center">
-    <div>
-      ${i.qty}x ${p.name}
-      <div class="flex gap-2 text-xs mt-1">
-        <button onclick="alterarQtd('${i.id}',-1)">➖</button>
-        <button onclick="alterarQtd('${i.id}',1)">➕</button>
+  carrinho.forEach(i=>{
+    const p = produtos[i.id];
+    subtotal += p.price * i.qty;
+
+    carrinhoEl.innerHTML += `
+    <div class="border-b pb-3 flex justify-between items-start gap-4">
+      <div class="flex-1">
+        <p class="font-medium">${p.name}</p>
+        <p class="text-xs text-gray-400">SKU: ${p.sku || '-'}</p>
+
+        <div class="mt-2 inline-flex items-center border rounded">
+          <button onclick="alterarQtd('${i.id}',-1)" class="px-3 py-1">➖</button>
+          <span class="px-4 text-sm">${i.qty}</span>
+          <button onclick="alterarQtd('${i.id}',1)" class="px-3 py-1">➕</button>
+        </div>
       </div>
-    </div>
-    <span>R$ ${(p.price*i.qty).toFixed(2)}</span>
-  </div>`;
- });
 
- subtotalEl.innerText = `R$ ${subtotal.toFixed(2)}`;
+      <div class="text-right font-medium">
+        R$ ${(p.price * i.qty).toFixed(2)}
+      </div>
+    </div>`;
+  });
 
- let total = subtotal;
- pixLinha.classList.add('hidden');
+  subtotalEl.textContent = subtotal.toFixed(2);
 
- if(pagamento==='PIX' && settings.pix){
-  const desconto = subtotal * (settings.pix/100);
-  total -= desconto;
-  pixLinha.innerText = `Desconto PIX (${settings.pix}%): -R$ ${desconto.toFixed(2)}`;
-  pixLinha.classList.remove('hidden');
- }
+  let total=subtotal;
+  descontoPix.classList.add('hidden');
 
- if(pagamento==='CARTAO'){
-  parcelamentoInfo.innerText = `${parcelas.value}x de R$ ${(total/parcelas.value).toFixed(2)}`;
- } else parcelamentoInfo.innerText='';
+  if(document.querySelector('[name=pagamento]:checked').value==='PIX'){
+    const d = config.pix || 0;
+    if(d>0){
+      const desc = subtotal*(d/100);
+      total = subtotal-desc;
+      descontoPix.textContent = `Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
+      descontoPix.classList.remove('hidden');
+    }
+  }
 
- totalEl.innerText = `R$ ${total.toFixed(2)}`;
+  totalEl.textContent = total.toFixed(2);
 }
 
 /* PAGAMENTO */
 document.querySelectorAll('[name=pagamento]').forEach(r=>{
- r.onchange=e=>{
-  pagamento=e.target.value;
-  parcelas.classList.toggle('hidden', pagamento!=='CARTAO');
-  renderCarrinho();
- };
+  r.onchange = ()=>{
+    parcelas.classList.toggle('hidden', r.value!=='CARTAO');
+    renderCarrinho();
+  };
 });
-parcelas.onchange = renderCarrinho;
 
-/* FINALIZAR */
+/* CHECKOUT */
 function finalizarPedido(){
- const nome = clienteNome.value.trim();
- if(!nome) return alert('Informe seu nome');
- if(carrinho.length===0) return alert('Carrinho vazio');
+  if(carrinho.length===0) return alert('Carrinho vazio');
 
- const total = parseFloat(totalEl.innerText.replace('R$ ','').replace(',','.'));
+  const nome = clienteNome.value.trim();
+  if(!nome) return alert('Informe seu nome');
 
- const pedido = {
-  cliente: nome,
-  data: new Date().toLocaleString('pt-BR'),
-  status: 'Novo',
-  pagamento,
-  parcelas: pagamento==='CARTAO' ? parcelas.value : 'À vista',
-  total,
-  itens: carrinho.map(i=>({
-    nome: produtos[i.id].name,
-    qtd: i.qty,
-    valor: produtos[i.id].price
-  }))
- };
+  const pagamento = document.querySelector('[name=pagamento]:checked').value;
+  const total = parseFloat(totalEl.textContent);
 
- db.ref('orders').push(pedido);
+  const pedido = {
+    cliente: nome,
+    customer: nome,
+    data: new Date().toLocaleString('pt-BR'),
+    status: 'Novo',
+    pagamento,
+    parcelas: pagamento==='CARTAO' ? parcelas.value : 'À vista',
+    total,
+    itens: carrinho.map(i=>({
+      nome: produtos[i.id].name,
+      sku: produtos[i.id].sku,
+      qtd: i.qty,
+      valor: produtos[i.id].price
+    }))
+  };
 
- carrinho.forEach(i=>{
-  db.ref('products/'+i.id+'/stock')
-   .transaction(s=>(s||0)-i.qty);
- });
+  db.ref('orders').push(pedido);
 
- let msg = `🛍️ *Novo Pedido Confirmado*%0A`;
- msg += `👤 Cliente: *${nome}*%0A%0A`;
- pedido.itens.forEach(i=>{
-  msg+=`${i.qtd}x ${i.nome}%0A`;
- });
- msg+=`%0APagamento: ${pedido.pagamento}`;
- if(pagamento==='CARTAO') msg+=`%0AParcelas: ${pedido.parcelas}`;
- msg+=`%0ATotal: R$ ${pedido.total.toFixed(2)}`;
+  carrinho.forEach(i=>{
+    db.ref('products/'+i.id+'/stock')
+      .transaction(s=>s-i.qty);
+  });
 
- window.open(`https://wa.me/55${settings.whatsapp}?text=${msg}`);
+  let msg = `Olá! Pedido de *${nome}*:%0A%0A`;
+  pedido.itens.forEach(i=>{
+    msg += `${i.qtd}x ${i.nome} (SKU ${i.sku})%0A`;
+  });
+  msg += `%0ATotal: R$ ${total.toFixed(2)}%0APagamento: ${pedido.pagamento}`;
 
- carrinho=[];
- clienteNome.value='';
- renderCarrinho();
- alert('Pedido enviado com sucesso!');
+  window.open(`https://wa.me/55${config.whatsapp}?text=${msg}`);
 }
 </script>
 
 </body>
 </html>
+
