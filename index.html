@@ -10,8 +10,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
-        .product-card img { transition: transform 0.3s ease; }
-        .product-card:hover img { transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -28,7 +26,7 @@
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-            authDomain: "marcinia-semijoias.firebaseapp.com",
+            authDomain: "marcinha-semijoias.firebaseapp.com",
             databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
             projectId: "marcinha-semijoias",
             storageBucket: "marcinha-semijoias.firebasestorage.app",
@@ -38,49 +36,74 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        db.ref('products').on('value', snapshot => {
-            const data = snapshot.val();
-            const container = document.getElementById('catalog-container');
-            container.innerHTML = "";
+        // Variáveis de configuração globais
+        let pixDiscount = 0;
+        let maxInstallments = 1;
 
-            if (!data) {
-                container.innerHTML = "<p class='text-center'>Nenhum produto cadastrado.</p>";
-                return;
+        // 1. Primeiro, buscar as configurações da loja
+        db.ref('settings').on('value', snapshot => {
+            const settings = snapshot.val();
+            if (settings) {
+                pixDiscount = parseFloat(settings.pixDiscount) || 0;
+                maxInstallments = parseInt(settings.installments) || 1;
             }
-
-            // Organizar produtos por categoria
-            const categories = {};
-            Object.values(data).forEach(product => {
-                if (!categories[product.category]) {
-                    categories[product.category] = [];
-                }
-                categories[product.category].push(product);
-            });
-
-            // Gerar o HTML para cada categoria
-            Object.keys(categories).forEach(catName => {
-                const section = document.createElement('section');
-                section.innerHTML = `
-                    <h2 class="font-serif text-xl uppercase tracking-widest text-[#A68966] mb-6 border-b pb-2">${catName}</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        ${categories[catName].map(p => `
-                            <div class="product-card group">
-                                <div class="relative overflow-hidden bg-gray-100 aspect-[3/4]">
-                                    <img src="${p.image}" class="w-full h-full object-cover">
-                                </div>
-                                <div class="mt-4 text-center">
-                                    <p class="text-[9px] text-gray-400 uppercase font-mono">${p.sku}</p>
-                                    <h3 class="text-[11px] font-bold uppercase tracking-tight mt-1 h-8 overflow-hidden">${p.name}</h3>
-                                    <p class="text-sm font-semibold mt-2">R$ ${p.price.toFixed(2)}</p>
-                                    <button class="mt-3 w-full border border-black py-2 text-[10px] uppercase font-bold hover:bg-black hover:text-white transition">Adicionar</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-                container.appendChild(section);
-            });
+            renderCatalog(); // Re-renderiza quando as configs mudam
         });
+
+        // 2. Buscar produtos e renderizar
+        function renderCatalog() {
+            db.ref('products').on('value', snapshot => {
+                const data = snapshot.val();
+                const container = document.getElementById('catalog-container');
+                container.innerHTML = "";
+
+                if (!data) {
+                    container.innerHTML = "<p class='text-center'>Nenhum produto cadastrado.</p>";
+                    return;
+                }
+
+                const categories = {};
+                Object.values(data).forEach(p => {
+                    if (!categories[p.category]) categories[p.category] = [];
+                    categories[p.category].push(p);
+                });
+
+                Object.keys(categories).forEach(catName => {
+                    const section = document.createElement('section');
+                    section.innerHTML = `
+                        <h2 class="font-serif text-sm uppercase tracking-widest text-[#A68966] mb-8 border-b pb-2">${catName}</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10">
+                            ${categories[catName].map(p => {
+                                // Cálculos de preço
+                                const pricePix = p.price * (1 - (pixDiscount / 100));
+                                const installmentValue = p.price / maxInstallments;
+
+                                return `
+                                    <div class="group">
+                                        <div class="relative overflow-hidden bg-gray-100 aspect-[3/4]">
+                                            <img src="${p.image}" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="mt-4 text-center">
+                                            <p class="text-[8px] text-gray-400 uppercase font-mono">${p.sku}</p>
+                                            <h3 class="text-[10px] font-bold uppercase tracking-tight mt-1 h-8 overflow-hidden px-2">${p.name}</h3>
+                                            
+                                            <div class="mt-2">
+                                                <p class="text-xs font-bold">R$ ${p.price.toFixed(2)}</p>
+                                                <p class="text-[9px] text-green-600 font-bold uppercase mt-1">R$ ${pricePix.toFixed(2)} NO PIX</p>
+                                                <p class="text-[9px] text-gray-400 uppercase mt-0.5">${maxInstallments}X DE R$ ${installmentValue.toFixed(2)}</p>
+                                            </div>
+
+                                            <button class="mt-4 w-full border border-black py-2 text-[9px] uppercase font-bold hover:bg-black hover:text-white transition">Adicionar</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    container.appendChild(section);
+                });
+            });
+        }
     </script>
 </body>
 </html>
