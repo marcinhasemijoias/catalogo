@@ -2,206 +2,118 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel Admin | Marcinha Semijoias</title>
+<title>Painel Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
 <style>
-body{background:#F8F6F2;color:#1a1a1a}
+body{background:#F8F6F2}
 .font-serif{font-family:'Cinzel',serif}
-.tab{display:none}
-.tab.active{display:block}
+.tab{display:none}.active{display:block}
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
-<header class="bg-white border-b px-8 py-6 flex justify-between">
-  <div>
-    <h1 class="font-serif text-xl tracking-widest text-[#A68966]">
-      Marcinha Semijoias
-    </h1>
-    <p class="text-xs tracking-widest text-gray-400 uppercase">
-      Painel Administrativo
-    </p>
-  </div>
-  <nav class="flex gap-8 text-xs tracking-widest uppercase">
-    <button onclick="openTab('config')" class="text-[#A68966]">Config</button>
-    <button onclick="openTab('products')">Produtos</button>
-    <button onclick="openTab('orders')">Pedidos</button>
-  </nav>
+<header class="bg-white border-b p-6 flex justify-between">
+<h1 class="font-serif text-xl text-[#A68966]">Painel Admin</h1>
+<nav class="flex gap-6 text-xs uppercase">
+<button onclick="tab('config')">Config</button>
+<button onclick="tab('products')">Produtos</button>
+<button onclick="tab('orders')">Pedidos</button>
+</nav>
 </header>
 
-<main class="max-w-5xl mx-auto p-8 space-y-16">
+<main class="max-w-5xl mx-auto p-8 space-y-12">
 
-<!-- CONFIG -->
-<section id="config" class="tab active space-y-8">
+<section id="config" class="tab active space-y-6">
+<h2 class="font-serif text-xl">Empresa</h2>
+<input id="conf-whatsapp" placeholder="WhatsApp" class="border p-3 w-full">
+<input id="conf-pix" placeholder="% PIX" type="number" class="border p-3 w-full">
+<input id="conf-parcelas" placeholder="Parcelas" type="number" class="border p-3 w-full">
 
-<h2 class="font-serif text-2xl border-b pb-2 text-[#A68966]">Configurações da Empresa</h2>
+<input type="file" id="iconPix">
+<input type="file" id="iconCard">
 
-<div class="bg-white border p-6 grid md:grid-cols-2 gap-6">
-
-<input id="conf-name" placeholder="Nome da Empresa" class="border p-3">
-<input id="conf-whatsapp" placeholder="WhatsApp (somente números)" class="border p-3">
-
-<input id="conf-pix" type="number" placeholder="% Desconto PIX" class="border p-3">
-<input id="conf-parcelas" type="number" placeholder="Parcelas no Cartão" class="border p-3">
-
-<div>
-<label class="block text-sm mb-2">Ícone PIX</label>
-<input type="file" id="iconPix" class="border p-2 w-full">
-<img id="previewPix" class="h-12 mt-2 hidden">
-</div>
-
-<div>
-<label class="block text-sm mb-2">Ícone Cartão</label>
-<input type="file" id="iconCard" class="border p-2 w-full">
-<img id="previewCard" class="h-12 mt-2 hidden">
-</div>
-
-</div>
-
-<button onclick="saveSettings()" class="bg-black text-white px-8 py-3 tracking-widest uppercase text-xs">
-Salvar Configurações
-</button>
-
+<button onclick="saveSettings()" class="bg-black text-white px-6 py-2">Salvar</button>
 </section>
 
-<!-- PRODUTOS -->
-<section id="products" class="tab space-y-8">
-
-<h2 class="font-serif text-2xl border-b pb-2 text-[#A68966]">Cadastro de Produtos</h2>
-
-<div class="bg-white border p-6 grid md:grid-cols-2 gap-6">
-
-<input id="p-name" placeholder="Nome do Produto" class="border p-3">
-<input id="p-sku" placeholder="SKU" class="border p-3">
-<input id="p-price" type="number" placeholder="Valor R$" class="border p-3">
-<input id="p-stock" type="number" placeholder="Estoque" class="border p-3">
-
-<input type="file" id="p-image" class="border p-3 col-span-2">
-
-</div>
-
-<button onclick="saveProduct()" class="bg-black text-white px-8 py-3 tracking-widest uppercase text-xs">
-Salvar Produto
-</button>
-
+<section id="products" class="tab space-y-6">
+<h2 class="font-serif text-xl">Produtos</h2>
+<input id="p-name" placeholder="Nome" class="border p-3 w-full">
+<input id="p-price" placeholder="Preço" type="number" class="border p-3 w-full">
+<input id="p-stock" placeholder="Estoque" type="number" class="border p-3 w-full">
+<input type="file" id="p-image">
+<button onclick="saveProduct()" class="bg-black text-white px-6 py-2">Salvar</button>
 </section>
 
-<!-- PEDIDOS -->
-<section id="orders" class="tab space-y-6">
-
-<h2 class="font-serif text-2xl border-b pb-2 text-[#A68966]">Pedidos</h2>
-
-<div id="ordersList" class="space-y-4"></div>
-
+<section id="orders" class="tab">
+<div id="ordersList"></div>
 </section>
 
 </main>
 
 <script>
-/* FIREBASE */
 firebase.initializeApp({
-  apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-  authDomain: "marcinha-semijoias.firebaseapp.com",
-  databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias"
+ apiKey:"AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+ databaseURL:"https://marcinha-semijoias-default-rtdb.firebaseio.com",
+ projectId:"marcinha-semijoias"
 });
 
-const db = firebase.database();
-const storage = firebase.storage();
+const db=firebase.database();
+const st=firebase.storage();
 
-/* TABS */
-function openTab(id){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function tab(id){
+ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
 }
 
-/* SETTINGS */
 function saveSettings(){
-  const data={
-    name:conf-name.value,
-    whatsapp:conf-whatsapp.value,
-    pix:parseInt(conf-pix.value||0),
-    parcelas:parseInt(conf-parcelas.value||1)
-  };
+ const data={
+  whatsapp:conf-whatsapp.value,
+  pix:parseInt(conf-pix.value),
+  parcelas:parseInt(conf-parcelas.value)
+ };
 
-  const uploads=[];
+ const up=[];
+ if(iconPix.files[0]){
+  const r=st.ref('icons/pix.png');
+  up.push(r.put(iconPix.files[0]).then(()=>r.getDownloadURL().then(u=>data.iconPix=u)));
+ }
+ if(iconCard.files[0]){
+  const r=st.ref('icons/card.png');
+  up.push(r.put(iconCard.files[0]).then(()=>r.getDownloadURL().then(u=>data.iconCard=u)));
+ }
 
-  if(iconPix.files[0]){
-    const ref=storage.ref('icons/pix.png');
-    uploads.push(ref.put(iconPix.files[0]).then(()=>ref.getDownloadURL().then(u=>{
-      data.iconPix=u;
-      previewPix.src=u; previewPix.classList.remove('hidden');
-    })));
-  }
-
-  if(iconCard.files[0]){
-    const ref=storage.ref('icons/card.png');
-    uploads.push(ref.put(iconCard.files[0]).then(()=>ref.getDownloadURL().then(u=>{
-      data.iconCard=u;
-      previewCard.src=u; previewCard.classList.remove('hidden');
-    })));
-  }
-
-  Promise.all(uploads).then(()=>{
-    db.ref('settings').update(data).then(()=>alert('Configurações salvas'));
-  });
+ Promise.all(up).then(()=>db.ref('settings').update(data));
 }
 
-/* LOAD SETTINGS */
-db.ref('settings').once('value').then(s=>{
-  if(!s.val())return;
-  const d=s.val();
-  conf-name.value=d.name||'';
-  conf-whatsapp.value=d.whatsapp||'';
-  conf-pix.value=d.pix||0;
-  conf-parcelas.value=d.parcelas||1;
-
-  if(d.iconPix){previewPix.src=d.iconPix;previewPix.classList.remove('hidden')}
-  if(d.iconCard){previewCard.src=d.iconCard;previewCard.classList.remove('hidden')}
-});
-
-/* PRODUTO */
 function saveProduct(){
-  const img=p-image.files[0];
-  if(!img)return alert('Selecione a imagem');
-
-  const ref=storage.ref('products/'+Date.now()+img.name);
-  ref.put(img).then(()=>{
-    ref.getDownloadURL().then(url=>{
-      db.ref('products').push({
-        name:p-name.value,
-        sku:p-sku.value,
-        price:parseFloat(p-price.value),
-        stock:parseInt(p-stock.value),
-        image:url
-      }).then(()=>alert('Produto salvo'));
-    });
+ const img=p-image.files[0];
+ const r=st.ref('products/'+Date.now());
+ r.put(img).then(()=>r.getDownloadURL().then(u=>{
+  db.ref('products').push({
+   name:p-name.value,
+   price:+p-price.value,
+   stock:+p-stock.value,
+   image:u
   });
+ }));
 }
 
-/* PEDIDOS */
-db.ref('orders').on('value',snap=>{
-  ordersList.innerHTML='';
-  snap.forEach(s=>{
-    const o=s.val();
-    ordersList.innerHTML+=`
-      <div class="bg-white border p-4 flex justify-between">
-        <div>
-          <strong>${o.customer}</strong><br>
-          <span class="text-xs">${o.date}</span>
-        </div>
-        <div class="font-bold">R$ ${o.total}</div>
-      </div>`;
-  });
+db.ref('orders').on('value',s=>{
+ ordersList.innerHTML='';
+ s.forEach(o=>{
+  ordersList.innerHTML+=`
+  <div class="bg-white border p-3 mb-2">
+   <strong>R$ ${o.val().total}</strong><br>
+   <span class="text-xs">${o.val().date}</span>
+  </div>`;
+ });
 });
 </script>
 
