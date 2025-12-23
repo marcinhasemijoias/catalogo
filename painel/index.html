@@ -2,45 +2,128 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel | Estoque</title>
+<title>Painel | Relatório Mensal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<style>
+  body { background:#F8F6F2; }
+</style>
 </head>
 
-<body class="bg-[#F8F6F2] p-8">
+<body class="p-8 text-[#1a1a1a]">
 
-<h1 class="font-serif text-2xl mb-6 text-[#A68966]">Produtos & Estoque</h1>
+<header class="mb-8">
+  <h1 class="font-serif text-2xl text-[#A68966] tracking-widest">
+    Relatório Mensal de Vendas
+  </h1>
+  <p class="text-xs uppercase tracking-widest text-gray-500 mt-1">
+    Controle financeiro
+  </p>
+</header>
 
-<div id="products" class="grid md:grid-cols-2 gap-4"></div>
+<section class="bg-white border p-6 mb-6 max-w-xl">
+  <label class="text-xs uppercase tracking-widest text-gray-500 block mb-2">
+    Selecionar Mês
+  </label>
+  <input type="month" id="month" class="border p-2 w-full">
+</section>
+
+<section class="grid md:grid-cols-4 gap-4 mb-8 max-w-5xl">
+
+  <div class="bg-white border p-4 text-center">
+    <p class="text-xs uppercase text-gray-400">Pedidos</p>
+    <p id="qtd" class="text-2xl font-bold">0</p>
+  </div>
+
+  <div class="bg-white border p-4 text-center">
+    <p class="text-xs uppercase text-gray-400">Total Vendido</p>
+    <p id="total" class="text-2xl font-bold">R$ 0</p>
+  </div>
+
+  <div class="bg-white border p-4 text-center">
+    <p class="text-xs uppercase text-gray-400">PIX</p>
+    <p id="pix" class="text-2xl font-bold text-green-600">R$ 0</p>
+  </div>
+
+  <div class="bg-white border p-4 text-center">
+    <p class="text-xs uppercase text-gray-400">Cartão</p>
+    <p id="card" class="text-2xl font-bold">R$ 0</p>
+  </div>
+
+</section>
+
+<section class="max-w-5xl">
+  <h2 class="font-serif text-xl mb-4 text-[#A68966]">
+    Pedidos do Mês
+  </h2>
+
+  <div id="orders" class="space-y-4"></div>
+</section>
 
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
   authDomain: "marcinha-semijoias.firebaseapp.com",
   databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias",
+  projectId: "marcinha-semijoias"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-db.ref('products').on('value', snap=>{
-  const el = document.getElementById('products');
-  el.innerHTML='';
-  snap.forEach(p=>{
-    const d=p.val();
-    el.innerHTML+=`
-      <div class="bg-white border p-4">
-        <h3 class="font-bold">${d.name}</h3>
-        <p>R$ ${d.price}</p>
-        <p class="${d.stock<=3?'text-red-500':'text-gray-600'}">
-          Estoque: ${d.stock}
-        </p>
-      </div>`;
+document.getElementById('month').addEventListener('change', loadReport);
+
+function loadReport(){
+  const month = document.getElementById('month').value;
+  if(!month) return;
+
+  let total = 0;
+  let pix = 0;
+  let card = 0;
+  let qtd = 0;
+
+  const list = document.getElementById('orders');
+  list.innerHTML = '';
+
+  db.ref('orders').once('value', snap=>{
+    snap.forEach(o=>{
+      const d = o.val();
+
+      // formato esperado: DD/MM/AAAA
+      const parts = d.date.split('/');
+      const orderMonth = `${parts[2]}-${parts[1]}`;
+
+      if(orderMonth === month){
+        qtd++;
+        total += parseFloat(d.total);
+        pix += parseFloat(d.pixTotal);
+        card += (parseFloat(d.total) - parseFloat(d.pixTotal));
+
+        list.innerHTML += `
+          <div class="bg-white border p-4">
+            <p class="text-xs text-gray-400">${d.date}</p>
+            <h3 class="font-bold">${d.customerName}</h3>
+            <pre class="text-sm mt-2">${d.items}</pre>
+            <div class="flex justify-between mt-2 text-sm">
+              <span>Total: R$ ${d.total}</span>
+              <span class="text-green-600">PIX: R$ ${d.pixTotal}</span>
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    document.getElementById('qtd').innerText = qtd;
+    document.getElementById('total').innerText = `R$ ${total.toFixed(2)}`;
+    document.getElementById('pix').innerText = `R$ ${pix.toFixed(2)}`;
+    document.getElementById('card').innerText = `R$ ${card.toFixed(2)}`;
   });
-});
+}
 </script>
 
 </body>
 </html>
+
