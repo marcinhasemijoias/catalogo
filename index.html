@@ -67,26 +67,22 @@
                             const pixPrice = p.price * (1 - (settings.pixDiscount / 100));
                             return `
                             <div class="group text-center">
-                                <div class="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
+                              <div class="relative aspect-[3/4] overflow-hidden bg-gray-100 mb-4">
                                     <img src="${p.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
-                                    ${p.stock <= 0 ? '<div class="absolute inset-0 bg-white/60 flex items-center justify-center text-[10px] uppercase font-bold">Esgotado</div>' : ''}
+                                    ${p.stock <= 0 ? '<div class="absolute inset-0 bg-white/60 flex items-center justify-center text-[10px] uppercase font-bold tracking-tighter">Esgotado</div>' : ''}
                                 </div>
-                                <h3 class="text-[10px] text-gray-400 uppercase font-mono">${p.sku}</h3>
-                                <h4 class="text-[11px] uppercase font-bold">${p.name}</h4>
-                                <p class="text-sm mt-1">R$ ${p.price.toFixed(2)}</p>
-                                <p class="text-[9px] text-green-600 font-bold uppercase italic">R$ ${pixPrice.toFixed(2)} no PIX</p>
-                                <p class="text-[9px] text-gray-400 uppercase">${settings.installments}x de R$ ${(p.price / settings.installments).toFixed(2)}</p>
+                                <h3 class="text-[9px] text-gray-400 uppercase font-mono tracking-tighter">${p.sku}</h3>
+                                <h4 class="text-[11px] uppercase font-bold leading-tight h-7 overflow-hidden">${p.name}</h4>
+                                <p class="text-sm font-bold mt-1">R$ ${p.price.toFixed(2)}</p>
+                                <p class="text-[10px] text-green-600 font-bold uppercase italic">R$ ${pixPrice.toFixed(2)} no PIX</p>
+                                <p class="text-[9px] text-gray-400 uppercase">
+                                    ${(settings.installments || 1)}x de R$ ${(p.price / (settings.installments || 1)).toFixed(2)}
+                                </p>
                                 <button onclick="addToCart('${p.id}', '${p.name}', ${p.price}, '${p.image}', '${p.sku}')" 
-                                        class="mt-4 text-[10px] uppercase border-b border-black pb-1 hover:text-[#A68966] hover:border-[#A68966] transition">
-                                    Adicionar
+                                        class="mt-4 w-full text-[10px] uppercase font-bold border border-black py-2 hover:bg-black hover:text-white transition duration-300">
+                                    Adicionar ao Carrinho
                                 </button>
                             </div>`;
-                        }).join('')}
-                    </div>`;
-                container.appendChild(section);
-            });
-        });
-    }
 
     // Carrega configurações e DEPOIS o catálogo
     // LISTA DE VENDAS COM EXCLUSÃO INDIVIDUAL
