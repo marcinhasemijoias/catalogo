@@ -147,13 +147,22 @@ db.ref('settings').once('value').then(s=>{
   empParcelas.value=s.val().parcelas||1;
 });
 
-/* PRODUTOS */
+/* ELEMENTOS PRODUTO */
+const pNome = document.getElementById('pNome');
+const pSku = document.getElementById('pSku');
+const pPreco = document.getElementById('pPreco');
+const pEstoque = document.getElementById('pEstoque');
+const pImagem = document.getElementById('pImagem');
+const listaProdutos = document.getElementById('listaProdutos');
+const btnSalvarProduto = document.getElementById('btnSalvarProduto');
+
 let editarId = null;
 
-function salvarProduto(){
+function salvarProduto() {
   const img = pImagem.files[0];
 
-  if(!editarId && !img) return alert('Imagem obrigatória');
+  // Se for novo produto, imagem é obrigatória
+  if (!editarId && !img) return alert('Imagem obrigatória');
 
   const salvarNoFirebase = (url) => {
     const produto = {
@@ -162,30 +171,36 @@ function salvarProduto(){
       price: parseFloat(pPreco.value),
       stock: parseInt(pEstoque.value),
     };
-    if(url) produto.image = url;
+    if (url) produto.image = url;
 
-    if(editarId){
-      db.ref('products/'+editarId).update(produto).then(()=>{
-        alert('Produto atualizado');
-        resetFormProduto();
-      });
+    if (editarId) {
+      db.ref('products/' + editarId).update(produto)
+        .then(() => {
+          alert('Produto atualizado com sucesso!');
+          resetFormProduto();
+        }).catch(err => alert('Erro ao atualizar produto: ' + err));
     } else {
-      db.ref('products').push(produto).then(()=>{
-        alert('Produto salvo');
-        resetFormProduto();
-      });
+      db.ref('products').push(produto)
+        .then(() => {
+          alert('Produto salvo com sucesso!');
+          resetFormProduto();
+        }).catch(err => alert('Erro ao salvar produto: ' + err));
     }
   };
 
-  if(img){
-    const ref = storage.ref('products/'+Date.now()+img.name);
-    ref.put(img).then(()=> ref.getDownloadURL().then(url => salvarNoFirebase(url)));
+  if (img) {
+    const ref = storage.ref('products/' + Date.now() + '_' + img.name);
+    ref.put(img)
+      .then(() => ref.getDownloadURL())
+      .then(url => salvarNoFirebase(url))
+      .catch(err => alert('Erro ao enviar imagem: ' + err));
   } else {
+    // Se for edição e sem nova imagem
     salvarNoFirebase();
   }
 }
 
-function resetFormProduto(){
+function resetFormProduto() {
   pNome.value = '';
   pSku.value = '';
   pPreco.value = '';
@@ -195,45 +210,48 @@ function resetFormProduto(){
   btnSalvarProduto.textContent = 'SALVAR PRODUTO';
 }
 
-const btnSalvarProduto = document.getElementById('btnSalvarProduto');
+// Vincula botão
 btnSalvarProduto.onclick = salvarProduto;
 
+// LISTAR PRODUTOS
 db.ref('products').on('value', snap => {
   listaProdutos.innerHTML = '';
   snap.forEach(s => {
     const p = s.val();
     const id = s.key;
     listaProdutos.innerHTML += `
-    <div class="bg-white border p-4">
-      <img src="${p.image}" class="h-40 w-full object-cover">
-      <p class="font-medium mt-2">${p.name}</p>
-      <p class="text-xs text-gray-400">SKU: ${p.sku}</p>
-      <p class="gold font-semibold">R$ ${p.price.toFixed(2)}</p>
-      <div class="flex gap-2 mt-2 text-xs">
-        <button onclick="editarProduto('${id}')" class="bg-blue-500 text-white px-2 py-1">Editar</button>
-        <button onclick="excluirProduto('${id}')" class="bg-red-500 text-white px-2 py-1">Excluir</button>
-      </div>
-    </div>`;
+      <div class="bg-white border p-4">
+        <img src="${p.image}" class="h-40 w-full object-cover">
+        <p class="font-medium mt-2">${p.name}</p>
+        <p class="text-xs text-gray-400">SKU: ${p.sku}</p>
+        <p class="gold font-semibold">R$ ${p.price.toFixed(2)}</p>
+        <div class="flex gap-2 mt-2 text-xs">
+          <button onclick="editarProduto('${id}')" class="bg-blue-500 text-white px-2 py-1">Editar</button>
+          <button onclick="excluirProduto('${id}')" class="bg-red-500 text-white px-2 py-1">Excluir</button>
+        </div>
+      </div>`;
   });
 });
 
-function excluirProduto(id){
-  if(!confirm('Deseja excluir este produto?')) return;
-  db.ref('products/'+id).remove()
-    .then(()=>alert('Produto excluído com sucesso'));
+function excluirProduto(id) {
+  if (!confirm('Deseja excluir este produto?')) return;
+  db.ref('products/' + id).remove()
+    .then(() => alert('Produto excluído com sucesso!'))
+    .catch(err => alert('Erro ao excluir: ' + err));
 }
 
-function editarProduto(id){
-  db.ref('products/'+id).once('value').then(snap=>{
-    const p = snap.val();
-    pNome.value = p.name;
-    pSku.value = p.sku;
-    pPreco.value = p.price;
-    pEstoque.value = p.stock;
-    // imagem não será preenchida automaticamente
-    editarId = id;
-    btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
-  });
+function editarProduto(id) {
+  db.ref('products/' + id).once('value')
+    .then(snap => {
+      const p = snap.val();
+      pNome.value = p.name;
+      pSku.value = p.sku;
+      pPreco.value = p.price;
+      pEstoque.value = p.stock;
+      // imagem não será preenchida automaticamente
+      editarId = id;
+      btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
+    }).catch(err => alert('Erro ao carregar produto: ' + err));
 }
 
 /* PEDIDOS */
