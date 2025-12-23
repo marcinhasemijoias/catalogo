@@ -9,12 +9,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Cinzel:wght@400;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F8F6F2; color: #1a1a1a; }
+        body { font-family: 'Inter', sans-serif; background-color: #F8F6F2; color: #1a1a1a; margin: 0; }
         .font-serif { font-family: 'Cinzel', serif; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .bg-gold { background-color: #A68966; }
         .text-gold { color: #A68966; }
+        .border-gold { border-color: #A68966; }
     </style>
 </head>
 <body>
@@ -22,89 +22,49 @@
     <header class="bg-white border-b border-[#E5E1DB] py-6 px-8 flex justify-between items-center sticky top-0 z-50">
         <div>
             <h1 class="font-serif text-xl tracking-[0.2em] text-gold">Marcinha Semijoias</h1>
-            <p class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Gerenciamento Profissional</p>
+            <p class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Gerenciamento de Luxo</p>
         </div>
         <nav class="flex gap-8 text-[10px] uppercase font-bold tracking-widest cursor-pointer">
-            <a onclick="showTab('vendas')" id="btn-vendas" class="text-gold border-b-2 border-gold pb-1">Vendas</a>
-            <a onclick="showTab('produtos')" id="btn-produtos" class="text-gray-400 hover:text-gold transition">Produtos</a>
-            <a onclick="showTab('config')" id="btn-config" class="text-gray-400 hover:text-gold transition">Configurações</a>
+            <a onclick="showTab('vendas')" id="nav-vendas" class="text-gold border-b-2 border-gold pb-1">Vendas</a>
+            <a onclick="showTab('produtos')" id="nav-produtos" class="text-gray-400 hover:text-gold transition">Produtos</a>
+            <a onclick="showTab('config')" id="nav-config" class="text-gray-400 hover:text-gold transition">Configurações</a>
         </nav>
     </header>
 
-    <main class="max-w-6xl mx-auto p-8">
+    <main class="max-w-5xl mx-auto p-8">
         
         <div id="vendas" class="tab-content active">
-            <div class="flex justify-between items-end border-b border-[#A68966] pb-4 mb-8">
-                <div>
-                    <h2 class="font-serif text-2xl">Histórico de Pedidos</h2>
-                    <p class="text-[10px] uppercase text-gray-400 mt-1 italic">Exclusão individual habilitada • Romaneio de luxo compacto</p>
-                </div>
-            </div>
-            <div id="ordersList" class="grid gap-4">
-                <p class="text-center py-10 text-gray-400 animate-pulse">Carregando pedidos...</p>
-            </div>
+            <h2 class="font-serif text-2xl mb-6 border-b border-gold pb-2">Histórico de Pedidos</h2>
+            <div id="ordersList" class="grid gap-4"></div>
         </div>
 
         <div id="produtos" class="tab-content">
-            <div class="flex justify-between items-center border-b border-[#A68966] pb-4 mb-8">
-                <h2 class="font-serif text-2xl">Cadastro de Produtos</h2>
-                <button onclick="saveProduct()" class="bg-black text-white text-[10px] px-6 py-2 uppercase font-bold tracking-widest hover:bg-gold transition">Salvar Produto</button>
+            <div class="flex justify-between items-center border-b border-gold pb-4 mb-8">
+                <h2 class="font-serif text-2xl">Cadastrar Joia</h2>
+                <button onclick="saveProduct()" class="bg-black text-white text-[10px] px-8 py-3 uppercase font-bold tracking-widest hover:bg-gold transition">Salvar no Catálogo</button>
             </div>
-            <div class="grid md:grid-cols-2 gap-8 bg-white p-8 border border-[#E5E1DB] rounded-sm">
+            <div class="grid md:grid-cols-2 gap-6 bg-white p-6 border border-[#E5E1DB]">
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase mb-1">Nome da Joia</label>
-                        <input type="text" id="p-name" class="w-full border border-gray-200 p-3 text-sm focus:outline-gold">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase mb-1">Preço (R$)</label>
-                            <input type="number" id="p-price" class="w-full border border-gray-200 p-3 text-sm focus:outline-gold">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase mb-1">Estoque</label>
-                            <input type="number" id="p-stock" class="w-full border border-gray-200 p-3 text-sm focus:outline-gold">
-                        </div>
-                    </div>
+                    <input type="text" id="p-name" placeholder="Nome da Peça" class="w-full border p-3 text-sm">
+                    <input type="number" id="p-price" placeholder="Preço R$" class="w-full border p-3 text-sm">
+                    <input type="number" id="p-stock" placeholder="Estoque" class="w-full border p-3 text-sm">
                 </div>
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase mb-1">URL da Imagem</label>
-                        <input type="text" id="p-image" class="w-full border border-gray-200 p-3 text-sm focus:outline-gold" placeholder="https://...">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase mb-1">Categoria</label>
-                            <select id="p-category" class="w-full border border-gray-200 p-3 text-sm focus:outline-gold">
-                                <option value="Brincos">Brincos</option>
-                                <option value="Colares">Colares</option>
-                                <option value="Pulseiras">Pulseiras</option>
-                                <option value="Aneis">Anéis</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase mb-1">SKU/Código</label>
-                            <input type="text" id="p-sku" class="w-full border border-gray-200 p-3 text-sm focus:outline-gold">
-                        </div>
-                    </div>
+                    <input type="text" id="p-image" placeholder="URL da Foto" class="w-full border p-3 text-sm">
+                    <input type="text" id="p-sku" placeholder="SKU/Código" class="w-full border p-3 text-sm">
+                    <select id="p-category" class="w-full border p-3 text-sm">
+                        <option>Brincos</option><option>Colares</option><option>Pulseiras</option><option>Aneis</option>
+                    </select>
                 </div>
             </div>
         </div>
 
         <div id="config" class="tab-content">
-            <div class="border-b border-[#A68966] pb-4 mb-8">
-                <h2 class="font-serif text-2xl">Ajustes da Loja</h2>
-            </div>
-            <div class="max-w-md bg-white p-8 border border-[#E5E1DB] space-y-6">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase mb-2">Desconto PIX (%)</label>
-                    <input type="number" id="conf-pix" class="w-full border border-gray-200 p-3 text-sm">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase mb-2">Máximo de Parcelas</label>
-                    <input type="number" id="conf-parcelas" class="w-full border border-gray-200 p-3 text-sm">
-                </div>
-                <button onclick="updateSettings()" class="w-full bg-gold text-white py-4 text-[10px] font-bold uppercase tracking-widest hover:brightness-110">Atualizar Configurações</button>
+            <h2 class="font-serif text-2xl mb-6 border-b border-gold pb-2">Ajustes do Site</h2>
+            <div class="max-w-xs bg-white p-6 border border-[#E5E1DB] space-y-4">
+                <input type="number" id="conf-pix" placeholder="% Desconto PIX" class="w-full border p-3 text-sm">
+                <input type="number" id="conf-parcelas" placeholder="Máx Parcelas" class="w-full border p-3 text-sm">
+                <button onclick="updateSettings()" class="w-full bg-[#A68966] text-white py-3 text-[10px] font-bold uppercase tracking-widest">Atualizar</button>
             </div>
         </div>
 
@@ -123,49 +83,40 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 1. NAVEGAÇÃO
         function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            
             document.querySelectorAll('nav a').forEach(a => {
                 a.classList.remove('text-gold', 'border-b-2', 'border-gold');
                 a.classList.add('text-gray-400');
             });
-            const activeNav = document.getElementById('btn-' + tabId);
-            activeNav.classList.add('text-gold', 'border-b-2', 'border-gold');
-            activeNav.classList.remove('text-gray-400');
+            document.getElementById('nav-' + tabId).classList.add('text-gold', 'border-b-2', 'border-gold');
         }
 
-        // 2. VENDAS E EXCLUSÃO
         db.ref('orders').on('value', snap => {
             const list = document.getElementById("ordersList");
             const data = snap.val();
             list.innerHTML = "";
-            if (!data) { list.innerHTML = "<p class='text-center py-20 text-gray-400'>Nenhum pedido no sistema.</p>"; return; }
-            
+            if (!data) return list.innerHTML = "<p class='text-gray-400'>Sem pedidos.</p>";
             Object.keys(data).reverse().forEach(id => {
                 const o = data[id];
                 list.innerHTML += `
-                    <div class="bg-white border border-[#E5E1DB] p-4 flex justify-between items-center hover:border-gold transition shadow-sm">
+                    <div class="bg-white border p-4 flex justify-between items-center shadow-sm">
                         <div class="flex-1">
-                            <span class="text-[8px] font-bold text-gold uppercase tracking-widest">${o.date}</span>
-                            <h4 class="text-xs font-bold uppercase tracking-tight">${o.customerName}</h4>
-                            <p class="text-[10px] text-gray-400 uppercase">Valor Total: R$ ${o.total}</p>
+                            <span class="text-[9px] text-gold font-bold uppercase">${o.date}</span>
+                            <h4 class="text-xs font-bold uppercase">${o.customerName}</h4>
+                            <p class="text-[10px] text-gray-400 font-bold">R$ ${o.total}</p>
                         </div>
                         <div class="flex gap-4 items-center">
                             <button onclick="printOrder('${id}')" class="bg-black text-white text-[9px] px-4 py-2 font-bold uppercase tracking-widest hover:bg-gold transition">Imprimir Romaneio</button>
-                            <button onclick="deleteOrder('${id}')" class="text-red-300 hover:text-red-500 text-[9px] font-bold uppercase">Excluir</button>
+                            <button onclick="deleteOrder('${id}')" class="text-red-400 text-[9px] font-bold uppercase">Excluir</button>
                         </div>
                     </div>`;
             });
         });
 
-        function deleteOrder(id) {
-            if(confirm("Deseja excluir este pedido permanentemente?")) db.ref('orders/' + id).remove();
-        }
+        function deleteOrder(id) { if(confirm("Eliminar este pedido?")) db.ref('orders/' + id).remove(); }
 
-        // 3. ROMANEIO PROFISSIONAL 1 PÁGINA
         function printOrder(id) {
             db.ref('orders/' + id).once('value', snap => {
                 const o = snap.val();
@@ -175,39 +126,36 @@
                     <head>
                         <style>
                             @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600&display=swap');
-                            @page { size: portrait; margin: 10mm; }
-                            body { font-family: 'Inter', sans-serif; color: #1a1a1a; margin: 0; padding: 0; }
-                            .doc { border: 1px solid #A68966; height: 95vh; padding: 30px; position: relative; box-sizing: border-box; }
-                            header { text-align: center; border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
-                            h1 { font-family: 'Cinzel', serif; font-size: 24px; color: #A68966; letter-spacing: 5px; margin: 0; }
-                            .meta { display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 30px; }
-                            .title { font-family: 'Cinzel', serif; font-size: 11px; color: #A68966; border-bottom: 1px solid #A68966; display: inline-block; margin-bottom: 15px; }
-                            .content { font-size: 11px; line-height: 1.8; white-space: pre-wrap; height: 400px; overflow: hidden; }
-                            .total { position: absolute; bottom: 120px; right: 30px; text-align: right; }
-                            .total span { font-size: 9px; color: #888; text-transform: uppercase; }
+                            @page { size: auto; margin: 5mm; }
+                            body { font-family: 'Inter', sans-serif; margin: 0; padding: 15px; color: #1a1a1a; }
+                            .doc { border: 1px solid #A68966; padding: 25px; min-height: 94vh; position: relative; box-sizing: border-box; }
+                            header { text-align: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+                            h1 { font-family: 'Cinzel', serif; font-size: 22px; color: #A68966; letter-spacing: 4px; margin: 0; }
+                            .meta { display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 25px; }
+                            .content { font-size: 11px; line-height: 1.6; white-space: pre-wrap; height: 420px; overflow: hidden; border-left: 2px solid #FDFBF7; padding-left: 15px; }
+                            .total { position: absolute; bottom: 100px; right: 25px; text-align: right; }
                             .total p { font-size: 22px; font-family: 'Cinzel', serif; margin: 0; font-weight: bold; }
-                            .footer { position: absolute; bottom: 30px; left: 30px; right: 30px; display: flex; justify-content: space-between; }
-                            .line { border-top: 1px solid #A68966; width: 45%; text-align: center; font-size: 8px; color: #A68966; font-weight: bold; padding-top: 5px; text-transform: uppercase; }
+                            .footer { position: absolute; bottom: 30px; left: 25px; right: 25px; display: flex; justify-content: space-between; }
+                            .line { border-top: 1px solid #A68966; width: 42%; text-align: center; font-size: 8px; color: #A68966; font-weight: bold; padding-top: 5px; text-transform: uppercase; }
                         </style>
                     </head>
                     <body>
                         <div class="doc">
-                            <header><h1>Marcinha Semijoias</h1><p style="font-size: 8px; text-transform: uppercase; letter-spacing: 3px; color: #999;">Documento de Pedido</p></header>
+                            <header><h1>Marcinha Semijoias</h1></header>
                             <div class="meta"><span>Cliente: ${o.customerName}</span><span>Data: ${o.date}</span></div>
-                            <div class="title">Itens Inclusos</div>
+                            <div style="font-family:'Cinzel'; font-size:10px; color:#A68966; margin-bottom:10px;">Descrição das Peças</div>
                             <div class="content">${o.items}</div>
-                            <div class="total"><span>Total do Pedido</span><p>R$ ${o.total}</p></div>
+                            <div class="total"><span>Investimento Total</span><p>R$ ${o.total}</p></div>
                             <div class="footer"><div class="line">Assinatura Cliente</div><div class="line">Marcinha Semijoias</div></div>
                         </div>
                     </body>
                     </html>
                 `);
                 win.document.close();
-                setTimeout(() => { win.print(); win.close(); }, 500);
+                setTimeout(() => { win.print(); win.close(); }, 400);
             });
         }
 
-        // 4. CADASTRO DE PRODUTOS
         function saveProduct() {
             const p = {
                 name: document.getElementById('p-name').value,
@@ -217,28 +165,23 @@
                 category: document.getElementById('p-category').value,
                 sku: document.getElementById('p-sku').value
             };
-            if(!p.name || !p.price) return alert("Preencha os campos principais!");
-            db.ref('products').push(p).then(() => {
-                alert("Produto Cadastrado!");
-                location.reload();
-            });
+            db.ref('products').push(p).then(() => { alert("Joia Cadastrada!"); location.reload(); });
         }
 
-        // 5. CONFIGURAÇÕES
+        function updateSettings() {
+            const s = {
+                pixDiscount: parseInt(document.getElementById('conf-pix').value),
+                installments: parseInt(document.getElementById('conf-parcelas').value)
+            };
+            db.ref('settings').set(s).then(() => alert("Ajustes Guardados!"));
+        }
+        
         db.ref('settings').on('value', s => {
             if(s.val()){
                 document.getElementById('conf-pix').value = s.val().pixDiscount;
                 document.getElementById('conf-parcelas').value = s.val().installments;
             }
         });
-
-        function updateSettings() {
-            const settings = {
-                pixDiscount: parseInt(document.getElementById('conf-pix').value),
-                installments: parseInt(document.getElementById('conf-parcelas').value)
-            };
-            db.ref('settings').set(settings).then(() => alert("Configurações atualizadas!"));
-        }
     </script>
 </body>
 </html>
