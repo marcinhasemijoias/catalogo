@@ -1,105 +1,82 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Painel Admin | Marcinha Semijoias</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<title>Painel Admin | Marcinha Semijoias</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body {
-      margin: 0;
-      font-family: "Georgia", serif;
-      background: #faf7f2;
-      color: #333;
-    }
+<style>
+body{
+  margin:0;
+  font-family:Georgia, serif;
+  background:#faf7f2;
+  color:#333;
+}
+header{
+  padding:20px 40px;
+  border-bottom:1px solid #d6b48c;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+nav a{
+  margin-left:20px;
+  cursor:pointer;
+  font-size:12px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#b48b5a;
+  border-bottom:2px solid transparent;
+  padding-bottom:4px;
+}
+nav a.active{ border-color:#b48b5a; }
+main{ padding:40px; max-width:1100px; margin:auto; }
+h2{ border-bottom:1px solid #d6b48c; padding-bottom:10px; }
 
-    header {
-      padding: 20px 40px;
-      border-bottom: 1px solid #d6b48c;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+.tab{ display:none; }
+.tab.active{ display:block; }
 
-    header h1 {
-      margin: 0;
-      font-weight: normal;
-      letter-spacing: 2px;
-    }
+label{ display:block; margin-top:15px; font-size:14px; }
+input,textarea{
+  width:100%; padding:10px; margin-top:5px;
+  border:1px solid #ccc; border-radius:4px;
+}
+button{
+  margin-top:20px;
+  padding:10px 25px;
+  background:#b48b5a;
+  color:#fff;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+}
 
-    nav a {
-      margin-left: 20px;
-      cursor: pointer;
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 2px;
-      color: #b48b5a;
-      text-decoration: none;
-      border-bottom: 2px solid transparent;
-      padding-bottom: 4px;
-    }
-
-    nav a.active {
-      border-color: #b48b5a;
-    }
-
-    main {
-      padding: 40px;
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    h2 {
-      font-weight: normal;
-      letter-spacing: 1px;
-      border-bottom: 1px solid #d6b48c;
-      padding-bottom: 10px;
-    }
-
-    .tab {
-      display: none;
-    }
-
-    .tab.active {
-      display: block;
-    }
-
-    label {
-      display: block;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    button {
-      margin-top: 30px;
-      padding: 12px 30px;
-      background: #b48b5a;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      letter-spacing: 1px;
-    }
-
-    button:hover {
-      opacity: 0.9;
-    }
-
-    .info {
-      margin-top: 20px;
-      font-size: 13px;
-      color: #666;
-    }
-  </style>
+.produtos-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:20px;
+  margin-top:30px;
+}
+.produto{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:6px;
+  padding:10px;
+  text-align:center;
+}
+.produto img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:4px;
+}
+.produto h4{ margin:10px 0 5px; font-weight:normal; }
+.produto span{ font-size:14px; color:#777; }
+.produto button{
+  background:#c0392b;
+  margin-top:10px;
+}
+</style>
 </head>
 
 <body>
@@ -115,99 +92,118 @@
 
 <main>
 
-  <!-- VENDAS -->
-  <section id="vendas" class="tab active">
-    <h2>Pedidos</h2>
-    <p class="info">Os pedidos aparecerão aqui automaticamente.</p>
-  </section>
+<section id="vendas" class="tab active">
+  <h2>Pedidos</h2>
+  <p>Pedidos aparecerão aqui.</p>
+</section>
 
-  <!-- PRODUTOS -->
-  <section id="produtos" class="tab">
-    <h2>Produtos</h2>
-    <p class="info">Cadastro e edição de produtos (próximo passo).</p>
-  </section>
+<section id="produtos" class="tab">
+  <h2>Cadastrar Produto</h2>
 
-  <!-- CONFIG -->
-  <section id="config" class="tab">
-    <h2>Configurações da Loja</h2>
+  <label>Nome do Produto
+    <input id="pNome">
+  </label>
 
-    <label>
-      Nome da Loja
-      <input id="cfgNome" placeholder="Ex: Marcinha Semijoias" />
-    </label>
+  <label>Descrição
+    <textarea id="pDesc"></textarea>
+  </label>
 
-    <label>
-      WhatsApp (somente números)
-      <input id="cfgWhats" placeholder="5599999999999" />
-    </label>
+  <label>Preço (R$)
+    <input id="pPreco" type="number" step="0.01">
+  </label>
 
-    <label>
-      Desconto PIX (%)
-      <input id="cfgPix" type="number" placeholder="5" />
-    </label>
+  <label>Estoque
+    <input id="pEstoque" type="number">
+  </label>
 
-    <label>
-      Estoque mínimo (alerta)
-      <input id="cfgEstoque" type="number" placeholder="3" />
-    </label>
+  <label>Imagem do Produto
+    <input id="pImagem" type="file" accept="image/*">
+  </label>
 
-    <button onclick="salvarConfig()">Salvar Configurações</button>
+  <button onclick="salvarProduto()">Salvar Produto</button>
 
-    <p class="info" id="status"></p>
-  </section>
+  <h2 style="margin-top:50px">Produtos Cadastrados</h2>
+  <div class="produtos-grid" id="listaProdutos"></div>
+</section>
+
+<section id="config" class="tab">
+  <h2>Configurações</h2>
+  <p>Configurações já implementadas.</p>
+</section>
 
 </main>
 
-<!-- FIREBASE -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
-  const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_DOMINIO.firebaseapp.com",
-    projectId: "SEU_PROJECT_ID",
-    storageBucket: "SEU_BUCKET.appspot.com",
-    messagingSenderId: "SEU_SENDER_ID",
-    appId: "SEU_APP_ID"
-  };
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_DOMINIO.firebaseapp.com",
+  projectId: "SEU_PROJECT_ID",
+  storageBucket: "SEU_BUCKET.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-  window.showTab = function(tab){
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+window.showTab = function(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  event.target.classList.add('active');
+};
 
-    document.getElementById(tab).classList.add('active');
-    event.target.classList.add('active');
+async function listarProdutos(){
+  listaProdutos.innerHTML = "";
+  const snap = await getDocs(collection(db,"produtos"));
+  snap.forEach(docu=>{
+    const p = docu.data();
+    listaProdutos.innerHTML += `
+      <div class="produto">
+        <img src="${p.imagem}">
+        <h4>${p.nome}</h4>
+        <span>R$ ${p.preco.toFixed(2)}</span>
+        <button onclick="excluirProduto('${docu.id}')">Excluir</button>
+      </div>
+    `;
+  });
+}
+
+window.salvarProduto = async function(){
+  const file = pImagem.files[0];
+  if(!file) return alert("Selecione uma imagem");
+
+  const imgRef = ref(storage, "produtos/"+Date.now()+"-"+file.name);
+  await uploadBytes(imgRef,file);
+  const imgURL = await getDownloadURL(imgRef);
+
+  await addDoc(collection(db,"produtos"),{
+    nome:pNome.value,
+    descricao:pDesc.value,
+    preco:Number(pPreco.value),
+    estoque:Number(pEstoque.value),
+    imagem:imgURL,
+    criadoEm:new Date()
+  });
+
+  pNome.value=pDesc.value=pPreco.value=pEstoque.value="";
+  pImagem.value="";
+  listarProdutos();
+};
+
+window.excluirProduto = async function(id){
+  if(confirm("Excluir produto?")){
+    await deleteDoc(doc(db,"produtos",id));
+    listarProdutos();
   }
+};
 
-  async function carregarConfig(){
-    const ref = doc(db, "config", "loja");
-    const snap = await getDoc(ref);
-
-    if(snap.exists()){
-      const c = snap.data();
-      cfgNome.value = c.nome || "";
-      cfgWhats.value = c.whatsapp || "";
-      cfgPix.value = c.descontoPix || "";
-      cfgEstoque.value = c.estoqueMin || "";
-    }
-  }
-
-  window.salvarConfig = async function(){
-    await setDoc(doc(db, "config", "loja"), {
-      nome: cfgNome.value,
-      whatsapp: cfgWhats.value,
-      descontoPix: Number(cfgPix.value),
-      estoqueMin: Number(cfgEstoque.value)
-    });
-
-    status.innerText = "Configurações salvas com sucesso ✔";
-  }
-
-  carregarConfig();
+listarProdutos();
 </script>
 
 </body>
