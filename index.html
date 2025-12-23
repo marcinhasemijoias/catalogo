@@ -10,20 +10,49 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
+        .cart-sidebar { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
+        .cart-sidebar.open { transform: translateX(0); }
     </style>
 </head>
-<body>
+<body class="relative">
+
+    <button onclick="toggleCart()" class="fixed bottom-6 right-6 z-50 bg-black text-white p-4 rounded-full shadow-2xl flex items-center gap-2 hover:bg-[#A68966] transition">
+        <span class="text-[10px] font-bold uppercase tracking-widest">Carrinho</span>
+        <span id="cartCount" class="bg-white text-black text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+    </button>
+
+    <div id="cartSidebar" class="cart-sidebar fixed top-0 right-0 w-full md:w-96 h-full bg-white z-[60] shadow-2xl p-6 flex flex-col">
+        <div class="flex justify-between items-center border-b pb-4">
+            <h2 class="font-serif text-lg uppercase tracking-widest">Seu Carrinho</h2>
+            <button onclick="toggleCart()" class="text-gray-400 uppercase text-[10px] font-bold">Fechar</button>
+        </div>
+        
+        <div id="cartItems" class="flex-1 overflow-y-auto py-4 space-y-4">
+            </div>
+
+        <div class="border-t pt-4 space-y-2">
+            <div class="flex justify-between text-xs uppercase font-bold">
+                <span>Total:</span>
+                <span id="cartTotal">R$ 0,00</span>
+            </div>
+            <p id="cartPixMsg" class="text-[10px] text-green-600 uppercase font-bold"></p>
+            <button onclick="sendWhatsApp()" class="w-full bg-black text-white py-4 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-[#A68966]">Finalizar no WhatsApp</button>
+        </div>
+    </div>
+
+    <div id="cartOverlay" onclick="toggleCart()" class="fixed inset-0 bg-black/20 z-[55] hidden"></div>
 
     <header class="py-10 text-center border-b bg-white">
         <h1 class="font-serif text-3xl uppercase tracking-[0.2em] text-[#A68966]">Marcinha Semijoias</h1>
         <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-2">Luxo e Sofisticação</p>
     </header>
 
-    <main id="catalog-container" class="max-w-6xl mx-auto p-6 space-y-12">
-        <p class="text-center text-gray-400 py-20">Carregando catálogo...</p>
+    <main id="catalog-container" class="max-w-6xl mx-auto p-6 space-y-12 mb-20">
+        <p class="text-center text-gray-400 py-20 italic">Sincronizando estoque...</p>
     </main>
 
     <script>
+        // CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
             authDomain: "marcinha-semijoias.firebaseapp.com",
@@ -36,31 +65,28 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Variáveis de configuração globais
+        let cart = [];
         let pixDiscount = 0;
         let maxInstallments = 1;
+        let storePhone = "";
 
-        // 1. Primeiro, buscar as configurações da loja
-        db.ref('settings').on('value', snapshot => {
-            const settings = snapshot.val();
-            if (settings) {
-                pixDiscount = parseFloat(settings.pixDiscount) || 0;
-                maxInstallments = parseInt(settings.installments) || 1;
+        // BUSCAR CONFIGURAÇÕES
+        db.ref('settings').on('value', s => {
+            const v = s.val();
+            if(v) {
+                pixDiscount = parseFloat(v.pixDiscount) || 0;
+                maxInstallments = parseInt(v.installments) || 1;
+                storePhone = v.phone || "";
             }
-            renderCatalog(); // Re-renderiza quando as configs mudam
+            renderCatalog();
         });
 
-        // 2. Buscar produtos e renderizar
         function renderCatalog() {
-            db.ref('products').on('value', snapshot => {
-                const data = snapshot.val();
+            db.ref('products').on('value', snap => {
+                const data = snap.val();
                 const container = document.getElementById('catalog-container');
                 container.innerHTML = "";
-
-                if (!data) {
-                    container.innerHTML = "<p class='text-center'>Nenhum produto cadastrado.</p>";
-                    return;
-                }
+                if(!data) return;
 
                 const categories = {};
                 Object.values(data).forEach(p => {
@@ -68,33 +94,26 @@
                     categories[p.category].push(p);
                 });
 
-                Object.keys(categories).forEach(catName => {
+                Object.keys(categories).forEach(cat => {
                     const section = document.createElement('section');
                     section.innerHTML = `
-                        <h2 class="font-serif text-sm uppercase tracking-widest text-[#A68966] mb-8 border-b pb-2">${catName}</h2>
+                        <h2 class="font-serif text-sm uppercase tracking-widest text-[#A68966] mb-8 border-b pb-2">${cat}</h2>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10">
-                            ${categories[catName].map(p => {
-                                // Cálculos de preço
-                                const pricePix = p.price * (1 - (pixDiscount / 100));
-                                const installmentValue = p.price / maxInstallments;
-
+                            ${categories[cat].map(p => {
+                                const pricePix = p.price * (1 - (pixDiscount/100));
                                 return `
-                                    <div class="group">
-                                        <div class="relative overflow-hidden bg-gray-100 aspect-[3/4]">
-                                            <img src="${p.image}" class="w-full h-full object-cover">
+                                    <div class="text-center group">
+                                        <div class="aspect-[3/4] bg-gray-100 overflow-hidden mb-4">
+                                            <img src="${p.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                                         </div>
-                                        <div class="mt-4 text-center">
-                                            <p class="text-[8px] text-gray-400 uppercase font-mono">${p.sku}</p>
-                                            <h3 class="text-[10px] font-bold uppercase tracking-tight mt-1 h-8 overflow-hidden px-2">${p.name}</h3>
-                                            
-                                            <div class="mt-2">
-                                                <p class="text-xs font-bold">R$ ${p.price.toFixed(2)}</p>
-                                                <p class="text-[9px] text-green-600 font-bold uppercase mt-1">R$ ${pricePix.toFixed(2)} NO PIX</p>
-                                                <p class="text-[9px] text-gray-400 uppercase mt-0.5">${maxInstallments}X DE R$ ${installmentValue.toFixed(2)}</p>
-                                            </div>
-
-                                            <button class="mt-4 w-full border border-black py-2 text-[9px] uppercase font-bold hover:bg-black hover:text-white transition">Adicionar</button>
+                                        <p class="text-[8px] text-gray-400 font-mono uppercase">${p.sku}</p>
+                                        <h3 class="text-[10px] font-bold uppercase mt-1 h-8 overflow-hidden px-2">${p.name}</h3>
+                                        <div class="mt-2 space-y-0.5">
+                                            <p class="text-xs font-bold">R$ ${p.price.toFixed(2)}</p>
+                                            <p class="text-[9px] text-green-600 font-bold uppercase">R$ ${pricePix.toFixed(2)} NO PIX</p>
+                                            <p class="text-[8px] text-gray-400 uppercase">${maxInstallments}X DE R$ ${(p.price/maxInstallments).toFixed(2)}</p>
                                         </div>
+                                        <button onclick="addToCart('${p.sku}', '${p.name}', ${p.price})" class="mt-4 w-full border border-black py-2 text-[9px] font-bold uppercase hover:bg-black hover:text-white transition">Adicionar</button>
                                     </div>
                                 `;
                             }).join('')}
@@ -103,6 +122,66 @@
                     container.appendChild(section);
                 });
             });
+        }
+
+        // FUNÇÕES DO CARRINHO
+        function toggleCart() {
+            document.getElementById('cartSidebar').classList.toggle('open');
+            document.getElementById('cartOverlay').classList.toggle('hidden');
+        }
+
+        function addToCart(sku, name, price) {
+            cart.push({sku, name, price});
+            updateCartUI();
+            if(!document.getElementById('cartSidebar').classList.contains('open')) toggleCart();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cartItems');
+            const count = document.getElementById('cartCount');
+            const totalEl = document.getElementById('cartTotal');
+            const pixMsg = document.getElementById('cartPixMsg');
+            
+            count.innerText = cart.length;
+            list.innerHTML = cart.map((item, i) => `
+                <div class="flex justify-between items-center text-[11px] border-b pb-2">
+                    <div class="flex-1">
+                        <p class="font-bold uppercase">${item.name}</p>
+                        <p class="text-gray-400 text-[9px]">${item.sku} - R$ ${item.price.toFixed(2)}</p>
+                    </div>
+                    <button onclick="removeFromCart(${i})" class="text-red-300 ml-4 italic">Remover</button>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const totalPix = total * (1 - (pixDiscount/100));
+            
+            totalEl.innerText = `R$ ${total.toFixed(2)}`;
+            pixMsg.innerText = total > 0 ? `OU R$ ${totalPix.toFixed(2)} NO PIX (-${pixDiscount}%)` : "";
+        }
+
+        function sendWhatsApp() {
+            if(cart.length === 0) return alert("Carrinho vazio!");
+            
+            let text = `*NOVO PEDIDO - MARCINHA SEMIJOIAS*\n\n`;
+            cart.forEach(item => {
+                text += `• ${item.name} (${item.sku}) - R$ ${item.price.toFixed(2)}\n`;
+            });
+            
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const totalPix = total * (1 - (pixDiscount/100));
+            
+            text += `\n*TOTAL: R$ ${total.toFixed(2)}*`;
+            text += `\n*PAGAMENTO VIA PIX: R$ ${totalPix.toFixed(2)}*`;
+            text += `\n\n_Aguardo confirmação de estoque e frete._`;
+
+            const encoded = encodeURIComponent(text);
+            window.open(`https://wa.me/${storePhone}?text=${encoded}`);
         }
     </script>
 </body>
