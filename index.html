@@ -3,32 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marcinha Semijoias | Catálogo</title>
+    <title>Admin | Marcinha Semijoias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #FDFBF7; }
-        .category-title::after { content: ''; display: block; width: 50px; height: 2px; background: #A68966; margin-top: 8px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Cinzel:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F8F6F2; }
+        .font-serif { font-family: 'Cinzel', serif; }
     </style>
 </head>
 <body>
 
-    <header class="py-12 text-center border-b border-[#E5E1DB] bg-white">
-        <h1 class="font-serif text-4xl tracking-widest uppercase text-[#1a1a1a]">Marcinha Semijoias</h1>
-        <p class="text-[10px] tracking-[0.3em] uppercase text-[#8C857B] mt-2">Luxo e Sofisticação</p>
+    <header class="bg-white border-b border-[#E5E1DB] py-6 px-8 flex justify-between items-center">
+        <div>
+            <h1 class="font-serif text-xl tracking-[0.2em] text-[#A68966]">Marcinha Semijoias</h1>
+            <p class="text-[9px] uppercase tracking-widest text-gray-400">Painel de Gestão Exclusivo</p>
+        </div>
+        <nav class="flex gap-6 text-[10px] uppercase font-bold tracking-widest">
+            <a href="#produtos" class="hover:text-[#A68966]">Produtos</a>
+            <a href="#vendas" class="text-[#A68966]">Vendas</a>
+            <a href="#config" class="hover:text-[#A68966]">Configurações</a>
+        </nav>
     </header>
 
-    <a href="cart.html" class="fixed bottom-6 right-6 z-50 bg-black text-white p-4 rounded-full shadow-2xl flex items-center gap-2 hover:scale-110 transition-transform active:scale-95">
-        <span class="text-[10px] uppercase tracking-widest font-bold">Carrinho</span>
-        <span id="cartCount" class="bg-[#A68966] text-[10px] px-2 py-1 rounded-full text-white">0</span>
-    </a>
+    <main class="max-w-5xl mx-auto p-8">
+        
+        <section id="vendas" class="space-y-8">
+            <div class="flex justify-between items-end border-b border-[#A68966] pb-4">
+                <div>
+                    <h2 class="font-serif text-2xl text-[#1a1a1a]">Histórico de Pedidos</h2>
+                    <p class="text-[10px] uppercase text-gray-400 mt-1">Gestão de vendas e emissão de romaneios</p>
+                </div>
+                </div>
 
-    <main class="max-w-7xl mx-auto p-6 py-12 space-y-20" id="catalogContainer">
-        <div class="text-center py-20 text-gray-400 animate-pulse uppercase text-xs tracking-widest">
-            Sincronizando Coleções...
-        </div>
+            <div id="ordersList" class="grid gap-6">
+                </div>
+        </section>
+
     </main>
 
     <script>
@@ -44,102 +56,123 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let settings = { pixDiscount: 0, installments: 1 };
-
-        // 1. Carrega as Configurações primeiro
-        db.ref('settings').on('value', s => {
-            if (s.val()) settings = s.val();
-            renderCatalog(); // Recarrega o catálogo se o desconto mudar no painel
+        // 1. CARREGAR PEDIDOS E GERAR BOTÕES INDIVIDUAIS
+        db.ref('orders').on('value', snap => {
+            const list = document.getElementById("ordersList");
+            const data = snap.val();
+            list.innerHTML = "";
+            
+            if (data) {
+                Object.keys(data).reverse().forEach(id => {
+                    const o = data[id];
+                    list.innerHTML += `
+                        <div class="bg-white border border-[#E5E1DB] p-6 rounded-sm shadow-sm hover:border-[#A68966] transition-colors">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <span class="text-[9px] bg-[#FDFBF7] text-[#A68966] border border-[#A68966] px-2 py-0.5 rounded-full font-bold">${o.date}</span>
+                                    <h4 class="text-sm font-bold uppercase mt-2 tracking-tight">${o.customerName}</h4>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button onclick="printOrder('${id}')" class="text-[10px] uppercase font-bold tracking-widest bg-black text-white px-4 py-2 hover:bg-[#A68966] transition">Imprimir Romaneio</button>
+                                    <button onclick="deleteOrder('${id}')" class="text-[10px] uppercase font-bold text-red-400 hover:text-red-600 transition">Excluir</button>
+                                </div>
+                            </div>
+                            
+                            <div class="text-[11px] text-gray-600 bg-[#FDFBF7] p-4 italic leading-relaxed mb-4 border-l-2 border-[#A68966]">
+                                ${o.items.replace(/\n/g, '<br>')}
+                            </div>
+                            
+                            <div class="text-right border-t pt-4">
+                                <span class="text-[9px] uppercase text-gray-400 block">Total do Pedido</span>
+                                <span class="text-lg font-bold text-black">R$ ${o.total}</span>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                list.innerHTML = "<p class='text-center py-20 text-gray-400 uppercase text-[10px] tracking-[0.2em]'>Nenhum pedido registrado no momento.</p>";
+            }
         });
 
-        // 2. Função de Renderização
-        function renderCatalog() {
-            db.ref('products').on('value', (snapshot) => {
-                const data = snapshot.val();
-                const container = document.getElementById("catalogContainer");
-                container.innerHTML = "";
+        // 2. FUNÇÃO PARA EXCLUIR INDIVIDUALMENTE
+        function deleteOrder(id) {
+            if(confirm("Deseja remover este registro de venda permanentemente?")) {
+                db.ref('orders/' + id).remove();
+            }
+        }
 
-                if (!data) {
-                    container.innerHTML = "<p class='text-center text-gray-400'>Nenhum produto disponível no momento.</p>";
-                    return;
-                }
+        // 3. FUNÇÃO DO ROMANEIO DE LUXO (PDF/IMPRESSÃO)
+        function printOrder(id) {
+            db.ref('orders/' + id).once('value', snap => {
+                const o = snap.val();
+                const win = window.open('', '', 'height=800,width=850');
+                
+                win.document.write(`
+                    <html>
+                    <head>
+                        <title>Romaneio Marcinha Semijoias</title>
+                        <style>
+                            @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+                            body { font-family: 'Inter', sans-serif; padding: 0; margin: 0; color: #1a1a1a; background: #fff; }
+                            .page { padding: 50px; border: 20px solid #FDFBF7; min-height: 90vh; position: relative; }
+                            .gold-border { border: 1px solid #A68966; padding: 40px; height: 100%; }
+                            
+                            .header { text-align: center; margin-bottom: 50px; }
+                            .header h1 { font-family: 'Cinzel', serif; font-size: 28px; margin: 0; letter-spacing: 6px; color: #A68966; }
+                            .header p { font-size: 9px; text-transform: uppercase; letter-spacing: 4px; color: #888; margin-top: 10px; }
+                            
+                            .info-grid { display: flex; justify-content: space-between; margin-bottom: 40px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+                            
+                            .items-title { font-family: 'Cinzel', serif; font-size: 12px; color: #A68966; border-bottom: 1px solid #A68966; padding-bottom: 5px; margin-bottom: 20px; display: inline-block; }
+                            .items-list { font-size: 13px; line-height: 2; color: #333; margin-bottom: 40px; white-space: pre-wrap; }
+                            
+                            .total-box { background: #FDFBF7; padding: 20px; text-align: right; border-radius: 4px; }
+                            .total-box span { font-size: 10px; uppercase; color: #A68966; font-weight: bold; display: block; margin-bottom: 5px; }
+                            .total-box strong { font-size: 24px; font-family: 'Cinzel', serif; color: #1a1a1a; }
+                            
+                            .footer-msg { text-align: center; margin-top: 60px; font-size: 10px; color: #aaa; font-style: italic; }
+                            .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
+                            .sig-block { width: 220px; text-align: center; border-top: 1px solid #A68966; padding-top: 10px; font-size: 9px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; color: #A68966; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="page">
+                            <div class="gold-border">
+                                <div class="header">
+                                    <h1>Marcinha Semijoias</h1>
+                                    <p>Certificado de Pedido & Romaneio</p>
+                                </div>
 
-                // Agrupamento Automático por Categoria
-                const categories = {};
-                Object.keys(data).forEach(id => {
-                    const p = data[id];
-                    if (!categories[p.category]) categories[p.category] = [];
-                    categories[p.category].push({ id, ...p });
-                });
+                                <div class="info-grid">
+                                    <span><strong>Cliente:</strong> ${o.customerName}</span>
+                                    <span><strong>Data:</strong> ${o.date}</span>
+                                </div>
 
-                // Criação das Seções
-                Object.keys(categories).sort().forEach(cat => {
-                    const section = document.createElement("section");
-                    section.innerHTML = `
-                        <h2 class="font-serif text-2xl uppercase tracking-widest mb-10 text-[#A68966] category-title">${cat}</h2>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-12">
-                            ${categories[cat].map(p => {
-                                const pixPrice = p.price * (1 - (settings.pixDiscount / 100));
-                                const instValue = p.price / (settings.installments || 1);
-                                
-                                return `
-                                <div class="group">
-                                    <div class="relative aspect-[3/4] overflow-hidden bg-[#F2F2F2] mb-4 shadow-sm">
-                                        <img src="${p.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" loading="lazy">
-                                        ${p.stock <= 0 ? '<div class="absolute inset-0 bg-white/70 flex items-center justify-center text-[10px] uppercase font-bold tracking-widest text-black">Esgotado</div>' : ''}
-                                    </div>
-                                    <div class="text-center px-2">
-                                        <h3 class="text-[9px] text-gray-400 uppercase font-mono tracking-tighter">${p.sku}</h3>
-                                        <h4 class="text-[11px] uppercase font-bold leading-tight h-8 flex items-center justify-center mb-1 text-gray-800">${p.name}</h4>
-                                        
-                                        <div class="space-y-1">
-                                            <p class="text-sm font-bold text-gray-900">R$ ${p.price.toFixed(2)}</p>
-                                            <div class="bg-green-50 py-1 rounded">
-                                                <p class="text-[10px] text-green-700 font-bold uppercase italic">R$ ${pixPrice.toFixed(2)} no PIX</p>
-                                            </div>
-                                            <p class="text-[9px] text-gray-400 uppercase tracking-tighter">
-                                                ou ${(settings.installments || 1)}x de R$ ${instValue.toFixed(2)}
-                                            </p>
-                                        </div>
+                                <div class="items-title">Descrição das Peças</div>
+                                <div class="items-list">${o.items}</div>
 
-                                        <button onclick="addToCart('${p.id}', '${p.name}', ${p.price}, '${p.image}', '${p.sku}')" 
-                                                class="mt-5 w-full text-[10px] uppercase font-bold border border-black py-3 hover:bg-black hover:text-white transition-all duration-300 tracking-widest">
-                                            Adicionar ao Carrinho
-                                        </button>
-                                    </div>
-                                </div>`;
-                            }).join('')}
-                        </div>`;
-                    container.appendChild(section);
-                });
+                                <div class="total-box">
+                                    <span>Investimento Total</span>
+                                    <strong>R$ ${o.total}</strong>
+                                </div>
+
+                                <div class="signatures">
+                                    <div class="sig-block">Assinatura da Cliente</div>
+                                    <div class="sig-block">Marcinha Semijoias</div>
+                                </div>
+
+                                <div class="footer-msg">
+                                    "Semijoias banhadas a ouro com design exclusivo. <br> 
+                                    Agradecemos por escolher a sofisticação da Marcinha Semijoias."
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+                setTimeout(() => { win.print(); win.close(); }, 500);
             });
         }
-
-        // 3. Funções do Carrinho
-        function addToCart(id, name, price, image, sku) {
-            let cart = JSON.parse(localStorage.getItem("cart")) || [];
-            cart.push({ id, name, price, image, sku, qty: 1 });
-            localStorage.setItem("cart", JSON.stringify(cart));
-            updateCartCount();
-            
-            // Feedback visual em vez de alert chato
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Adicionado! ✓";
-            btn.classList.add("bg-green-600", "border-green-600", "text-white");
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.classList.remove("bg-green-600", "border-green-600", "text-white");
-            }, 1500);
-        }
-
-        function updateCartCount() {
-            const cart = JSON.parse(localStorage.getItem("cart")) || [];
-            document.getElementById("cartCount").innerText = cart.length;
-        }
-
-        // Inicia o contador ao carregar
-        updateCartCount();
     </script>
 </body>
 </html>
