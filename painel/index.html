@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
@@ -80,7 +79,7 @@ SALVAR
 SALVAR PRODUTO
 </button>
 
-<div id="listaProdutos" class="grid sm:grid-cols-2 gap-6"></div>
+<div id="listaProdutos" class="grid sm:grid-cols-2 gap-6 mt-6"></div>
 </section>
 
 <!-- PEDIDOS -->
@@ -158,49 +157,46 @@ const btnSalvarProduto = document.getElementById('btnSalvarProduto');
 
 let editarId = null;
 
+/* SALVAR PRODUTO */
 function salvarProduto() {
-  const img = pImagem.files[0];
+  const imgFile = pImagem.files[0];
 
-  // Se for novo produto, imagem é obrigatória
-  if (!editarId && !img) return alert('Imagem obrigatória');
+  if(!pNome.value.trim() || !pPreco.value || (!editarId && !imgFile)) {
+    return alert('Preencha nome, preço e selecione uma imagem!');
+  }
 
-  const salvarNoFirebase = (url) => {
+  const enviarParaFirebase = (url) => {
     const produto = {
-      name: pNome.value,
-      sku: pSku.value,
+      name: pNome.value.trim(),
+      sku: pSku.value.trim(),
       price: parseFloat(pPreco.value),
-      stock: parseInt(pEstoque.value),
+      stock: parseInt(pEstoque.value) || 0
     };
-    if (url) produto.image = url;
+    if(url) produto.image = url;
 
-    if (editarId) {
-      db.ref('products/' + editarId).update(produto)
-        .then(() => {
-          alert('Produto atualizado com sucesso!');
-          resetFormProduto();
-        }).catch(err => alert('Erro ao atualizar produto: ' + err));
-    } else {
-      db.ref('products').push(produto)
-        .then(() => {
-          alert('Produto salvo com sucesso!');
-          resetFormProduto();
-        }).catch(err => alert('Erro ao salvar produto: ' + err));
-    }
+    const refProduto = editarId ? db.ref('products/' + editarId) : db.ref('products');
+    const salvar = editarId ? refProduto.update(produto) : refProduto.push(produto);
+
+    salvar
+      .then(() => {
+        alert(editarId ? 'Produto atualizado!' : 'Produto salvo!');
+        resetFormProduto();
+      })
+      .catch(err => alert('Erro ao salvar produto: ' + err));
   };
 
-  if (img) {
-    const ref = storage.ref('products/' + Date.now() + '_' + img.name);
-    ref.put(img)
-      .then(() => ref.getDownloadURL())
-      .then(url => salvarNoFirebase(url))
+  if(imgFile){
+    const storageRef = storage.ref('products/' + Date.now() + '_' + imgFile.name);
+    storageRef.put(imgFile)
+      .then(snapshot => snapshot.ref.getDownloadURL())
+      .then(url => enviarParaFirebase(url))
       .catch(err => alert('Erro ao enviar imagem: ' + err));
   } else {
-    // Se for edição e sem nova imagem
-    salvarNoFirebase();
+    enviarParaFirebase();
   }
 }
 
-function resetFormProduto() {
+function resetFormProduto(){
   pNome.value = '';
   pSku.value = '';
   pPreco.value = '';
@@ -210,10 +206,9 @@ function resetFormProduto() {
   btnSalvarProduto.textContent = 'SALVAR PRODUTO';
 }
 
-// Vincula botão
 btnSalvarProduto.onclick = salvarProduto;
 
-// LISTAR PRODUTOS
+/* LISTAR PRODUTOS */
 db.ref('products').on('value', snap => {
   listaProdutos.innerHTML = '';
   snap.forEach(s => {
@@ -236,7 +231,7 @@ db.ref('products').on('value', snap => {
 function excluirProduto(id) {
   if (!confirm('Deseja excluir este produto?')) return;
   db.ref('products/' + id).remove()
-    .then(() => alert('Produto excluído com sucesso!'))
+    .then(() => alert('Produto excluído!'))
     .catch(err => alert('Erro ao excluir: ' + err));
 }
 
@@ -248,10 +243,10 @@ function editarProduto(id) {
       pSku.value = p.sku;
       pPreco.value = p.price;
       pEstoque.value = p.stock;
-      // imagem não será preenchida automaticamente
       editarId = id;
       btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
-    }).catch(err => alert('Erro ao carregar produto: ' + err));
+    })
+    .catch(err => alert('Erro ao carregar produto: ' + err));
 }
 
 /* PEDIDOS */
@@ -282,14 +277,8 @@ db.ref('orders').on('value',snap=>{
         <strong>R$ ${o.total.toFixed(2)}</strong>
 
         <div class="flex gap-4 text-xs">
-          <button onclick='imprimirRomaneio(${JSON.stringify(o)})' class="underline">
-            Romaneio
-          </button>
-
-          <!-- ✅ NOVO BOTÃO EXCLUIR -->
-          <button onclick="excluirPedido('${id}')" class="text-red-600 underline">
-            Excluir
-          </button>
+          <button onclick='imprimirRomaneio(${JSON.stringify(o)})' class="underline">Romaneio</button>
+          <button onclick="excluirPedido('${id}')" class="text-red-600 underline">Excluir</button>
         </div>
       </div>
     </div>`;
@@ -299,7 +288,7 @@ db.ref('orders').on('value',snap=>{
 function excluirPedido(id){
   if(!confirm('Deseja excluir este pedido?')) return;
   db.ref('orders/'+id).remove()
-    .then(()=>alert('Pedido excluído com sucesso'));
+    .then(()=>alert('Pedido excluído!'));
 }
 
 /* ROMANEIO */
