@@ -6,30 +6,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
 body{background:#F8F6F2}
 .font-serif{font-family:'Cinzel',serif}
+.price{color:#A68966;font-weight:600;font-size:18px}
 </style>
 </head>
 
 <body>
 
 <header class="bg-white p-6 border-b text-center">
-  <h1 class="font-serif text-2xl tracking-widest text-[#A68966]">
-    Marcinha Semijoias
-  </h1>
+<h1 class="font-serif text-2xl tracking-widest text-[#A68966]">
+Marcinha Semijoias
+</h1>
 </header>
 
 <main class="max-w-6xl mx-auto p-6 grid md:grid-cols-3 gap-8">
 
-<!-- PRODUTOS -->
-<section class="md:col-span-2 grid sm:grid-cols-2 gap-6" id="products"></section>
+<section id="products" class="md:col-span-2 grid sm:grid-cols-2 gap-6"></section>
 
-<!-- CARRINHO -->
 <aside class="bg-white border p-6 space-y-6">
 <h2 class="font-serif text-lg">Carrinho</h2>
 
@@ -37,32 +35,32 @@ body{background:#F8F6F2}
 
 <hr>
 
-<div class="space-y-2 text-sm">
-  <p>Subtotal: R$ <span id="subtotal">0.00</span></p>
-  <p id="pixDiscount" class="hidden text-green-600"></p>
-  <p class="font-bold">Total: R$ <span id="total">0.00</span></p>
+<div class="text-sm space-y-1">
+<p>Subtotal: R$ <span id="subtotal">0.00</span></p>
+<p id="pixDiscount" class="text-green-600 hidden"></p>
+<p class="font-bold">Total: R$ <span id="total">0.00</span></p>
 </div>
 
 <hr>
 
-<h3 class="text-sm uppercase tracking-widest">Pagamento</h3>
-
 <div class="space-y-3">
-<label class="flex items-center gap-3 cursor-pointer">
-  <input type="radio" name="pay" value="pix" checked>
-  <img id="iconPix" class="h-6 hidden">
-  <span>PIX</span>
+<label class="flex items-center gap-3">
+<input type="radio" name="pay" value="pix" checked>
+<img id="iconPix" class="h-6 hidden">
+<span>PIX</span>
 </label>
 
-<label class="flex items-center gap-3 cursor-pointer">
-  <input type="radio" name="pay" value="card">
-  <img id="iconCard" class="h-6 hidden">
-  <span>Cartão</span>
+<label class="flex items-center gap-3">
+<input type="radio" name="pay" value="card">
+<img id="iconCard" class="h-6 hidden">
+<span>Cartão</span>
 </label>
+
+<p id="parcelasInfo" class="text-xs text-gray-500"></p>
 </div>
 
-<button onclick="checkout()" class="w-full bg-black text-white py-3 mt-4 uppercase tracking-widest text-xs">
-Finalizar Pedido
+<button onclick="checkout()" class="w-full bg-black text-white py-3 uppercase tracking-widest text-xs">
+Finalizar no WhatsApp
 </button>
 </aside>
 
@@ -70,123 +68,112 @@ Finalizar Pedido
 
 <script>
 firebase.initializeApp({
-  apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-  authDomain: "marcinha-semijoias.firebaseapp.com",
-  databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias"
+ apiKey:"AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+ databaseURL:"https://marcinha-semijoias-default-rtdb.firebaseio.com",
+ projectId:"marcinha-semijoias"
 });
 
-const db = firebase.database();
-let cart=[];
-let settings={};
+const db=firebase.database();
+let cart=[],settings={};
 
-/* LOAD SETTINGS */
+const subtotalEl=document.getElementById('subtotal');
+const totalEl=document.getElementById('total');
+const pixDiscount=document.getElementById('pixDiscount');
+
 db.ref('settings').once('value').then(s=>{
-  settings=s.val()||{};
-  if(settings.iconPix){iconPix.src=settings.iconPix;iconPix.classList.remove('hidden')}
-  if(settings.iconCard){iconCard.src=settings.iconCard;iconCard.classList.remove('hidden')}
+ settings=s.val()||{};
+ if(settings.iconPix){iconPix.src=settings.iconPix;iconPix.classList.remove('hidden')}
+ if(settings.iconCard){iconCard.src=settings.iconCard;iconCard.classList.remove('hidden')}
+ if(settings.parcelas)parcelasInfo.innerText=`Até ${settings.parcelas}x no cartão`;
 });
 
-/* LOAD PRODUCTS */
 db.ref('products').on('value',snap=>{
-  products.innerHTML='';
-  snap.forEach(s=>{
-    const p=s.val();
-    p.id=s.key;
-    products.innerHTML+=`
-    <div class="bg-white border p-4 space-y-3">
-      <img src="${p.image}" class="w-full h-48 object-cover">
-      <h3 class="font-serif">${p.name}</h3>
-      <p>R$ ${p.price.toFixed(2)}</p>
-      <button onclick='addCart(${JSON.stringify(p)})'
-      class="w-full border py-2 text-xs uppercase">Adicionar</button>
-    </div>`;
-  });
+ products.innerHTML='';
+ snap.forEach(s=>{
+  const p=s.val(); p.id=s.key;
+  products.innerHTML+=`
+  <div class="bg-white border p-4 space-y-3">
+   <img src="${p.image}" class="w-full h-48 object-cover">
+   <h3 class="font-serif">${p.name}</h3>
+   <p class="price">R$ ${p.price.toFixed(2)}</p>
+   <button onclick='addCart(${JSON.stringify(p)})'
+   class="w-full border py-2 text-xs uppercase">Adicionar</button>
+  </div>`;
+ });
 });
 
-/* CART */
 function addCart(p){
-  const item=cart.find(i=>i.id===p.id);
-  if(item)item.qty++;
-  else cart.push({...p,qty:1});
-  renderCart();
+ const i=cart.find(x=>x.id===p.id);
+ i?i.qty++:cart.push({...p,qty:1});
+ renderCart();
 }
 
-function changeQty(id,delta){
-  const item=cart.find(i=>i.id===id);
-  item.qty+=delta;
-  if(item.qty<=0)cart=cart.filter(i=>i.id!==id);
-  renderCart();
+function changeQty(id,d){
+ const i=cart.find(x=>x.id===id);
+ i.qty+=d;
+ if(i.qty<=0)cart=cart.filter(x=>x.id!==id);
+ renderCart();
 }
 
 function renderCart(){
-  cartItems.innerHTML='';
-  let subtotal=0;
+ cartItems.innerHTML='';
+ let subtotal=0;
+ cart.forEach(i=>{
+  subtotal+=i.price*i.qty;
+  cartItems.innerHTML+=`
+  <div class="flex justify-between">
+   <div>
+    <strong>${i.name}</strong>
+    <div class="flex gap-2 mt-1">
+     <button onclick="changeQty('${i.id}',-1)">➖</button>
+     <span>${i.qty}</span>
+     <button onclick="changeQty('${i.id}',1)">➕</button>
+    </div>
+   </div>
+   <span>R$ ${(i.price*i.qty).toFixed(2)}</span>
+  </div>`;
+ });
 
-  cart.forEach(i=>{
-    subtotal+=i.price*i.qty;
-    cartItems.innerHTML+=`
-    <div class="flex justify-between items-center">
-      <div>
-        <strong>${i.name}</strong><br>
-        <div class="flex items-center gap-2 mt-1">
-          <button onclick="changeQty('${i.id}',-1)">➖</button>
-          <span>${i.qty}</span>
-          <button onclick="changeQty('${i.id}',1)">➕</button>
-        </div>
-      </div>
-      <span>R$ ${(i.price*i.qty).toFixed(2)}</span>
-    </div>`;
-  });
+ subtotalEl.innerText=subtotal.toFixed(2);
+ let total=subtotal;
+ pixDiscount.classList.add('hidden');
 
-  subtotalEl.textContent=subtotal.toFixed(2);
-
-  let total=subtotal;
-  pixDiscount.classList.add('hidden');
-
-  if(document.querySelector('[name=pay]:checked').value==='pix'){
-    const d=settings.pix||0;
-    if(d>0){
-      const desc=subtotal*(d/100);
-      total=subtotal-desc;
-      pixDiscount.textContent=`Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
-      pixDiscount.classList.remove('hidden');
-    }
+ if(document.querySelector('[name=pay]:checked').value==='pix'){
+  const d=settings.pix||0;
+  if(d>0){
+   const desc=subtotal*d/100;
+   total-=desc;
+   pixDiscount.innerText=`Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
+   pixDiscount.classList.remove('hidden');
   }
-
-  totalEl.textContent=total.toFixed(2);
+ }
+ totalEl.innerText=total.toFixed(2);
 }
 
 document.querySelectorAll('[name=pay]').forEach(r=>r.onchange=renderCart);
 
-/* CHECKOUT */
 function checkout(){
-  if(cart.length===0)return alert('Carrinho vazio');
+ if(!cart.length)return alert('Carrinho vazio');
 
-  const total=parseFloat(totalEl.textContent);
-  const pay=document.querySelector('[name=pay]:checked').value;
+ const pay=document.querySelector('[name=pay]:checked').value;
+ const total=parseFloat(totalEl.innerText);
 
-  const order={
-    date:new Date().toLocaleString(),
-    payment:pay,
-    items:cart,
-    total
-  };
+ db.ref('orders').push({
+  date:new Date().toLocaleString(),
+  payment:pay,
+  items:cart,
+  total
+ });
 
-  db.ref('orders').push(order);
+ cart.forEach(i=>{
+  db.ref(`products/${i.id}/stock`).transaction(s=>s-i.qty);
+ });
 
-  cart.forEach(i=>{
-    db.ref('products/'+i.id+'/stock')
-    .transaction(s=>s-i.qty);
-  });
+ let msg='Pedido:%0A';
+ cart.forEach(i=>msg+=`${i.qty}x ${i.name}%0A`);
+ msg+=`Total: R$ ${total.toFixed(2)}%0APagamento: ${pay.toUpperCase()}`;
 
-  let msg=`Pedido:%0A`;
-  cart.forEach(i=>{
-    msg+=`${i.qty}x ${i.name}%0A`;
-  });
-  msg+=`Total: R$ ${total.toFixed(2)}%0APagamento: ${pay.toUpperCase()}`;
-
-  window.open(`https://wa.me/55${settings.whatsapp}?text=${msg}`);
+ window.open(`https://wa.me/55${settings.whatsapp}?text=${msg}`);
 }
 </script>
 
