@@ -148,21 +148,46 @@
             const pixMsg = document.getElementById('cartPixMsg');
             
             count.innerText = cart.length;
+            
+            // Renderiza os itens na lista
             list.innerHTML = cart.map((item, i) => `
-                <div class="flex justify-between items-center text-[11px] border-b pb-2">
+                <div class="flex justify-between items-center text-[11px] border-b pb-3 pt-1">
                     <div class="flex-1">
-                        <p class="font-bold uppercase">${item.name}</p>
-                        <p class="text-gray-400 text-[9px]">${item.sku} - R$ ${item.price.toFixed(2)}</p>
+                        <p class="font-bold uppercase text-gray-800">${item.name}</p>
+                        <p class="text-gray-400 text-[9px] font-mono">${item.sku}</p>
+                        <p class="font-semibold mt-1">R$ ${item.price.toFixed(2)}</p>
                     </div>
-                    <button onclick="removeFromCart(${i})" class="text-red-300 ml-4 italic">Remover</button>
+                    <button onclick="removeFromCart(${i})" class="text-red-300 text-[9px] uppercase font-bold hover:text-red-500 transition">Remover</button>
                 </div>
             `).join('');
 
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            const totalPix = total * (1 - (pixDiscount/100));
-            
-            totalEl.innerText = `R$ ${total.toFixed(2)}`;
-            pixMsg.innerText = total > 0 ? `OU R$ ${totalPix.toFixed(2)} NO PIX (-${pixDiscount}%)` : "";
+            // Cálculos de Totais
+            const totalGeral = cart.reduce((sum, item) => sum + item.price, 0);
+            const valorDesconto = totalGeral * (pixDiscount / 100);
+            const totalComDesconto = totalGeral - valorDesconto;
+
+            if (cart.length > 0) {
+                // Mostra o total original e destaca a economia
+                totalEl.innerHTML = `
+                    <div class="text-right">
+                        <p class="text-[10px] text-gray-400 line-through">DE R$ ${totalGeral.toFixed(2)}</p>
+                        <p class="text-lg font-bold text-black">POR R$ ${totalComDesconto.toFixed(2)}</p>
+                    </div>
+                `;
+                
+                pixMsg.innerHTML = `
+                    <div class="bg-green-50 p-3 rounded mt-2 border border-green-100">
+                        <p class="text-[10px] text-green-700 font-bold uppercase text-center">
+                            ✨ VOCÊ ESTÁ ECONOMIZANDO R$ ${valorDesconto.toFixed(2)} NO PIX!
+                        </p>
+                    </div>
+                `;
+            } else {
+                totalEl.innerText = "R$ 0,00";
+                pixMsg.innerHTML = "";
+                list.innerHTML = "<p class='text-center text-gray-400 text-[10px] py-10'>SEU CARRINHO ESTÁ VAZIO</p>";
+            }
+        }
         }
 
         function sendWhatsApp() {
