@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="bg-[#F8F6F2] text-[#1a1a1a]">
@@ -23,10 +22,10 @@
     <h2 class="font-serif text-xl mb-4">Carrinho</h2>
     <div id="cart"></div>
 
-    <div class="mt-4 space-y-2 text-right">
+    <div class="mt-4 space-y-1 text-right">
       <p>Total: <strong id="total">R$ 0</strong></p>
       <p class="text-green-600">PIX (-10%): <strong id="pixTotal">R$ 0</strong></p>
-      <p>Cartão: <strong>3x sem juros</strong></p>
+      <p class="text-xs text-gray-500">Cartão: até 3x sem juros</p>
     </div>
 
     <input id="customer" placeholder="Nome da cliente" class="border p-2 w-full mt-4">
@@ -48,26 +47,34 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let cart = [];
+let productsCache = {};
 
 db.ref('products').on('value', snap => {
   const el = document.getElementById('products');
   el.innerHTML = '';
   snap.forEach(p => {
     const d = p.val();
+    if(d.stock <= 0) return;
+
+    productsCache[p.key] = d;
+
     el.innerHTML += `
       <div class="bg-white border p-4">
         <img src="${d.image}" class="h-40 w-full object-cover mb-3">
         <h3 class="font-bold">${d.name}</h3>
         <p>R$ ${d.price}</p>
-        <button onclick='add(${JSON.stringify(d)})' class="mt-2 border px-3 py-1 text-xs">
+        <p class="text-xs text-gray-500">Estoque: ${d.stock}</p>
+        <button onclick="add('${p.key}')" class="mt-2 border px-3 py-1 text-xs">
           Adicionar
         </button>
       </div>`;
   });
 });
 
-function add(p){
-  cart.push(p);
+function add(id){
+  const p = productsCache[id];
+  if(p.stock <= 0) return alert("Sem estoque");
+  cart.push({id, ...p});
   renderCart();
 }
 
@@ -87,7 +94,13 @@ function checkout(){
   const name = document.getElementById('customer').value;
   if(!name) return alert('Nome da cliente');
 
+  const updates = {};
+  cart.forEach(p=>{
+    updates[`products/${p.id}/stock`] = p.stock - 1;
+  });
+
   const total = cart.reduce((s,p)=>s+p.price,0);
+
   const order = {
     customerName: name,
     items: cart.map(p=>p.name).join('\n'),
@@ -96,7 +109,9 @@ function checkout(){
     date: new Date().toLocaleDateString('pt-BR')
   };
 
-  db.ref('orders').push(order);
+  updates[`orders/${Date.now()}`] = order;
+
+  db.ref().update(updates);
 
   const msg =
 `Pedido Marcinha Semijoias
@@ -108,6 +123,7 @@ Total: R$ ${order.total}
 PIX: R$ ${order.pixTotal}`;
 
   window.open(`https://wa.me/55SEUNUMERO?text=${encodeURIComponent(msg)}`);
+
   cart = [];
   renderCart();
 }
