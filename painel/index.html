@@ -1,148 +1,187 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Admin | Marcinha Semijoias</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Cinzel:wght@400;700&display=swap');
-body { font-family: 'Inter', sans-serif; background:#F8F6F2; }
-.font-serif { font-family:'Cinzel', serif; }
-.tab-content{display:none}
-.tab-content.active{display:block}
-.text-gold{color:#A68966}
-.border-gold{border-color:#A68966}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Marcinha Semijoias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Cinzel:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F8F6F2; color: #1a1a1a; margin: 0; }
+        .font-serif { font-family: 'Cinzel', serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .text-gold { color: #A68966; }
+        .border-gold { border-color: #A68966; }
+    </style>
 </head>
-
 <body>
 
-<header class="bg-white border-b py-6 px-8 flex justify-between sticky top-0 z-50">
-  <div>
-    <h1 class="font-serif text-xl tracking-[0.2em] text-gold">Marcinha Semijoias</h1>
-    <p class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Painel Administrativo</p>
-  </div>
-  <nav class="flex gap-8 text-[10px] uppercase font-bold tracking-widest">
-    <a onclick="showTab('vendas')" id="nav-vendas" class="text-gold border-b-2 border-gold pb-1 cursor-pointer">Vendas</a>
-    <a onclick="showTab('produtos')" id="nav-produtos" class="text-gray-400 hover:text-gold cursor-pointer">Produtos</a>
-    <a onclick="showTab('config')" id="nav-config" class="text-gray-400 hover:text-gold cursor-pointer">Config</a>
-  </nav>
-</header>
-
-<main class="max-w-5xl mx-auto p-8">
-
-<!-- VENDAS -->
-<div id="vendas" class="tab-content active">
-  <h2 class="font-serif text-2xl mb-6 border-b border-gold pb-2">Pedidos</h2>
-  <div id="ordersList" class="grid gap-4"></div>
-</div>
-
-<!-- PRODUTOS -->
-<div id="produtos" class="tab-content">
-  <div class="flex justify-between border-b border-gold pb-4 mb-6">
-    <h2 class="font-serif text-2xl">Cadastrar Joia</h2>
-    <button onclick="saveProduct()" class="bg-black text-white px-8 py-3 text-[10px] uppercase font-bold tracking-widest hover:bg-gold">
-      Salvar
-    </button>
-  </div>
-
-  <div class="grid md:grid-cols-2 gap-6 bg-white p-6 border">
-    <div class="space-y-4">
-      <input id="p-name" placeholder="Nome" class="w-full border p-3 text-sm">
-      <input id="p-price" type="number" placeholder="Preço" class="w-full border p-3 text-sm">
-      <input id="p-stock" type="number" placeholder="Estoque" class="w-full border p-3 text-sm">
-    </div>
-    <div class="space-y-4">
-      <input id="p-image" placeholder="URL da Imagem" class="w-full border p-3 text-sm">
-      <input id="p-sku" placeholder="SKU" class="w-full border p-3 text-sm">
-      <select id="p-category" class="w-full border p-3 text-sm">
-        <option>Brincos</option><option>Colares</option><option>Pulseiras</option><option>Aneis</option>
-      </select>
-    </div>
-  </div>
-</div>
-
-<!-- CONFIG -->
-<div id="config" class="tab-content">
-  <h2 class="font-serif text-2xl mb-6 border-b border-gold pb-2">Configurações</h2>
-  <div class="bg-white p-6 border max-w-xs space-y-4">
-    <input id="conf-pix" type="number" placeholder="% PIX" class="w-full border p-3 text-sm">
-    <input id="conf-parcelas" type="number" placeholder="Parcelas" class="w-full border p-3 text-sm">
-    <button onclick="updateSettings()" class="w-full bg-gold text-white py-3 text-[10px] uppercase font-bold tracking-widest">
-      Salvar
-    </button>
-  </div>
-</div>
-
-</main>
-
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-  authDomain: "marcinha-semijoias.firebaseapp.com",
-  databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias",
-  storageBucket: "marcinha-semijoias.firebasestorage.app",
-  messagingSenderId: "830107812924",
-  appId: "1:830107812924:web:1ee54d9b875514e48eef39"
-};
-
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-function showTab(id){
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-db.ref('orders').on('value',snap=>{
-  const list=document.getElementById('ordersList');
-  list.innerHTML='';
-  const data=snap.val();
-  if(!data){list.innerHTML='<p class="text-gray-400">Sem pedidos</p>';return;}
-  Object.keys(data).reverse().forEach(id=>{
-    const o=data[id];
-    list.innerHTML+=`
-      <div class="bg-white border p-4 flex justify-between">
+    <header class="bg-white border-b border-[#E5E1DB] py-6 px-8 flex justify-between items-center sticky top-0 z-50">
         <div>
-          <p class="text-[9px] text-gold">${o.date}</p>
-          <strong class="text-xs uppercase">${o.customerName}</strong>
-          <p class="text-[10px]">R$ ${o.total}</p>
+            <h1 class="font-serif text-xl tracking-[0.2em] text-gold">Marcinha Semijoias</h1>
+            <p class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Gerenciamento de Luxo</p>
         </div>
-        <button onclick="db.ref('orders/${id}').remove()" class="text-red-400 text-[9px] uppercase">Excluir</button>
-      </div>`;
-  });
-});
+        <nav class="flex gap-8 text-[10px] uppercase font-bold tracking-widest cursor-pointer">
+            <a onclick="showTab('vendas')" id="nav-vendas" class="text-gold border-b-2 border-gold pb-1">Vendas</a>
+            <a onclick="showTab('produtos')" id="nav-produtos" class="text-gray-400 hover:text-gold transition">Produtos</a>
+            <a onclick="showTab('config')" id="nav-config" class="text-gray-400 hover:text-gold transition">Configurações</a>
+        </nav>
+    </header>
 
-function saveProduct(){
-  db.ref('products').push({
-    name:p-name.value,
-    price:+p-price.value,
-    stock:+p-stock.value,
-    image:p-image.value,
-    sku:p-sku.value,
-    category:p-category.value
-  }).then(()=>location.reload());
-}
+    <main class="max-w-5xl mx-auto p-8">
+        
+        <div id="vendas" class="tab-content active">
+            <h2 class="font-serif text-2xl mb-6 border-b border-gold pb-2">Histórico de Pedidos</h2>
+            <div id="ordersList" class="grid gap-4"></div>
+        </div>
 
-function updateSettings(){
-  db.ref('settings').set({
-    pixDiscount:+conf-pix.value,
-    installments:+conf-parcelas.value
-  }).then(()=>alert('Salvo'));
-}
+        <div id="produtos" class="tab-content">
+            <div class="flex justify-between items-center border-b border-gold pb-4 mb-8">
+                <h2 class="font-serif text-2xl">Cadastrar Joia</h2>
+                <button onclick="saveProduct()" class="bg-black text-white text-[10px] px-8 py-3 uppercase font-bold tracking-widest hover:bg-gold transition">Salvar no Catálogo</button>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6 bg-white p-6 border border-[#E5E1DB]">
+                <div class="space-y-4">
+                    <input type="text" id="p-name" placeholder="Nome da Peça" class="w-full border p-3 text-sm">
+                    <input type="number" id="p-price" placeholder="Preço R$" class="w-full border p-3 text-sm">
+                    <input type="number" id="p-stock" placeholder="Estoque" class="w-full border p-3 text-sm">
+                </div>
+                <div class="space-y-4">
+                    <input type="text" id="p-image" placeholder="URL da Foto" class="w-full border p-3 text-sm">
+                    <input type="text" id="p-sku" placeholder="SKU/Código" class="w-full border p-3 text-sm">
+                    <select id="p-category" class="w-full border p-3 text-sm">
+                        <option>Brincos</option><option>Colares</option><option>Pulseiras</option><option>Aneis</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
-db.ref('settings').on('value',s=>{
-  if(!s.val())return;
-  conf-pix.value=s.val().pixDiscount||'';
-  conf-parcelas.value=s.val().installments||'';
-});
-</script>
+        <div id="config" class="tab-content">
+            <h2 class="font-serif text-2xl mb-6 border-b border-gold pb-2">Ajustes do Site</h2>
+            <div class="max-w-xs bg-white p-6 border border-[#E5E1DB] space-y-4">
+                <input type="number" id="conf-pix" placeholder="% Desconto PIX" class="w-full border p-3 text-sm">
+                <input type="number" id="conf-parcelas" placeholder="Máx Parcelas" class="w-full border p-3 text-sm">
+                <button onclick="updateSettings()" class="w-full bg-[#A68966] text-white py-3 text-[10px] font-bold uppercase tracking-widest">Atualizar</button>
+            </div>
+        </div>
 
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+            authDomain: "marcinha-semijoias.firebaseapp.com",
+            databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
+            projectId: "marcinha-semijoias",
+            storageBucket: "marcinha-semijoias.firebasestorage.app",
+            messagingSenderId: "830107812924",
+            appId: "1:830107812924:web:1ee54d9b875514e48eef39"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('nav a').forEach(a => {
+                a.classList.remove('text-gold', 'border-b-2', 'border-gold');
+                a.classList.add('text-gray-400');
+            });
+            document.getElementById('nav-' + tabId).classList.add('text-gold', 'border-b-2', 'border-gold');
+        }
+
+        db.ref('orders').on('value', snap => {
+            const list = document.getElementById("ordersList");
+            const data = snap.val();
+            list.innerHTML = "";
+            if (!data) return list.innerHTML = "<p class='text-gray-400'>Sem pedidos.</p>";
+            Object.keys(data).reverse().forEach(id => {
+                const o = data[id];
+                list.innerHTML += `
+                    <div class="bg-white border p-4 flex justify-between items-center shadow-sm">
+                        <div class="flex-1">
+                            <span class="text-[9px] text-gold font-bold uppercase">${o.date}</span>
+                            <h4 class="text-xs font-bold uppercase">${o.customerName}</h4>
+                            <p class="text-[10px] text-gray-400 font-bold">R$ ${o.total}</p>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <button onclick="printOrder('${id}')" class="bg-black text-white text-[9px] px-4 py-2 font-bold uppercase tracking-widest hover:bg-gold transition">Imprimir Romaneio</button>
+                            <button onclick="deleteOrder('${id}')" class="text-red-400 text-[9px] font-bold uppercase">Excluir</button>
+                        </div>
+                    </div>`;
+            });
+        });
+
+        function deleteOrder(id) { if(confirm("Eliminar este pedido?")) db.ref('orders/' + id).remove(); }
+
+        function printOrder(id) {
+            db.ref('orders/' + id).once('value', snap => {
+                const o = snap.val();
+                const win = window.open('', '', 'height=800,width=800');
+                win.document.write(`
+                    <html>
+                    <head>
+                        <style>
+                            @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600&display=swap');
+                            @page { size: auto; margin: 5mm; }
+                            body { font-family: 'Inter', sans-serif; margin: 0; padding: 15px; color: #1a1a1a; }
+                            .doc { border: 1px solid #A68966; padding: 25px; min-height: 94vh; position: relative; box-sizing: border-box; }
+                            header { text-align: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+                            h1 { font-family: 'Cinzel', serif; font-size: 22px; color: #A68966; letter-spacing: 4px; margin: 0; }
+                            .meta { display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 25px; }
+                            .content { font-size: 11px; line-height: 1.6; white-space: pre-wrap; height: 420px; overflow: hidden; border-left: 2px solid #FDFBF7; padding-left: 15px; }
+                            .total { position: absolute; bottom: 100px; right: 25px; text-align: right; }
+                            .total p { font-size: 22px; font-family: 'Cinzel', serif; margin: 0; font-weight: bold; }
+                            .footer { position: absolute; bottom: 30px; left: 25px; right: 25px; display: flex; justify-content: space-between; }
+                            .line { border-top: 1px solid #A68966; width: 42%; text-align: center; font-size: 8px; color: #A68966; font-weight: bold; padding-top: 5px; text-transform: uppercase; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="doc">
+                            <header><h1>Marcinha Semijoias</h1></header>
+                            <div class="meta"><span>Cliente: ${o.customerName}</span><span>Data: ${o.date}</span></div>
+                            <div style="font-family:'Cinzel'; font-size:10px; color:#A68966; margin-bottom:10px;">Descrição das Peças</div>
+                            <div class="content">${o.items}</div>
+                            <div class="total"><span>Investimento Total</span><p>R$ ${o.total}</p></div>
+                            <div class="footer"><div class="line">Assinatura Cliente</div><div class="line">Marcinha Semijoias</div></div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+                setTimeout(() => { win.print(); win.close(); }, 400);
+            });
+        }
+
+        function saveProduct() {
+            const p = {
+                name: document.getElementById('p-name').value,
+                price: parseFloat(document.getElementById('p-price').value),
+                stock: parseInt(document.getElementById('p-stock').value),
+                image: document.getElementById('p-image').value,
+                category: document.getElementById('p-category').value,
+                sku: document.getElementById('p-sku').value
+            };
+            db.ref('products').push(p).then(() => { alert("Joia Cadastrada!"); location.reload(); });
+        }
+
+        function updateSettings() {
+            const s = {
+                pixDiscount: parseInt(document.getElementById('conf-pix').value),
+                installments: parseInt(document.getElementById('conf-parcelas').value)
+            };
+            db.ref('settings').set(s).then(() => alert("Ajustes Guardados!"));
+        }
+        
+        db.ref('settings').on('value', s => {
+            if(s.val()){
+                document.getElementById('conf-pix').value = s.val().pixDiscount;
+                document.getElementById('conf-parcelas').value = s.val().installments;
+            }
+        });
+    </script>
 </body>
 </html>
