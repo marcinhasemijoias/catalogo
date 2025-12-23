@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Painel Administrativo | Marcinha Semijoias</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
@@ -29,7 +28,6 @@ body{background:#F8F6F2}
 }
 </style>
 </head>
-
 <body>
 
 <header class="bg-white border-b px-10 py-6 flex justify-between">
@@ -37,7 +35,6 @@ body{background:#F8F6F2}
     <h1 class="font-serif text-xl tracking-widest gold">Marcinha Semijoias</h1>
     <p class="text-xs tracking-widest text-gray-400 uppercase">Painel Administrativo</p>
   </div>
-
   <nav class="flex gap-8 text-xs tracking-widest uppercase">
     <button onclick="openTab('empresa')" class="gold">Empresa</button>
     <button onclick="openTab('produtos')">Produtos</button>
@@ -58,7 +55,7 @@ body{background:#F8F6F2}
   <input id="empParcelas" type="number" placeholder="Parcelas no cartão" class="border p-3">
 </div>
 
-<button onclick="salvarEmpresa()" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
+<button type="button" onclick="salvarEmpresa()" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
 SALVAR
 </button>
 </section>
@@ -75,7 +72,7 @@ SALVAR
   <input type="file" id="pImagem" class="border p-3 md:col-span-2">
 </div>
 
-<button id="btnSalvarProduto" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
+<button type="button" id="btnSalvarProduto" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
 SALVAR PRODUTO
 </button>
 
@@ -93,7 +90,6 @@ SALVAR PRODUTO
   <h2 class="font-serif text-2xl gold mb-4">Romaneio</h2>
   <p><strong>Cliente:</strong> <span id="rCliente"></span></p>
   <p><strong>Data:</strong> <span id="rData"></span></p>
-
   <table class="w-full border mt-6">
     <thead>
       <tr class="border-b">
@@ -105,7 +101,6 @@ SALVAR PRODUTO
     </thead>
     <tbody id="rItens"></tbody>
   </table>
-
   <p class="mt-6 text-right font-bold">Total: R$ <span id="rTotal"></span></p>
 </div>
 
@@ -146,7 +141,7 @@ db.ref('settings').once('value').then(s=>{
   empParcelas.value=s.val().parcelas||1;
 });
 
-/* ELEMENTOS PRODUTO */
+/* PRODUTOS */
 const pNome = document.getElementById('pNome');
 const pSku = document.getElementById('pSku');
 const pPreco = document.getElementById('pPreco');
@@ -154,18 +149,18 @@ const pEstoque = document.getElementById('pEstoque');
 const pImagem = document.getElementById('pImagem');
 const listaProdutos = document.getElementById('listaProdutos');
 const btnSalvarProduto = document.getElementById('btnSalvarProduto');
-
 let editarId = null;
 
-/* SALVAR PRODUTO */
-function salvarProduto() {
+function salvarProduto(){
+  console.log('Clique detectado!'); // debug
+
   const imgFile = pImagem.files[0];
 
   if(!pNome.value.trim() || !pPreco.value || (!editarId && !imgFile)) {
     return alert('Preencha nome, preço e selecione uma imagem!');
   }
 
-  const enviarParaFirebase = (url) => {
+  const enviarFirebase = (url)=>{
     const produto = {
       name: pNome.value.trim(),
       sku: pSku.value.trim(),
@@ -174,25 +169,25 @@ function salvarProduto() {
     };
     if(url) produto.image = url;
 
-    const refProduto = editarId ? db.ref('products/' + editarId) : db.ref('products');
-    const salvar = editarId ? refProduto.update(produto) : refProduto.push(produto);
-
-    salvar
-      .then(() => {
-        alert(editarId ? 'Produto atualizado!' : 'Produto salvo!');
-        resetFormProduto();
-      })
-      .catch(err => alert('Erro ao salvar produto: ' + err));
+    if(editarId){
+      db.ref('products/' + editarId).update(produto)
+        .then(()=>{ alert('Produto atualizado!'); resetFormProduto(); })
+        .catch(err=>alert('Erro: '+err));
+    } else {
+      db.ref('products').push(produto)
+        .then(()=>{ alert('Produto salvo!'); resetFormProduto(); })
+        .catch(err=>alert('Erro: '+err));
+    }
   };
 
   if(imgFile){
-    const storageRef = storage.ref('products/' + Date.now() + '_' + imgFile.name);
+    const storageRef = storage.ref('products/'+Date.now()+'_'+imgFile.name);
     storageRef.put(imgFile)
       .then(snapshot => snapshot.ref.getDownloadURL())
-      .then(url => enviarParaFirebase(url))
-      .catch(err => alert('Erro ao enviar imagem: ' + err));
+      .then(url => enviarFirebase(url))
+      .catch(err=>alert('Erro upload imagem: '+err));
   } else {
-    enviarParaFirebase();
+    enviarFirebase();
   }
 }
 
@@ -209,12 +204,12 @@ function resetFormProduto(){
 btnSalvarProduto.onclick = salvarProduto;
 
 /* LISTAR PRODUTOS */
-db.ref('products').on('value', snap => {
-  listaProdutos.innerHTML = '';
-  snap.forEach(s => {
+db.ref('products').on('value', snap=>{
+  listaProdutos.innerHTML='';
+  snap.forEach(s=>{
     const p = s.val();
     const id = s.key;
-    listaProdutos.innerHTML += `
+    listaProdutos.innerHTML+=`
       <div class="bg-white border p-4">
         <img src="${p.image}" class="h-40 w-full object-cover">
         <p class="font-medium mt-2">${p.name}</p>
@@ -228,35 +223,31 @@ db.ref('products').on('value', snap => {
   });
 });
 
-function excluirProduto(id) {
-  if (!confirm('Deseja excluir este produto?')) return;
-  db.ref('products/' + id).remove()
-    .then(() => alert('Produto excluído!'))
-    .catch(err => alert('Erro ao excluir: ' + err));
+function excluirProduto(id){
+  if(!confirm('Deseja excluir este produto?')) return;
+  db.ref('products/'+id).remove().then(()=>alert('Produto excluído!'));
 }
 
-function editarProduto(id) {
-  db.ref('products/' + id).once('value')
-    .then(snap => {
-      const p = snap.val();
-      pNome.value = p.name;
-      pSku.value = p.sku;
-      pPreco.value = p.price;
-      pEstoque.value = p.stock;
-      editarId = id;
-      btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
-    })
-    .catch(err => alert('Erro ao carregar produto: ' + err));
+function editarProduto(id){
+  db.ref('products/'+id).once('value').then(s=>{
+    const p = s.val();
+    pNome.value = p.name;
+    pSku.value = p.sku;
+    pPreco.value = p.price;
+    pEstoque.value = p.stock;
+    editarId = id;
+    btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
+  });
 }
 
 /* PEDIDOS */
-db.ref('orders').on('value',snap=>{
+const listaPedidos = document.getElementById('listaPedidos');
+db.ref('orders').on('value', snap=>{
   listaPedidos.innerHTML='';
   snap.forEach(s=>{
-    const o=s.val();
-    const id=s.key;
-    const status=o.status||'Novo';
-
+    const o = s.val();
+    const id = s.key;
+    const status = o.status||'Novo';
     listaPedidos.innerHTML+=`
     <div class="bg-white border p-5 space-y-3">
       <div class="flex justify-between">
@@ -266,16 +257,13 @@ db.ref('orders').on('value',snap=>{
         </div>
         <span class="px-3 py-1 text-xs rounded status-${status.replace(' ','')}">${status}</span>
       </div>
-
       <div class="flex gap-2 text-xs">
         ${['Novo','Em separação','Enviado','Finalizado'].map(st=>`
           <button onclick="db.ref('orders/${id}/status').set('${st}')" class="border px-3 py-1">${st}</button>
         `).join('')}
       </div>
-
       <div class="flex justify-between items-center">
         <strong>R$ ${o.total.toFixed(2)}</strong>
-
         <div class="flex gap-4 text-xs">
           <button onclick='imprimirRomaneio(${JSON.stringify(o)})' class="underline">Romaneio</button>
           <button onclick="excluirPedido('${id}')" class="text-red-600 underline">Excluir</button>
@@ -287,29 +275,30 @@ db.ref('orders').on('value',snap=>{
 
 function excluirPedido(id){
   if(!confirm('Deseja excluir este pedido?')) return;
-  db.ref('orders/'+id).remove()
-    .then(()=>alert('Pedido excluído!'));
+  db.ref('orders/'+id).remove().then(()=>alert('Pedido excluído!'));
 }
 
 /* ROMANEIO */
 function imprimirRomaneio(o){
-  rCliente.textContent=o.cliente||o.customer;
-  rData.textContent=o.data;
-  rItens.innerHTML='';
+  document.getElementById('rCliente').textContent = o.cliente||o.customer;
+  document.getElementById('rData').textContent = o.data;
+  const rItens = document.getElementById('rItens');
+  rItens.innerHTML = '';
   o.itens.forEach(i=>{
     rItens.innerHTML+=`
-    <tr>
-      <td class="p-2">${i.nome}</td>
-      <td class="p-2">${i.sku}</td>
-      <td class="p-2">${i.qtd}</td>
-      <td class="p-2">R$ ${i.valor.toFixed(2)}</td>
-    </tr>`;
+      <tr>
+        <td class="p-2">${i.nome}</td>
+        <td class="p-2">${i.sku}</td>
+        <td class="p-2">${i.qtd}</td>
+        <td class="p-2">R$ ${i.valor.toFixed(2)}</td>
+      </tr>`;
   });
-  rTotal.textContent=o.total.toFixed(2);
-  romaneio.classList.remove('hidden');
+  document.getElementById('rTotal').textContent = o.total.toFixed(2);
+  document.getElementById('romaneio').classList.remove('hidden');
   window.print();
 }
 </script>
 
 </body>
 </html>
+
