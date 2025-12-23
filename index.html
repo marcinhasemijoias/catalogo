@@ -38,6 +38,14 @@ body{background:#F8F6F2}
 
   <div id="carrinho" class="space-y-4 text-sm"></div>
 
+  <!-- CLIENTE -->
+  <div class="border-t pt-4 space-y-2 text-sm">
+    <label class="block text-xs uppercase tracking-widest text-gray-500">
+      Nome do Cliente
+    </label>
+    <input id="clienteNome" class="border p-2 w-full" placeholder="Digite seu nome">
+  </div>
+
   <div class="border-t pt-4 space-y-3 text-sm">
     <p>Subtotal: <strong id="subtotal">R$ 0,00</strong></p>
     <p id="pixLinha" class="text-green-700 hidden"></p>
@@ -81,10 +89,6 @@ let carrinho = [];
 let settings = {};
 let pagamento = 'PIX';
 
-/* ELEMENTOS */
-const produtosEl = document.getElementById('produtos');
-const carrinhoEl = document.getElementById('carrinho');
-
 /* SETTINGS */
 db.ref('settings').once('value').then(s=>{
  settings = s.val() || {};
@@ -107,10 +111,8 @@ function renderProdutos(){
   <div class="bg-white border p-4 space-y-3">
     <img src="${p.image}" class="h-56 w-full object-cover">
     <h3 class="font-serif">${p.name}</h3>
-
     <p class="gold text-lg font-semibold">R$ ${p.price.toFixed(2)}</p>
     ${settings.pix ? `<p class="text-green-700 text-sm">PIX: R$ ${pixPrice.toFixed(2)}</p>` : ''}
-
     <button onclick="addCarrinho('${id}')" class="border w-full py-2 text-xs tracking-widest uppercase">
       Adicionar ao carrinho
     </button>
@@ -134,13 +136,13 @@ function alterarQtd(id,delta){
 }
 
 function renderCarrinho(){
- carrinhoEl.innerHTML='';
+ carrinho.innerHTML='';
  let subtotal = 0;
 
  carrinho.forEach(i=>{
   const p = produtos[i.id];
   subtotal += p.price * i.qty;
-  carrinhoEl.innerHTML+=`
+  carrinho.innerHTML+=`
   <div class="flex justify-between items-center">
     <div>
       ${i.qty}x ${p.name}
@@ -153,7 +155,7 @@ function renderCarrinho(){
   </div>`;
  });
 
- document.getElementById('subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
+ subtotalEl.innerText = `R$ ${subtotal.toFixed(2)}`;
 
  let total = subtotal;
  pixLinha.classList.add('hidden');
@@ -166,42 +168,41 @@ function renderCarrinho(){
  }
 
  if(pagamento==='CARTAO'){
-  const p = parcelas.value || 1;
-  parcelamentoInfo.innerText = `${p}x de R$ ${(total/p).toFixed(2)}`;
- } else {
-  parcelamentoInfo.innerText = '';
- }
+  parcelamentoInfo.innerText = `${parcelas.value}x de R$ ${(total/parcelas.value).toFixed(2)}`;
+ } else parcelamentoInfo.innerText='';
 
- document.getElementById('total').innerText = `R$ ${total.toFixed(2)}`;
+ totalEl.innerText = `R$ ${total.toFixed(2)}`;
 }
 
 /* PAGAMENTO */
-document.querySelectorAll('input[name=pagamento]').forEach(r=>{
+document.querySelectorAll('[name=pagamento]').forEach(r=>{
  r.onchange=e=>{
   pagamento=e.target.value;
   parcelas.classList.toggle('hidden', pagamento!=='CARTAO');
   renderCarrinho();
  };
 });
-
 parcelas.onchange = renderCarrinho;
 
 /* FINALIZAR */
 function finalizarPedido(){
+ const nome = clienteNome.value.trim();
+ if(!nome) return alert('Informe seu nome');
  if(carrinho.length===0) return alert('Carrinho vazio');
 
- const total = document.getElementById('total').innerText.replace('R$ ','');
+ const total = parseFloat(totalEl.innerText.replace('R$ ','').replace(',','.'));
+
  const pedido = {
+  cliente: nome,
   data: new Date().toLocaleString('pt-BR'),
   status: 'Novo',
   pagamento,
   parcelas: pagamento==='CARTAO' ? parcelas.value : 'À vista',
-  total: parseFloat(total.replace(',','.')),
+  total,
   itens: carrinho.map(i=>({
-    id:i.id,
-    nome:produtos[i.id].name,
-    qtd:i.qty,
-    valor:produtos[i.id].price
+    nome: produtos[i.id].name,
+    qtd: i.qty,
+    valor: produtos[i.id].price
   }))
  };
 
@@ -212,7 +213,8 @@ function finalizarPedido(){
    .transaction(s=>(s||0)-i.qty);
  });
 
- let msg = `🛍️ *Novo Pedido*%0A%0A`;
+ let msg = `🛍️ *Novo Pedido Confirmado*%0A`;
+ msg += `👤 Cliente: *${nome}*%0A%0A`;
  pedido.itens.forEach(i=>{
   msg+=`${i.qtd}x ${i.nome}%0A`;
  });
@@ -223,6 +225,7 @@ function finalizarPedido(){
  window.open(`https://wa.me/55${settings.whatsapp}?text=${msg}`);
 
  carrinho=[];
+ clienteNome.value='';
  renderCarrinho();
  alert('Pedido enviado com sucesso!');
 }
@@ -230,5 +233,4 @@ function finalizarPedido(){
 
 </body>
 </html>
-
 
