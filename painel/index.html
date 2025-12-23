@@ -21,73 +21,67 @@ body{background:#F8F6F2}
 
 <body>
 
-<!-- HEADER -->
 <header class="bg-white border-b px-10 py-6 flex justify-between items-center">
   <div>
     <h1 class="font-serif text-2xl gold tracking-widest">Marcinha Semijoias</h1>
     <p class="text-xs tracking-widest text-gray-400 uppercase">Painel Administrativo</p>
   </div>
   <nav class="flex gap-10 text-xs tracking-widest uppercase">
-    <button onclick="openTab('company')" class="gold">Empresa</button>
-    <button onclick="openTab('products')">Produtos</button>
-    <button onclick="openTab('orders')">Pedidos</button>
+    <button onclick="openTab('empresa')" class="gold">Empresa</button>
+    <button onclick="openTab('produtos')">Produtos</button>
+    <button onclick="openTab('pedidos')">Pedidos</button>
   </nav>
 </header>
 
 <main class="max-w-6xl mx-auto p-10 space-y-16">
 
 <!-- EMPRESA -->
-<section id="company" class="tab active space-y-8">
+<section id="empresa" class="tab active space-y-8">
 <h2 class="font-serif text-2xl gold border-b pb-2">Cadastro da Empresa</h2>
 
 <div class="bg-white border p-8 grid md:grid-cols-2 gap-6">
-  <input id="c-name" class="border p-4" placeholder="Nome da Empresa">
-  <input id="c-whatsapp" class="border p-4" placeholder="WhatsApp (somente números)">
-  <input id="c-pix" type="number" class="border p-4" placeholder="% Desconto PIX">
-  <input id="c-parcelas" type="number" class="border p-4" placeholder="Parcelas no Cartão">
+  <input id="empresaNome" class="border p-4" placeholder="Nome da Empresa">
+  <input id="empresaWhatsapp" class="border p-4" placeholder="WhatsApp (somente números)">
+  <input id="empresaPix" type="number" class="border p-4" placeholder="% Desconto PIX">
+  <input id="empresaParcelas" type="number" class="border p-4" placeholder="Parcelas no Cartão">
 </div>
 
 <div class="flex gap-6 text-sm">
-  <span class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded">
-    💰 PIX
-  </span>
-  <span class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded">
-    💳 CARTÃO
-  </span>
+  <span class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded">💰 PIX</span>
+  <span class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded">💳 CARTÃO</span>
 </div>
 
-<button onclick="saveCompany()"
+<button onclick="salvarEmpresa()"
 class="bg-black text-white px-10 py-3 tracking-widest uppercase text-xs">
 Salvar Configurações
 </button>
 </section>
 
 <!-- PRODUTOS -->
-<section id="products" class="tab space-y-10">
+<section id="produtos" class="tab space-y-10">
 
 <h2 class="font-serif text-2xl gold border-b pb-2">Cadastro de Produtos</h2>
 
 <div class="bg-white border p-8 grid md:grid-cols-3 gap-6">
-  <input id="p-sku" class="border p-4" placeholder="SKU">
-  <input id="p-name" class="border p-4 md:col-span-2" placeholder="Nome do Produto">
-  <input id="p-price" type="number" class="border p-4" placeholder="Valor R$">
-  <input id="p-stock" type="number" class="border p-4" placeholder="Estoque">
-  <input id="p-image" type="file" class="border p-4 md:col-span-3">
+  <input id="produtoSku" class="border p-4" placeholder="SKU">
+  <input id="produtoNome" class="border p-4 md:col-span-2" placeholder="Nome do Produto">
+  <input id="produtoPreco" type="number" class="border p-4" placeholder="Valor R$">
+  <input id="produtoEstoque" type="number" class="border p-4" placeholder="Estoque">
+  <input id="produtoImagem" type="file" class="border p-4 md:col-span-3">
 </div>
 
-<button onclick="saveProduct()"
+<button onclick="salvarProduto()"
 class="bg-black text-white px-10 py-3 tracking-widest uppercase text-xs">
 Salvar Produto
 </button>
 
-<!-- LISTA -->
-<div id="productList" class="grid sm:grid-cols-2 md:grid-cols-3 gap-8"></div>
+<div id="listaProdutos" class="grid sm:grid-cols-2 md:grid-cols-3 gap-8"></div>
 </section>
 
 <!-- PEDIDOS -->
-<section id="orders" class="tab space-y-8">
+<section id="pedidos" class="tab space-y-8">
 <h2 class="font-serif text-2xl gold border-b pb-2">Pedidos</h2>
-<div id="orderList" class="space-y-4"></div>
+<div id="listaPedidos" class="space-y-4"></div>
 </section>
 
 </main>
@@ -99,8 +93,8 @@ firebase.initializeApp({
  projectId:"marcinha-semijoias"
 });
 
-const db=firebase.database();
-const st=firebase.storage();
+const db = firebase.database();
+const st = firebase.storage();
 
 function openTab(id){
  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -108,84 +102,76 @@ function openTab(id){
 }
 
 /* EMPRESA */
-function saveCompany(){
+function salvarEmpresa(){
  db.ref('settings').set({
-  name:c-name.value,
-  whatsapp:c-whatsapp.value,
-  pix:+c-pix.value||0,
-  parcelas:+c-parcelas.value||1
- }).then(()=>alert('Empresa salva'));
+  name: document.getElementById('empresaNome').value,
+  whatsapp: document.getElementById('empresaWhatsapp').value,
+  pix: parseInt(document.getElementById('empresaPix').value || 0),
+  parcelas: parseInt(document.getElementById('empresaParcelas').value || 1)
+ }).then(()=>alert('Empresa salva com sucesso'));
 }
 
 db.ref('settings').once('value').then(s=>{
- if(!s.val())return;
- c-name.value=s.val().name||'';
- c-whatsapp.value=s.val().whatsapp||'';
- c-pix.value=s.val().pix||0;
- c-parcelas.value=s.val().parcelas||1;
+ if(!s.val()) return;
+ document.getElementById('empresaNome').value = s.val().name || '';
+ document.getElementById('empresaWhatsapp').value = s.val().whatsapp || '';
+ document.getElementById('empresaPix').value = s.val().pix || 0;
+ document.getElementById('empresaParcelas').value = s.val().parcelas || 1;
 });
 
 /* PRODUTOS */
-function saveProduct(){
- const img=p-image.files[0];
- if(!img)return alert('Imagem obrigatória');
+function salvarProduto(){
+ const img = document.getElementById('produtoImagem').files[0];
+ if(!img) return alert('Selecione uma imagem');
 
- const ref=st.ref('products/'+Date.now());
- ref.put(img).then(()=>ref.getDownloadURL().then(url=>{
-  db.ref('products').push({
-   sku:p-sku.value,
-   name:p-name.value,
-   price:+p-price.value,
-   stock:+p-stock.value,
-   image:url
+ const ref = st.ref('products/' + Date.now());
+ ref.put(img).then(()=>{
+  ref.getDownloadURL().then(url=>{
+   db.ref('products').push({
+    sku: produtoSku.value,
+    name: produtoNome.value,
+    price: parseFloat(produtoPreco.value),
+    stock: parseInt(produtoEstoque.value),
+    image: url
+   });
   });
- }));
+ });
 }
 
 db.ref('products').on('value',snap=>{
- productList.innerHTML='';
+ listaProdutos.innerHTML='';
  snap.forEach(s=>{
   const p=s.val();
-  productList.innerHTML+=`
+  listaProdutos.innerHTML+=`
   <div class="bg-white border p-4 space-y-2">
     <img src="${p.image}" class="h-40 w-full object-cover">
     <h3 class="font-serif">${p.name}</h3>
-    <p class="text-sm text-gray-500">SKU: ${p.sku}</p>
+    <p class="text-xs text-gray-500">SKU: ${p.sku}</p>
     <p class="gold font-semibold">R$ ${p.price.toFixed(2)}</p>
     <div class="flex justify-between text-xs">
-      <button onclick="editProduct('${s.key}')" class="underline">Editar</button>
-      <button onclick="delProduct('${s.key}')" class="text-red-600 underline">Excluir</button>
+      <button onclick="db.ref('products/${s.key}').remove()" class="text-red-600 underline">Excluir</button>
     </div>
   </div>`;
  });
 });
 
-function delProduct(id){
- if(confirm('Excluir produto?'))
-  db.ref('products/'+id).remove();
-}
-
 /* PEDIDOS */
 db.ref('orders').on('value',snap=>{
- orderList.innerHTML='';
+ listaPedidos.innerHTML='';
  snap.forEach(s=>{
   const o=s.val();
-  orderList.innerHTML+=`
+  listaPedidos.innerHTML+=`
   <div class="bg-white border p-4 flex justify-between items-center">
     <div>
       <strong>${o.date}</strong><br>
       <span class="text-xs">R$ ${o.total}</span>
     </div>
-    <div class="flex gap-4 items-center">
-      <select onchange="db.ref('orders/${s.key}/status').set(this.value)"
-      class="border p-2 text-xs">
-        <option ${o.status==='Novo'?'selected':''}>Novo</option>
-        <option ${o.status==='Em preparo'?'selected':''}>Em preparo</option>
-        <option ${o.status==='Finalizado'?'selected':''}>Finalizado</option>
-      </select>
-      <button onclick="db.ref('orders/${s.key}').remove()"
-      class="text-red-600 text-xs underline">Excluir</button>
-    </div>
+    <select onchange="db.ref('orders/${s.key}/status').set(this.value)"
+    class="border p-2 text-xs">
+      <option ${o.status==='Novo'?'selected':''}>Novo</option>
+      <option ${o.status==='Em preparo'?'selected':''}>Em preparo</option>
+      <option ${o.status==='Finalizado'?'selected':''}>Finalizado</option>
+    </select>
   </div>`;
  });
 });
