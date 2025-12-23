@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.tailwindcss.com"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
@@ -19,9 +18,14 @@ body{background:#F8F6F2}
 
 <body>
 
-<header class="bg-white p-8 border-b text-center">
+<header class="bg-white p-8 border-b text-center relative">
   <h1 class="font-serif text-3xl tracking-widest gold">Marcinha Semijoias</h1>
   <p class="text-xs tracking-widest text-gray-400 mt-1">CATÁLOGO EXCLUSIVO</p>
+
+  <!-- Botão desktop carrinho -->
+  <button id="btnCarrinhoDesktop" class="absolute top-5 right-10 hidden lg:inline-block bg-black text-white px-4 py-2 rounded text-xs tracking-widest">
+    🛒 Carrinho
+  </button>
 </header>
 
 <main class="max-w-7xl mx-auto p-8 grid lg:grid-cols-3 gap-10">
@@ -29,8 +33,8 @@ body{background:#F8F6F2}
 <!-- PRODUTOS -->
 <section class="lg:col-span-2 grid sm:grid-cols-2 gap-8" id="produtos"></section>
 
-<!-- CARRINHO -->
-<aside id="cartBox" class="bg-white border p-6 space-y-6 hidden">
+<!-- CARRINHO DESKTOP -->
+<aside id="cartBox" class="bg-white border p-6 space-y-6 hidden lg:block">
 
 <h2 class="font-serif text-lg gold">Carrinho</h2>
 
@@ -83,6 +87,51 @@ FINALIZAR NO WHATSAPP
   🛒 Carrinho
 </button>
 
+<!-- MODAL CARRINHO MOBILE -->
+<div id="modalCarrinho" class="fixed inset-0 bg-black/50 hidden z-50 lg:hidden">
+  <div class="bg-white w-11/12 max-w-md mx-auto mt-20 p-6 rounded shadow-lg relative">
+    <button id="fecharModal" class="absolute top-2 right-2 text-black font-bold text-lg">✕</button>
+    <h2 class="font-serif text-lg gold mb-4">Carrinho</h2>
+
+    <div class="space-y-2">
+      <label class="text-xs tracking-widest">NOME DO CLIENTE</label>
+      <input id="clienteNomeMobile" class="border p-2 w-full" placeholder="Digite seu nome">
+    </div>
+
+    <div id="carrinhoMobile" class="space-y-4 max-h-80 overflow-y-auto mb-4"></div>
+
+    <div class="text-sm space-y-1">
+      <p>Subtotal: <strong>R$ <span id="subtotalMobile">0.00</span></strong></p>
+      <p id="descontoPixMobile" class="text-green-600 hidden"></p>
+      <p class="text-lg font-semibold">Total: R$ <span id="totalMobile">0.00</span></p>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="space-y-3">
+      <label class="flex items-center gap-2">
+        <input type="radio" name="pagamentoMobile" value="PIX" checked>
+        <span class="gold font-medium">PIX</span>
+      </label>
+
+      <label class="flex items-center gap-2">
+        <input type="radio" name="pagamentoMobile" value="CARTAO">
+        <span class="font-medium">Cartão</span>
+      </label>
+
+      <select id="parcelasMobile" class="border p-2 w-full hidden">
+        <option value="1x">1x sem juros</option>
+        <option value="2x">2x sem juros</option>
+        <option value="3x">3x sem juros</option>
+      </select>
+    </div>
+
+    <button onclick="finalizarPedidoMobile()" class="w-full bg-black text-white py-3 tracking-widest text-xs mt-3">
+      FINALIZAR NO WHATSAPP
+    </button>
+  </div>
+</div>
+
 <script>
 firebase.initializeApp({
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
@@ -102,6 +151,17 @@ const parcelas = document.getElementById('parcelas');
 const clienteNome = document.getElementById('clienteNome');
 const cartBox = document.getElementById('cartBox');
 const btnCarrinhoMobile = document.getElementById('btnCarrinhoMobile');
+const btnCarrinhoDesktop = document.getElementById('btnCarrinhoDesktop');
+
+// Modal mobile
+const modalCarrinho = document.getElementById('modalCarrinho');
+const carrinhoMobileEl = document.getElementById('carrinhoMobile');
+const subtotalMobileEl = document.getElementById('subtotalMobile');
+const totalMobileEl = document.getElementById('totalMobile');
+const descontoPixMobile = document.getElementById('descontoPixMobile');
+const parcelasMobile = document.getElementById('parcelasMobile');
+const clienteNomeMobile = document.getElementById('clienteNomeMobile');
+const fecharModal = document.getElementById('fecharModal');
 
 let produtos = {};
 let carrinho = [];
@@ -134,7 +194,6 @@ db.ref('products').on('value', snap=>{
     </div>`;
   });
 
-  // Adiciona eventos aos botões após renderizar
   document.querySelectorAll('.btn-adicionar').forEach(btn=>{
     btn.addEventListener('click', function(){
       const id = this.dataset.id;
@@ -143,7 +202,7 @@ db.ref('products').on('value', snap=>{
   });
 });
 
-/* CARRINHO */
+/* CARRINHO FUNCIONAL */
 function adicionar(id){
   const item = carrinho.find(i=>i.id===id);
   if(item) item.qty++;
@@ -159,6 +218,7 @@ function alterarQtd(id,delta){
 }
 
 function renderCarrinho(){
+  // Desktop
   carrinhoEl.innerHTML='';
   let subtotal=0;
 
@@ -189,40 +249,87 @@ function renderCarrinho(){
   });
 
   subtotalEl.textContent = subtotal.toFixed(2);
+  totalEl.textContent = calcularTotal(subtotal, descontoPix);
+  
+  // Mobile
+  carrinhoMobileEl.innerHTML='';
+  let subtotalMobile = 0;
+  carrinho.forEach(i=>{
+    const p = produtos[i.id];
+    subtotalMobile += Number(p.price) * i.qty;
 
-  let total=subtotal;
-  descontoPix.classList.add('hidden');
+    carrinhoMobileEl.innerHTML += `
+    <div class="border-b pb-3 flex gap-4 items-start">
 
-  if(document.querySelector('[name=pagamento]:checked').value==='PIX'){
+      <img src="${p.image}" class="w-16 h-16 object-cover rounded border">
+
+      <div class="flex-1">
+        <p class="font-medium leading-tight">${p.name}</p>
+        <p class="text-xs text-gray-400">SKU: ${p.sku || '-'}</p>
+
+        <div class="mt-2 inline-flex items-center border rounded">
+          <button onclick="alterarQtd('${i.id}',-1)" class="px-3 py-1">➖</button>
+          <span class="px-4 text-sm">${i.qty}</span>
+          <button onclick="alterarQtd('${i.id}',1)" class="px-3 py-1">➕</button>
+        </div>
+      </div>
+
+      <div class="text-right font-medium whitespace-nowrap">
+        R$ ${(Number(p.price) * i.qty).toFixed(2)}
+      </div>
+    </div>`;
+  });
+
+  subtotalMobileEl.textContent = subtotalMobile.toFixed(2);
+  totalMobileEl.textContent = calcularTotal(subtotalMobile, descontoPixMobile, true);
+}
+
+function calcularTotal(sub, descontoEl, mobile=false){
+  descontoEl.classList.add('hidden');
+  let total = sub;
+  const name = mobile ? 'pagamentoMobile' : 'pagamento';
+  if(document.querySelector(`[name=${name}]:checked`).value==='PIX'){
     const d = config.pix || 0;
     if(d>0){
-      const desc = subtotal*(d/100);
-      total = subtotal-desc;
-      descontoPix.textContent = `Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
-      descontoPix.classList.remove('hidden');
+      const desc = sub*(d/100);
+      total = sub - desc;
+      descontoEl.textContent = `Desconto PIX (${d}%): -R$ ${desc.toFixed(2)}`;
+      descontoEl.classList.remove('hidden');
     }
   }
-
-  totalEl.textContent = total.toFixed(2);
+  return total.toFixed(2);
 }
 
 /* PAGAMENTO */
 document.querySelectorAll('[name=pagamento]').forEach(r=>{
+  r.onchange = ()=> renderCarrinho();
+});
+document.querySelectorAll('[name=pagamentoMobile]').forEach(r=>{
+  r.onchange = ()=> renderCarrinho();
+});
+document.getElementById('parcelasMobile').classList.add('hidden');
+document.querySelectorAll('[name=pagamentoMobile]').forEach(r=>{
   r.onchange = ()=>{
-    parcelas.classList.toggle('hidden', r.value!=='CARTAO');
+    parcelasMobile.classList.toggle('hidden', r.value!=='CARTAO');
     renderCarrinho();
   };
 });
 
 /* CHECKOUT */
 function finalizarPedido(){
-  if(carrinho.length===0) return alert('Carrinho vazio');
+  checkout(carrinho, clienteNome, totalEl);
+}
+function finalizarPedidoMobile(){
+  checkout(carrinho, clienteNomeMobile, totalMobileEl);
+}
 
-  const nome = clienteNome.value.trim();
+function checkout(carrinhoArr, nomeInput, totalElement){
+  if(carrinhoArr.length===0) return alert('Carrinho vazio');
+  const nome = nomeInput.value.trim();
   if(!nome) return alert('Informe seu nome');
 
-  const pagamento = document.querySelector('[name=pagamento]:checked').value;
-  const total = parseFloat(totalEl.textContent);
+  const pagamento = document.querySelector(`[name=${nomeInput===clienteNome?'pagamento':'pagamentoMobile'}]:checked`).value;
+  const total = parseFloat(totalElement.textContent);
 
   const pedido = {
     cliente: nome,
@@ -230,9 +337,9 @@ function finalizarPedido(){
     data: new Date().toLocaleString('pt-BR'),
     status: 'Novo',
     pagamento,
-    parcelas: pagamento==='CARTAO' ? parcelas.value : 'À vista',
+    parcelas: pagamento==='CARTAO' ? (nomeInput===clienteNome? parcelas.value : parcelasMobile.value) : 'À vista',
     total,
-    itens: carrinho.map(i=>({
+    itens: carrinhoArr.map(i=>({
       nome: produtos[i.id].name,
       sku: produtos[i.id].sku,
       qtd: i.qty,
@@ -242,7 +349,7 @@ function finalizarPedido(){
 
   db.ref('orders').push(pedido);
 
-  carrinho.forEach(i=>{
+  carrinhoArr.forEach(i=>{
     db.ref('products/'+i.id+'/stock')
       .transaction(s=>s-i.qty);
   });
@@ -256,32 +363,20 @@ function finalizarPedido(){
   window.open(`https://wa.me/55${config.whatsapp}?text=${msg}`);
 }
 
-/* MOBILE */
-btnCarrinhoMobile.addEventListener('click', function(){
-  cartBox.classList.toggle('hidden');
+/* MOBILE MODAL */
+btnCarrinhoMobile.addEventListener('click', ()=>{
+  modalCarrinho.classList.remove('hidden');
+});
+fecharModal.addEventListener('click', ()=>{
+  modalCarrinho.classList.add('hidden');
+});
 
-  // Ajustes para visual flutuante
-  if(!cartBox.classList.contains('hidden')){
-    cartBox.style.position = 'fixed';
-    cartBox.style.top = '10%';
-    cartBox.style.right = '10%';
-    cartBox.style.width = '80%';
-    cartBox.style.maxHeight = '80%';
-    cartBox.style.overflowY = 'auto';
-    cartBox.style.zIndex = 50;
-    cartBox.style.padding = '1.5rem';
-  } else {
-    cartBox.style.position = '';
-    cartBox.style.top = '';
-    cartBox.style.right = '';
-    cartBox.style.width = '';
-    cartBox.style.maxHeight = '';
-    cartBox.style.overflowY = '';
-    cartBox.style.zIndex = '';
-    cartBox.style.padding = '';
-  }
+/* DESKTOP */
+btnCarrinhoDesktop.addEventListener('click', ()=>{
+  cartBox.classList.toggle('hidden');
 });
 </script>
 
 </body>
 </html>
+
