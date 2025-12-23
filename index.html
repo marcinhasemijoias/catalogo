@@ -30,7 +30,7 @@ body{background:#F8F6F2}
 <section class="lg:col-span-2 grid sm:grid-cols-2 gap-8" id="produtos"></section>
 
 <!-- CARRINHO -->
-<aside class="bg-white border p-6 space-y-6">
+<aside id="cartBox" class="bg-white border p-6 space-y-6 hidden lg:block">
 
 <h2 class="font-serif text-lg gold">Carrinho</h2>
 
@@ -76,6 +76,13 @@ FINALIZAR NO WHATSAPP
 </aside>
 </main>
 
+<!-- BOTÃO FLUTUANTE MOBILE -->
+<button 
+  onclick="toggleCarrinho()"
+  class="fixed bottom-5 right-5 bg-black text-white px-5 py-3 rounded-full text-xs tracking-widest lg:hidden shadow-lg">
+  🛒 Carrinho
+</button>
+
 <script>
 firebase.initializeApp({
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
@@ -86,7 +93,6 @@ firebase.initializeApp({
 
 const db = firebase.database();
 
-/* 🔧 AJUSTE CRÍTICO (SEM MEXER EM NADA VISUAL) */
 const produtosEl = document.getElementById('produtos');
 const carrinhoEl = document.getElementById('carrinho');
 const subtotalEl = document.getElementById('subtotal');
@@ -94,6 +100,7 @@ const totalEl = document.getElementById('total');
 const descontoPix = document.getElementById('descontoPix');
 const parcelas = document.getElementById('parcelas');
 const clienteNome = document.getElementById('clienteNome');
+const cartBox = document.getElementById('cartBox');
 
 let produtos = {};
 let carrinho = [];
@@ -151,9 +158,12 @@ function renderCarrinho(){
     subtotal += Number(p.price) * i.qty;
 
     carrinhoEl.innerHTML += `
-    <div class="border-b pb-3 flex justify-between items-start gap-4">
+    <div class="border-b pb-3 flex gap-4 items-start">
+
+      <img src="${p.image}" class="w-16 h-16 object-cover rounded border">
+
       <div class="flex-1">
-        <p class="font-medium">${p.name}</p>
+        <p class="font-medium leading-tight">${p.name}</p>
         <p class="text-xs text-gray-400">SKU: ${p.sku || '-'}</p>
 
         <div class="mt-2 inline-flex items-center border rounded">
@@ -163,7 +173,7 @@ function renderCarrinho(){
         </div>
       </div>
 
-      <div class="text-right font-medium">
+      <div class="text-right font-medium whitespace-nowrap">
         R$ ${(Number(p.price) * i.qty).toFixed(2)}
       </div>
     </div>`;
@@ -236,7 +246,13 @@ function finalizarPedido(){
 
   window.open(`https://wa.me/55${config.whatsapp}?text=${msg}`);
 }
+
+/* MOBILE */
+function toggleCarrinho(){
+  cartBox.classList.toggle('hidden');
+}
 </script>
 
 </body>
 </html>
+
