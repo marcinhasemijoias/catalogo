@@ -78,86 +78,48 @@ small{color:#666}
 
 <script>
 /* 🔥 FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
-  authDomain: "marcinha-semijoias.firebaseapp.com",
-  databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias",
-  storageBucket: "marcinha-semijoias.appspot.com",
+<script>
+const firebaseConfig={
+  apiKey:"AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
+  authDomain:"marcinha-semijoias.firebaseapp.com",
+  databaseURL:"https://marcinha-semijoias-default-rtdb.firebaseio.com",
+  projectId:"marcinha-semijoias"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-/* 📦 LISTAR PEDIDOS */
 db.ref('orders').on('value', snap=>{
   const box=document.getElementById('orders');
   box.innerHTML='';
 
   if(!snap.exists()){
-    box.innerHTML='<p>Nenhum pedido registrado.</p>';
+    box.innerHTML='<p>Nenhum pedido.</p>';
     return;
   }
 
   snap.forEach(o=>{
     const v=o.val();
-    const status=v.status || 'novo';
-    const data=new Date(v.createdAt || Date.now()).toLocaleDateString();
+    const status = v.status || 'novo';
 
     box.innerHTML+=`
       <div class="order">
-        <div class="badge ${status}">${status}</div><br>
+        <strong>Cliente:</strong> ${v.customer || '---'}<br>
+        <strong>Total:</strong> R$ ${v.total || 0}<br><br>
 
-        <strong>Cliente:</strong> ${v.customer}<br>
-        <small>Data: ${data}</small><br><br>
-
-        <strong>Total:</strong> R$ ${v.total}<br><br>
-
-        <label>Status:</label><br>
-        <select onchange="updateStatus('${o.key}',this.value)">
+        <label>Status:</label>
+        <select onchange="updateStatus('${o.key}', this.value)">
           <option value="novo" ${status==='novo'?'selected':''}>Novo</option>
           <option value="pago" ${status==='pago'?'selected':''}>Pago</option>
           <option value="entregue" ${status==='entregue'?'selected':''}>Entregue</option>
           <option value="cancelado" ${status==='cancelado'?'selected':''}>Cancelado</option>
-        </select><br>
-
-        <button onclick="gerarPDF('${o.key}')">
-          Gerar PDF / Romaneio
-        </button>
+        </select>
       </div>
     `;
   });
 });
 
-/* 🔄 ATUALIZAR STATUS */
-function updateStatus(id,status){
-  db.ref('orders/'+id).update({status});
-}
-
-/* 🧾 GERAR PDF */
-function gerarPDF(id){
-  db.ref('orders/'+id).once('value', snap=>{
-    const o=snap.val();
-
-    pdfCliente.innerText="Cliente: "+o.customer;
-    pdfData.innerText="Data: "+new Date(o.createdAt).toLocaleDateString();
-    pdfStatus.innerText="Status: "+(o.status||'novo');
-    pdfTotal.innerText=o.total;
-
-    pdfItens.innerHTML='';
-    o.items.forEach(i=>{
-      pdfItens.innerHTML+=`<p>${i.name} — R$ ${i.price}</p>`;
-    });
-
-    html2pdf().set({
-      margin:10,
-      filename:`pedido-${id}.pdf`,
-      html2canvas:{scale:2},
-      jsPDF:{unit:'mm',format:'a4'}
-    }).from(document.getElementById('pdf')).save();
-  });
+function updateStatus(id, status){
+  db.ref('orders/' + id).update({ status });
 }
 </script>
-
-</body>
-</html>
