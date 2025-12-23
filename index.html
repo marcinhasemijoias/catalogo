@@ -38,7 +38,6 @@ body{background:#F8F6F2}
 
   <div id="carrinho" class="space-y-4 text-sm"></div>
 
-  <!-- CLIENTE -->
   <div class="border-t pt-4 space-y-2 text-sm">
     <label class="block text-xs uppercase tracking-widest text-gray-500">
       Nome do Cliente
@@ -51,7 +50,6 @@ body{background:#F8F6F2}
     <p id="pixLinha" class="text-green-700 hidden"></p>
     <p class="text-lg">Total: <strong id="total">R$ 0,00</strong></p>
 
-    <!-- PAGAMENTO -->
     <div class="space-y-2 pt-2">
       <label class="flex items-center gap-2">
         <input type="radio" name="pagamento" value="PIX" checked>
@@ -84,6 +82,15 @@ firebase.initializeApp({
 
 const db = firebase.database();
 
+const produtosEl = document.getElementById('produtos'); // ✅ AJUSTE AQUI
+const carrinhoEl = document.getElementById('carrinho');
+const subtotalEl = document.getElementById('subtotal');
+const totalEl = document.getElementById('total');
+const pixLinha = document.getElementById('pixLinha');
+const parcelas = document.getElementById('parcelas');
+const parcelamentoInfo = document.getElementById('parcelamentoInfo');
+const clienteNome = document.getElementById('clienteNome');
+
 let produtos = {};
 let carrinho = [];
 let settings = {};
@@ -92,6 +99,7 @@ let pagamento = 'PIX';
 /* SETTINGS */
 db.ref('settings').once('value').then(s=>{
  settings = s.val() || {};
+ parcelas.innerHTML='';
  for(let i=1;i<=settings.parcelas;i++){
   parcelas.innerHTML+=`<option value="${i}">${i}x sem juros</option>`;
  }
@@ -136,13 +144,13 @@ function alterarQtd(id,delta){
 }
 
 function renderCarrinho(){
- carrinho.innerHTML='';
+ carrinhoEl.innerHTML='';
  let subtotal = 0;
 
  carrinho.forEach(i=>{
   const p = produtos[i.id];
   subtotal += p.price * i.qty;
-  carrinho.innerHTML+=`
+  carrinhoEl.innerHTML+=`
   <div class="flex justify-between items-center">
     <div>
       ${i.qty}x ${p.name}
@@ -233,4 +241,3 @@ function finalizarPedido(){
 
 </body>
 </html>
-
