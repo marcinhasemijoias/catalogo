@@ -38,32 +38,28 @@ body{background:#F8F6F2}
 
   <div id="carrinho" class="space-y-4 text-sm"></div>
 
-  <div class="border-t pt-4 space-y-3">
-    <div class="flex justify-between">
-      <span>Total:</span>
-      <strong id="total">R$ 0,00</strong>
-    </div>
+  <div class="border-t pt-4 space-y-3 text-sm">
+    <p>Subtotal: <strong id="subtotal">R$ 0,00</strong></p>
+    <p id="pixLinha" class="text-green-700 hidden"></p>
+    <p class="text-lg">Total: <strong id="total">R$ 0,00</strong></p>
 
     <!-- PAGAMENTO -->
-    <div class="space-y-2">
+    <div class="space-y-2 pt-2">
       <label class="flex items-center gap-2">
         <input type="radio" name="pagamento" value="PIX" checked>
-        <span class="text-green-700 font-semibold">
-          💰 PIX <small id="pixInfo"></small>
-        </span>
+        <span class="text-green-700 font-semibold">💰 PIX</span>
       </label>
 
       <label class="flex items-center gap-2">
         <input type="radio" name="pagamento" value="CARTAO">
-        <span class="text-gray-800 font-semibold">
-          💳 Cartão
-        </span>
+        <span class="font-semibold">💳 Cartão</span>
       </label>
 
-      <select id="parcelas" class="border p-2 w-full hidden"></select>
+      <select id="parcelas" class="border p-2 w-full hidden text-sm"></select>
+      <p id="parcelamentoInfo" class="text-xs text-gray-500"></p>
     </div>
 
-    <button onclick="finalizar()" class="bg-black text-white w-full py-3 tracking-widest text-xs uppercase">
+    <button onclick="finalizarPedido()" class="bg-black text-white w-full py-3 tracking-widest text-xs uppercase">
       Finalizar no WhatsApp
     </button>
   </div>
@@ -85,12 +81,15 @@ let carrinho = [];
 let settings = {};
 let pagamento = 'PIX';
 
+/* ELEMENTOS */
+const produtosEl = document.getElementById('produtos');
+const carrinhoEl = document.getElementById('carrinho');
+
 /* SETTINGS */
 db.ref('settings').once('value').then(s=>{
- settings = s.val();
- pixInfo.innerText = `(${settings.pix}% OFF)`;
+ settings = s.val() || {};
  for(let i=1;i<=settings.parcelas;i++){
-  parcelas.innerHTML+=`<option>${i}x sem juros</option>`;
+  parcelas.innerHTML+=`<option value="${i}">${i}x sem juros</option>`;
  }
 });
 
@@ -101,54 +100,79 @@ db.ref('products').on('value',snap=>{
 });
 
 function renderProdutos(){
- const el = document.getElementById('produtos');
- el.innerHTML='';
+ produtosEl.innerHTML='';
  Object.entries(produtos).forEach(([id,p])=>{
-  el.innerHTML+=`
+  const pixPrice = settings.pix ? (p.price * (1 - settings.pix/100)) : p.price;
+  produtosEl.innerHTML+=`
   <div class="bg-white border p-4 space-y-3">
     <img src="${p.image}" class="h-56 w-full object-cover">
     <h3 class="font-serif">${p.name}</h3>
+
     <p class="gold text-lg font-semibold">R$ ${p.price.toFixed(2)}</p>
-    <button onclick="add('${id}')" class="border w-full py-2 text-xs tracking-widest uppercase">
-      Adicionar
+    ${settings.pix ? `<p class="text-green-700 text-sm">PIX: R$ ${pixPrice.toFixed(2)}</p>` : ''}
+
+    <button onclick="addCarrinho('${id}')" class="border w-full py-2 text-xs tracking-widest uppercase">
+      Adicionar ao carrinho
     </button>
   </div>`;
  });
 }
 
 /* CARRINHO */
-function add(id){
+function addCarrinho(id){
  const item = carrinho.find(i=>i.id===id);
  if(item) item.qty++;
  else carrinho.push({id,qty:1});
  renderCarrinho();
 }
 
+function alterarQtd(id,delta){
+ const item = carrinho.find(i=>i.id===id);
+ item.qty += delta;
+ if(item.qty<=0) carrinho = carrinho.filter(i=>i.id!==id);
+ renderCarrinho();
+}
+
 function renderCarrinho(){
- carrinhoDiv.innerHTML='';
- let total = 0;
+ carrinhoEl.innerHTML='';
+ let subtotal = 0;
 
  carrinho.forEach(i=>{
   const p = produtos[i.id];
-  total += p.price * i.qty;
-  carrinhoDiv.innerHTML+=`
+  subtotal += p.price * i.qty;
+  carrinhoEl.innerHTML+=`
   <div class="flex justify-between items-center">
     <div>
-      ${i.qty}x ${p.name}<br>
-      <span class="text-xs gold">R$ ${(p.price*i.qty).toFixed(2)}</span>
+      ${i.qty}x ${p.name}
+      <div class="flex gap-2 text-xs mt-1">
+        <button onclick="alterarQtd('${i.id}',-1)">➖</button>
+        <button onclick="alterarQtd('${i.id}',1)">➕</button>
+      </div>
     </div>
-    <div class="flex gap-2">
-      <button onclick="i.qty--; if(i.qty<=0) carrinho=carrinho.filter(x=>x!=i); renderCarrinho()">−</button>
-      <button onclick="i.qty++; renderCarrinho()">+</button>
-    </div>
+    <span>R$ ${(p.price*i.qty).toFixed(2)}</span>
   </div>`;
  });
 
- if(pagamento==='PIX'){
-  total *= (1 - settings.pix/100);
+ document.getElementById('subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
+
+ let total = subtotal;
+ pixLinha.classList.add('hidden');
+
+ if(pagamento==='PIX' && settings.pix){
+  const desconto = subtotal * (settings.pix/100);
+  total -= desconto;
+  pixLinha.innerText = `Desconto PIX (${settings.pix}%): -R$ ${desconto.toFixed(2)}`;
+  pixLinha.classList.remove('hidden');
  }
 
- totalEl.innerText = `R$ ${total.toFixed(2)}`;
+ if(pagamento==='CARTAO'){
+  const p = parcelas.value || 1;
+  parcelamentoInfo.innerText = `${p}x de R$ ${(total/p).toFixed(2)}`;
+ } else {
+  parcelamentoInfo.innerText = '';
+ }
+
+ document.getElementById('total').innerText = `R$ ${total.toFixed(2)}`;
 }
 
 /* PAGAMENTO */
@@ -160,21 +184,51 @@ document.querySelectorAll('input[name=pagamento]').forEach(r=>{
  };
 });
 
-/* FINALIZAR */
-function finalizar(){
- let msg = `🛍️ *Novo Pedido*\n\n`;
- carrinho.forEach(i=>{
-  const p=produtos[i.id];
-  msg+=`${i.qty}x ${p.name}\n`;
- });
- msg+=`\nPagamento: ${pagamento}`;
- if(pagamento==='CARTAO') msg+=`\nParcelas: ${parcelas.value}`;
- msg+=`\nTotal: ${totalEl.innerText}`;
+parcelas.onchange = renderCarrinho;
 
- window.open(`https://wa.me/55${settings.whatsapp}?text=${encodeURIComponent(msg)}`);
+/* FINALIZAR */
+function finalizarPedido(){
+ if(carrinho.length===0) return alert('Carrinho vazio');
+
+ const total = document.getElementById('total').innerText.replace('R$ ','');
+ const pedido = {
+  data: new Date().toLocaleString('pt-BR'),
+  status: 'Novo',
+  pagamento,
+  parcelas: pagamento==='CARTAO' ? parcelas.value : 'À vista',
+  total: parseFloat(total.replace(',','.')),
+  itens: carrinho.map(i=>({
+    id:i.id,
+    nome:produtos[i.id].name,
+    qtd:i.qty,
+    valor:produtos[i.id].price
+  }))
+ };
+
+ db.ref('orders').push(pedido);
+
+ carrinho.forEach(i=>{
+  db.ref('products/'+i.id+'/stock')
+   .transaction(s=>(s||0)-i.qty);
+ });
+
+ let msg = `🛍️ *Novo Pedido*%0A%0A`;
+ pedido.itens.forEach(i=>{
+  msg+=`${i.qtd}x ${i.nome}%0A`;
+ });
+ msg+=`%0APagamento: ${pedido.pagamento}`;
+ if(pagamento==='CARTAO') msg+=`%0AParcelas: ${pedido.parcelas}`;
+ msg+=`%0ATotal: R$ ${pedido.total.toFixed(2)}`;
+
+ window.open(`https://wa.me/55${settings.whatsapp}?text=${msg}`);
+
+ carrinho=[];
+ renderCarrinho();
+ alert('Pedido enviado com sucesso!');
 }
 </script>
 
 </body>
 </html>
+
 
