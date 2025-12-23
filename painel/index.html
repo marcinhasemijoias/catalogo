@@ -9,20 +9,24 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
 <style>
 body{background:#F8F6F2}
 .font-serif{font-family:'Cinzel',serif}
 .gold{color:#A68966}
+.tab{display:none}
+.tab.active{display:block}
+
 .status-Novo{background:#fef3c7;color:#92400e}
-.status-Em{background:#e0f2fe;color:#075985}
+.status-Emseparação{background:#e0f2fe;color:#075985}
 .status-Enviado{background:#ede9fe;color:#5b21b6}
 .status-Finalizado{background:#ecfdf5;color:#065f46}
 
 @media print{
   body *{visibility:hidden}
   #romaneio, #romaneio *{visibility:visible}
-  #romaneio{position:absolute;left:0;top:0;width:100%}
+  #romaneio{position:absolute;top:0;left:0;width:100%}
 }
 </style>
 </head>
@@ -34,13 +38,56 @@ body{background:#F8F6F2}
     <h1 class="font-serif text-xl tracking-widest gold">Marcinha Semijoias</h1>
     <p class="text-xs tracking-widest text-gray-400 uppercase">Painel Administrativo</p>
   </div>
+
+  <nav class="flex gap-8 text-xs tracking-widest uppercase">
+    <button onclick="openTab('empresa')" class="gold">Empresa</button>
+    <button onclick="openTab('produtos')">Produtos</button>
+    <button onclick="openTab('pedidos')">Pedidos</button>
+  </nav>
 </header>
 
-<main class="max-w-6xl mx-auto p-8 space-y-10">
+<main class="max-w-6xl mx-auto p-8 space-y-16">
 
+<!-- EMPRESA -->
+<section id="empresa" class="tab active space-y-6">
+<h2 class="font-serif text-2xl gold border-b pb-2">Dados da Empresa</h2>
+
+<div class="bg-white border p-6 grid md:grid-cols-2 gap-6">
+  <input id="empNome" placeholder="Nome da empresa" class="border p-3">
+  <input id="empWhatsapp" placeholder="WhatsApp (somente números)" class="border p-3">
+  <input id="empPix" type="number" placeholder="% desconto PIX" class="border p-3">
+  <input id="empParcelas" type="number" placeholder="Parcelas no cartão" class="border p-3">
+</div>
+
+<button onclick="salvarEmpresa()" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
+SALVAR
+</button>
+</section>
+
+<!-- PRODUTOS -->
+<section id="produtos" class="tab space-y-8">
+<h2 class="font-serif text-2xl gold border-b pb-2">Produtos</h2>
+
+<div class="bg-white border p-6 grid md:grid-cols-2 gap-6">
+  <input id="pNome" placeholder="Nome do produto" class="border p-3">
+  <input id="pSku" placeholder="SKU" class="border p-3">
+  <input id="pPreco" type="number" placeholder="Preço" class="border p-3">
+  <input id="pEstoque" type="number" placeholder="Estoque" class="border p-3">
+  <input type="file" id="pImagem" class="border p-3 md:col-span-2">
+</div>
+
+<button onclick="salvarProduto()" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
+SALVAR PRODUTO
+</button>
+
+<div id="listaProdutos" class="grid sm:grid-cols-2 gap-6"></div>
+</section>
+
+<!-- PEDIDOS -->
+<section id="pedidos" class="tab space-y-6">
 <h2 class="font-serif text-2xl gold border-b pb-2">Pedidos</h2>
-
 <div id="listaPedidos" class="space-y-4"></div>
+</section>
 
 <!-- ROMANEIO -->
 <div id="romaneio" class="hidden bg-white p-10 text-sm">
@@ -48,7 +95,7 @@ body{background:#F8F6F2}
   <p><strong>Cliente:</strong> <span id="rCliente"></span></p>
   <p><strong>Data:</strong> <span id="rData"></span></p>
 
-  <table class="w-full border mt-6 text-left">
+  <table class="w-full border mt-6">
     <thead>
       <tr class="border-b">
         <th class="p-2">Produto</th>
@@ -74,66 +121,115 @@ firebase.initializeApp({
 });
 
 const db = firebase.database();
+const storage = firebase.storage();
 
-/* PEDIDOS */
+/* TABS */
+function openTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* EMPRESA */
+function salvarEmpresa(){
+  db.ref('settings').set({
+    name: empNome.value,
+    whatsapp: empWhatsapp.value,
+    pix: parseInt(empPix.value||0),
+    parcelas: parseInt(empParcelas.value||1)
+  }).then(()=>alert('Empresa salva'));
+}
+
+db.ref('settings').once('value').then(s=>{
+  if(!s.val())return;
+  empNome.value=s.val().name||'';
+  empWhatsapp.value=s.val().whatsapp||'';
+  empPix.value=s.val().pix||0;
+  empParcelas.value=s.val().parcelas||1;
+});
+
+/* PRODUTOS */
+function salvarProduto(){
+  const img = pImagem.files[0];
+  if(!img) return alert('Imagem obrigatória');
+
+  const ref = storage.ref('products/'+Date.now()+img.name);
+  ref.put(img).then(()=>{
+    ref.getDownloadURL().then(url=>{
+      db.ref('products').push({
+        name:pNome.value,
+        sku:pSku.value,
+        price:parseFloat(pPreco.value),
+        stock:parseInt(pEstoque.value),
+        image:url
+      }).then(()=>alert('Produto salvo'));
+    });
+  });
+}
+
+db.ref('products').on('value',snap=>{
+  listaProdutos.innerHTML='';
+  snap.forEach(s=>{
+    const p=s.val();
+    listaProdutos.innerHTML+=`
+    <div class="bg-white border p-4">
+      <img src="${p.image}" class="h-40 w-full object-cover">
+      <p class="font-medium mt-2">${p.name}</p>
+      <p class="text-xs text-gray-400">SKU: ${p.sku}</p>
+      <p class="gold font-semibold">R$ ${p.price.toFixed(2)}</p>
+    </div>`;
+  });
+});
+
+/* PEDIDOS (INALTERADO) */
 db.ref('orders').on('value',snap=>{
   listaPedidos.innerHTML='';
   snap.forEach(s=>{
     const o=s.val();
     const id=s.key;
-    const status=o.status || 'Novo';
+    const status=o.status||'Novo';
 
     listaPedidos.innerHTML+=`
     <div class="bg-white border p-5 space-y-3">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between">
         <div>
-          <p class="font-medium">${o.cliente || o.customer}</p>
+          <p>${o.cliente||o.customer}</p>
           <p class="text-xs text-gray-400">${o.data}</p>
         </div>
-        <span class="px-3 py-1 text-xs rounded status-${status.replace(' ','')}">
-          ${status}
-        </span>
+        <span class="px-3 py-1 text-xs rounded status-${status.replace(' ','')}">${status}</span>
       </div>
 
-      <div class="flex flex-wrap gap-2 text-xs">
+      <div class="flex gap-2 text-xs">
         ${['Novo','Em separação','Enviado','Finalizado'].map(st=>`
-          <button onclick="mudarStatus('${id}','${st}')"
-          class="border px-3 py-1">${st}</button>
+          <button onclick="db.ref('orders/${id}/status').set('${st}')" class="border px-3 py-1">${st}</button>
         `).join('')}
       </div>
 
-      <div class="flex justify-between items-center pt-2">
+      <div class="flex justify-between">
         <strong>R$ ${o.total.toFixed(2)}</strong>
-        <button onclick='imprimirRomaneio(${JSON.stringify(o)})'
-        class="text-xs underline">Gerar Romaneio</button>
+        <button onclick='imprimirRomaneio(${JSON.stringify(o)})' class="underline text-xs">
+          Romaneio
+        </button>
       </div>
     </div>`;
   });
 });
 
-/* STATUS */
-function mudarStatus(id,status){
-  db.ref('orders/'+id+'/status').set(status);
-}
-
 /* ROMANEIO */
 function imprimirRomaneio(o){
-  rCliente.textContent=o.cliente || o.customer;
+  rCliente.textContent=o.cliente||o.customer;
   rData.textContent=o.data;
   rItens.innerHTML='';
-
   o.itens.forEach(i=>{
     rItens.innerHTML+=`
-    <tr class="border-b">
+    <tr>
       <td class="p-2">${i.nome}</td>
       <td class="p-2">${i.sku}</td>
       <td class="p-2">${i.qtd}</td>
       <td class="p-2">R$ ${i.valor.toFixed(2)}</td>
     </tr>`;
   });
-
   rTotal.textContent=o.total.toFixed(2);
-  document.getElementById('romaneio').classList.remove('hidden');
+  romaneio.classList.remove('hidden');
   window.print();
 }
 </script>
