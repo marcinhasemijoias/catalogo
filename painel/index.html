@@ -2,113 +2,129 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel Admin</title>
+<title>Painel Administrativo | Marcinha Semijoias</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
+<!-- PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-body{font-family:Arial;background:#111;color:#fff}
-input,button{padding:8px;margin:5px;width:100%}
-section{max-width:600px;margin:30px auto}
-.hidden{display:none}
-.order{border:1px solid #444;padding:10px;margin:10px 0}
+body{
+  font-family: Arial, sans-serif;
+  background:#f6f6f6;
+  margin:0;
+  padding:20px;
+}
+h1{text-align:center}
+.order{
+  background:#fff;
+  border:1px solid #ddd;
+  padding:15px;
+  margin-bottom:15px;
+}
+button{
+  background:#000;
+  color:#fff;
+  border:0;
+  padding:8px 12px;
+  cursor:pointer;
+  margin-top:10px;
+}
+button:hover{opacity:.85}
+small{color:#666}
 </style>
 </head>
 <body>
 
-<section id="login">
-<h2>Login Admin</h2>
-<input id="email" placeholder="Email">
-<input id="pass" type="password">
-<button onclick="login()">Entrar</button>
-</section>
+<h1>Painel Administrativo</h1>
 
-<section id="painel" class="hidden">
-<h2>Painel Administrativo</h2>
+<div id="orders">Carregando pedidos...</div>
 
-<h3>Pedidos</h3>
-<div id="orders"></div>
-
-<button onclick="logout()">Sair</button>
-</section>
-
-<!-- MODELO PDF (OCULTO) -->
+<!-- MODELO DO PDF (OCULTO) -->
 <div id="pdf" style="display:none;padding:30px;font-family:Arial">
-<h2>Marcinha Semijoias</h2>
-<p id="pdfCliente"></p>
-<p id="pdfStatus"></p>
-<hr>
-<div id="pdfItens"></div>
-<hr>
-<p><strong>Total:</strong> R$ <span id="pdfTotal"></span></p>
-<p style="margin-top:40px">Assinatura: __________________________</p>
+  <h2 style="text-align:center">Marcinha Semijoias</h2>
+  <p id="pdfCliente"></p>
+  <p id="pdfData"></p>
+  <hr>
+  <div id="pdfItens"></div>
+  <hr>
+  <p><strong>Total:</strong> R$ <span id="pdfTotal"></span></p>
+  <p style="margin-top:40px">
+    Assinatura: _______________________________
+  </p>
 </div>
 
 <script>
+/* 🔥 CONFIG FIREBASE */
 const firebaseConfig={
- apiKey:"SUA_API_KEY",
- authDomain:"SEU_AUTH",
- databaseURL:"SUA_DATABASE",
- projectId:"SEU_PROJECT",
- storageBucket:"SEU_BUCKET"
+  apiKey:"SUA_API_KEY",
+  authDomain:"SEU_AUTH",
+  databaseURL:"SUA_DATABASE",
+  projectId:"SEU_PROJECT",
+  storageBucket:"SEU_BUCKET"
 };
-firebase.initializeApp(firebaseConfig);
 
-const auth=firebase.auth();
+firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-auth.onAuthStateChanged(u=>{
- login.classList.toggle('hidden',!!u);
- painel.classList.toggle('hidden',!u);
- if(u) loadOrders();
+/* 📦 CARREGAR PEDIDOS */
+db.ref('orders').on('value', snap=>{
+  const box=document.getElementById('orders');
+  box.innerHTML='';
+
+  if(!snap.exists()){
+    box.innerHTML='<p>Nenhum pedido registrado.</p>';
+    return;
+  }
+
+  snap.forEach(o=>{
+    const v=o.val();
+    const data=new Date(v.createdAt || Date.now()).toLocaleDateString();
+
+    box.innerHTML+=`
+      <div class="order">
+        <strong>Cliente:</strong> ${v.customer}<br>
+        <small>Data: ${data}</small><br><br>
+
+        <strong>Total:</strong> R$ ${v.total}<br>
+        <strong>Status:</strong> ${v.status || 'novo'}<br>
+
+        <button onclick="gerarPDF('${o.key}')">
+          Gerar PDF / Romaneio
+        </button>
+      </div>
+    `;
+  });
 });
 
-function login(){
- auth.signInWithEmailAndPassword(email.value,pass.value)
- .catch(e=>alert(e.message));
-}
-function logout(){auth.signOut();}
-
-function loadOrders(){
- db.ref('orders').on('value', s=>{
-  orders.innerHTML='';
-  s.forEach(o=>{
-   const v=o.val();
-   orders.innerHTML+=`
-   <div class="order">
-    <strong>${v.customer}</strong><br>
-    Total: R$ ${v.total}<br>
-    Status: ${v.status}<br>
-    <button onclick="gerarPDF('${o.key}')">Gerar PDF</button>
-   </div>`;
-  });
- });
-}
-
+/* 🧾 GERAR PDF A4 */
 function gerarPDF(id){
- db.ref('orders/'+id).once('value', s=>{
-  const o=s.val();
-  pdfCliente.innerText="Cliente: "+o.customer;
-  pdfStatus.innerText="Status: "+o.status;
-  pdfTotal.innerText=o.total;
-  pdfItens.innerHTML='';
-  o.items.forEach(i=>{
-   pdfItens.innerHTML+=`<p>${i.name} - R$ ${i.price}</p>`;
-  });
+  db.ref('orders/'+id).once('value', snap=>{
+    const o=snap.val();
 
-  html2pdf().set({
-   margin:10,
-   filename:`pedido-${id}.pdf`,
-   html2canvas:{scale:2},
-   jsPDF:{unit:'mm',format:'a4'}
-  }).from(document.getElementById('pdf')).save();
- });
+    pdfCliente.innerText="Cliente: "+o.customer;
+    pdfData.innerText="Data: "+new Date(o.createdAt).toLocaleDateString();
+    pdfTotal.innerText=o.total;
+
+    pdfItens.innerHTML='';
+    o.items.forEach(i=>{
+      pdfItens.innerHTML+=`
+        <p>${i.name} — R$ ${i.price}</p>
+      `;
+    });
+
+    html2pdf().set({
+      margin:10,
+      filename:`pedido-${id}.pdf`,
+      html2canvas:{scale:2},
+      jsPDF:{unit:'mm',format:'a4'}
+    }).from(document.getElementById('pdf')).save();
+  });
 }
 </script>
+
 </body>
 </html>
