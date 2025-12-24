@@ -8,7 +8,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
 <style>
 body{background:#F8F6F2}
@@ -71,7 +70,7 @@ SALVAR
   <input id="pSku" placeholder="SKU" class="border p-3">
   <input id="pPreco" type="number" placeholder="Preço" class="border p-3">
   <input id="pEstoque" type="number" placeholder="Estoque" class="border p-3">
-  <input type="file" id="pImagem" class="border p-3 md:col-span-2" accept="image/*">
+  <input id="pImagemUrl" placeholder="URL da imagem" class="border p-3 md:col-span-2">
 </div>
 
 <button id="btnSalvarProduto" class="bg-black text-white px-8 py-3 text-xs tracking-widest">
@@ -115,12 +114,10 @@ firebase.initializeApp({
   apiKey: "AIzaSyD5RdWTYOnaTov7VtM9ZGenUpFYSZVGoPs",
   authDomain: "marcinha-semijoias.firebaseapp.com",
   databaseURL: "https://marcinha-semijoias-default-rtdb.firebaseio.com",
-  projectId: "marcinha-semijoias",
-  storageBucket: "marcinha-semijoias.firebasestorage.app"
+  projectId: "marcinha-semijoias"
 });
 
 const db = firebase.database();
-const storage = firebase.storage();
 
 /* TABS */
 function openTab(id){
@@ -151,46 +148,34 @@ const pNome = document.getElementById('pNome');
 const pSku = document.getElementById('pSku');
 const pPreco = document.getElementById('pPreco');
 const pEstoque = document.getElementById('pEstoque');
-const pImagem = document.getElementById('pImagem');
+const pImagemUrl = document.getElementById('pImagemUrl');
 const listaProdutos = document.getElementById('listaProdutos');
 const btnSalvarProduto = document.getElementById('btnSalvarProduto');
 
 let editarId = null;
 
 function salvarProduto() {
-  const imgFile = pImagem.files[0];
+  const url = pImagemUrl.value.trim();
 
-  if(!pNome.value.trim() || !pPreco.value || (!editarId && !imgFile)){
-    return alert('Preencha nome, preço e selecione uma imagem!');
+  if(!pNome.value.trim() || !pPreco.value || (!editarId && !url)){
+    return alert('Preencha nome, preço e informe a URL da imagem!');
   }
 
-  const enviarParaFirebase = (url) => {
-    const produto = {
-      name: pNome.value.trim(),
-      sku: pSku.value.trim(),
-      price: parseFloat(pPreco.value),
-      stock: parseInt(pEstoque.value) || 0
-    };
-    if(url) produto.image = url;
-
-    const refProduto = editarId ? db.ref('products/' + editarId) : db.ref('products');
-    const salvar = editarId ? refProduto.update(produto) : refProduto.push(produto);
-
-    salvar.then(()=>{
-      alert(editarId ? 'Produto atualizado!' : 'Produto salvo!');
-      resetFormProduto();
-    }).catch(err=>alert('Erro ao salvar produto: '+err));
+  const produto = {
+    name: pNome.value.trim(),
+    sku: pSku.value.trim(),
+    price: parseFloat(pPreco.value),
+    stock: parseInt(pEstoque.value) || 0,
+    image: url
   };
 
-  if(imgFile){
-    const storageRef = storage.ref('products/' + Date.now() + '_' + imgFile.name);
-    storageRef.put(imgFile)
-      .then(snapshot => snapshot.ref.getDownloadURL())
-      .then(url => enviarParaFirebase(url))
-      .catch(err => alert('Erro ao enviar imagem: '+err));
-  } else {
-    enviarParaFirebase();
-  }
+  const refProduto = editarId ? db.ref('products/' + editarId) : db.ref('products');
+  const salvar = editarId ? refProduto.update(produto) : refProduto.push(produto);
+
+  salvar.then(()=>{
+    alert(editarId ? 'Produto atualizado!' : 'Produto salvo!');
+    resetFormProduto();
+  }).catch(err=>alert('Erro ao salvar produto: '+err));
 }
 
 function resetFormProduto(){
@@ -198,7 +183,7 @@ function resetFormProduto(){
   pSku.value = '';
   pPreco.value = '';
   pEstoque.value = '';
-  pImagem.value = '';
+  pImagemUrl.value = '';
   editarId = null;
   btnSalvarProduto.textContent = 'SALVAR PRODUTO';
 }
@@ -240,6 +225,7 @@ function editarProduto(id){
       pSku.value = p.sku;
       pPreco.value = p.price;
       pEstoque.value = p.stock;
+      pImagemUrl.value = p.image || '';
       editarId = id;
       btnSalvarProduto.textContent = 'ATUALIZAR PRODUTO';
     }).catch(err=>alert('Erro ao carregar produto: '+err));
@@ -317,4 +303,3 @@ function imprimirRomaneio(o){
 
 </body>
 </html>
-
