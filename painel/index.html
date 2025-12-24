@@ -159,16 +159,9 @@ let editarId = null;
 
 function salvarProduto() {
   const imgFile = pImagem.files[0];
-  const progressoContainer = document.getElementById('progressoContainer');
-  const barraProgresso = document.getElementById('barraProgresso');
-  const textoProgresso = document.getElementById('textoProgresso');
 
-  if (!pNome.value.trim() || !pPreco.value) {
-    return alert('Preencha nome e preço!');
-  }
-
-  if (!editarId && !imgFile) {
-    return alert('Selecione uma imagem!');
+  if(!pNome.value.trim() || !pPreco.value || (!editarId && !imgFile)){
+    return alert('Preencha nome, preço e selecione uma imagem!');
   }
 
   const enviarParaFirebase = (url) => {
@@ -178,58 +171,26 @@ function salvarProduto() {
       price: parseFloat(pPreco.value),
       stock: parseInt(pEstoque.value) || 0
     };
-    if (url) produto.image = url;
+    if(url) produto.image = url;
 
     const refProduto = editarId ? db.ref('products/' + editarId) : db.ref('products');
     const salvar = editarId ? refProduto.update(produto) : refProduto.push(produto);
 
-    salvar.then(() => {
+    salvar.then(()=>{
       alert(editarId ? 'Produto atualizado!' : 'Produto salvo!');
       resetFormProduto();
-      progressoContainer.classList.add('hidden'); // Esconde a barra ao finalizar
-    }).catch(err => alert('Erro ao salvar dados: ' + err));
+    }).catch(err=>alert('Erro ao salvar produto: '+err));
   };
 
-  if (imgFile) {
-    progressoContainer.classList.remove('hidden'); // Mostra a barra
+  if(imgFile){
     const storageRef = storage.ref('products/' + Date.now() + '_' + imgFile.name);
-    const uploadTask = storageRef.put(imgFile);
-
-    // Monitora o progresso
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        barraProgresso.style.width = progress + '%';
-        textoProgresso.innerText = Math.round(progress) + '% ENVIANDO IMAGEM...';
-      }, 
-      (error) => {
-        alert('Erro no upload: ' + error.message);
-        progressoContainer.classList.add('hidden');
-      }, 
-      () => {
-        // Upload concluído com sucesso
-        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
-          enviarParaFirebase(url);
-        });
-      }
-    );
+    storageRef.put(imgFile)
+      .then(snapshot => snapshot.ref.getDownloadURL())
+      .then(url => enviarParaFirebase(url))
+      .catch(err => alert('Erro ao enviar imagem: '+err));
   } else {
     enviarParaFirebase();
   }
-}
-
-// Atualize também o resetForm para limpar a barra
-function resetFormProduto(){
-  pNome.value = '';
-  pSku.value = '';
-  pPreco.value = '';
-  pEstoque.value = '';
-  pImagem.value = '';
-  editarId = null;
-  btnSalvarProduto.textContent = 'SALVAR PRODUTO';
-  document.getElementById('progressoContainer').classList.add('hidden');
-  document.getElementById('barraProgresso').style.width = '0%';
-}
 }
 
 function resetFormProduto(){
