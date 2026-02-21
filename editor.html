@@ -54,7 +54,7 @@ tr.is-paused{opacity:.4;background:#2a1010!important}
 <thead class="sticky-header">
 <tr class="text-[#e11d48] uppercase">
 <th>Status</th>
-<th>Imagem</th>
+<th>Imagens</th>
 <th>SKU</th>
 <th>Nome</th>
 <th>Peso</th>
@@ -82,7 +82,6 @@ tr.is-paused{opacity:.4;background:#2a1010!important}
 </div>
 
 <script>
-/* FIREBASE — MARCINHA SEMIJOIAS */
 const firebaseConfig = {
   apiKey: "AIzaSyAQMdBkCMssdrtM4q3btyTrVyO940WkJK0",
   authDomain: "marcinha-semijoias-ee0c0.firebaseapp.com",
@@ -109,6 +108,9 @@ async function carregarCategorias(){
 }
 
 function criarLinhaHTML(id,p){
+
+    if(!p.images && p.image) p.images=[p.image];
+
     let cats='';
     Object.entries(categoriasCache).forEach(([cid,c])=>{
         cats+=`<option value="${cid}" ${p.category===cid?'selected':''}>${c.name}</option>`;
@@ -117,16 +119,23 @@ function criarLinhaHTML(id,p){
     return `
 <tr data-id="${id}" class="border-b border-[#222] ${p.paused?'is-paused':''}">
 <td><button class="btn-status ${p.paused?'status-off':'status-on'}" onclick="toggleStatus(this)">${p.paused?'OFF':'ON'}</button></td>
+
 <td>
-<div class="flex gap-2 items-center">
-<img src="${p.image||''}" class="img-preview row-img" onerror="this.classList.add('img-error')">
-<input class="input-dark edit-img" value="${p.image||''}" onchange="atualizarPreview(this)">
+<div class="grid grid-cols-2 gap-1">
+${Array.from({length:10}).map((_,i)=>`
+<div>
+<img src="${p.images?.[i]||''}" class="img-preview row-img" onerror="this.classList.add('img-error')">
+<input class="input-dark edit-img-${i}" value="${p.images?.[i]||''}" onchange="atualizarPreviewMulti(this)">
+</div>
+`).join('')}
 </div>
 </td>
+
 <td><input class="input-dark edit-sku" value="${p.sku||''}"></td>
 <td><input class="input-dark edit-name" value="${p.name||''}"></td>
 <td><input class="input-dark edit-peso text-center" value="${p.peso||0}"></td>
 <td><select class="input-dark edit-cat">${cats}</select></td>
+
 <td>
 <select class="input-dark edit-varTipo" onchange="liberarCampoLista(this)">
 <option value="">Padrão</option>
@@ -134,8 +143,10 @@ function criarLinhaHTML(id,p){
 <option value="Lista" ${p.variacaoTipo==='Lista'?'selected':''}>Lista</option>
 </select>
 </td>
+
 <td><input class="input-dark edit-opcoes ${p.variacaoTipo==='Lista'?'highlight-var':'opacity-20 pointer-events-none'}" value="${p.opcoesPersonalizadas||''}"></td>
 <td><input class="input-dark edit-precoFinal" type="number" step="0.01" value="${p.precoFinal||p.price||0}"></td>
+
 <td class="text-center">
 <button onclick="salvarLinhaUnica(this)" class="bg-green-600 p-2 rounded">✅</button>
 <button onclick="deletarProduto('${id}')" class="bg-red-900 p-2 rounded">🗑</button>
@@ -143,15 +154,15 @@ function criarLinhaHTML(id,p){
 </tr>`;
 }
 
-function atualizarPreview(input){
-    const img=input.closest('td').querySelector('.row-img');
+function atualizarPreviewMulti(input){
+    const img=input.parentElement.querySelector('.row-img');
     img.src=input.value||'';
     img.classList.remove('img-error');
 }
 
 function criarNovoProduto(){
     const ref=db.ref('products').push();
-    const p={sku:'SKU-TEMP',name:'Novo Produto',peso:0,price:0,precoFinal:0,image:'',paused:true};
+    const p={sku:'SKU-TEMP',name:'Novo Produto',peso:0,price:0,precoFinal:0,images:[],paused:true};
     const corpo=document.getElementById('tabelaCorpo');
     if(corpo.innerText.includes('Busque')) corpo.innerHTML='';
     corpo.insertAdjacentHTML('afterbegin',criarLinhaHTML(ref.key,p));
@@ -180,20 +191,30 @@ function sincronizarFotosInteligente(){
     const ext=prompt("Extensão das fotos?","png");
     if(!ext) return;
     const dominio="marcinha-semijoias-ee0c0.firebasestorage.app";
+
     document.querySelectorAll('#tabelaCorpo tr[data-id]').forEach(tr=>{
         const sku=tr.querySelector('.edit-sku').value;
         if(sku){
             const link=`https://firebasestorage.googleapis.com/v0/b/${dominio}/o/produtos%2F${sku}.${ext}?alt=media`;
-            const input=tr.querySelector('.edit-img');
-            input.value=link;
-            atualizarPreview(input);
+            const input=tr.querySelector('.edit-img-0');
+            if(input){
+                input.value=link;
+                atualizarPreviewMulti(input);
+            }
         }
     });
+}
+
+function coletarImagens(tr){
+    return Array.from({length:10}).map((_,i)=>{
+        return tr.querySelector('.edit-img-'+i)?.value || '';
+    }).filter(v=>v);
 }
 
 function salvarLinhaUnica(btn){
     const tr=btn.closest('tr'),id=tr.dataset.id;
     const preco=parseFloat(tr.querySelector('.edit-precoFinal').value)||0;
+
     db.ref('products/'+id).update({
         sku:tr.querySelector('.edit-sku').value.toUpperCase(),
         name:tr.querySelector('.edit-name').value,
@@ -201,17 +222,20 @@ function salvarLinhaUnica(btn){
         category:tr.querySelector('.edit-cat').value,
         variacaoTipo:tr.querySelector('.edit-varTipo').value,
         opcoesPersonalizadas:tr.querySelector('.edit-opcoes').value,
-        price:preco,precoFinal:preco,
-        image:tr.querySelector('.edit-img').value,
+        price:preco,
+        precoFinal:preco,
+        images:coletarImagens(tr),
         paused:tr.querySelector('.btn-status').classList.contains('status-off')
     });
 }
 
 function salvarAlteracoes(){
     const up={};
+
     document.querySelectorAll('#tabelaCorpo tr[data-id]').forEach(tr=>{
         const id=tr.dataset.id;
         const preco=parseFloat(tr.querySelector('.edit-precoFinal').value)||0;
+
         up[`products/${id}`]={
             sku:tr.querySelector('.edit-sku').value.toUpperCase(),
             name:tr.querySelector('.edit-name').value,
@@ -219,11 +243,13 @@ function salvarAlteracoes(){
             category:tr.querySelector('.edit-cat').value,
             variacaoTipo:tr.querySelector('.edit-varTipo').value,
             opcoesPersonalizadas:tr.querySelector('.edit-opcoes').value,
-            price:preco,precoFinal:preco,
-            image:tr.querySelector('.edit-img').value,
+            price:preco,
+            precoFinal:preco,
+            images:coletarImagens(tr),
             paused:tr.querySelector('.btn-status').classList.contains('status-off')
         };
     });
+
     db.ref().update(up).then(()=>alert("✅ Produtos salvos com sucesso!"));
 }
 
