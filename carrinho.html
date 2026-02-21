@@ -2,53 +2,283 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Checkout</title>
+<title>Finalizar Pedido • Marcinha Semijoias</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --black:#0b0b0b;
+    --gold:#d4af37;
+    --bg:#f8f6f3;
+}
+body{
+    font-family:'Montserrat',sans-serif;
+    background:var(--bg);
+    color:var(--black);
+    margin:0;
+}
+.serif{font-family:'Playfair Display',serif}
+.card{
+    background:#fff;
+    border-radius:22px;
+    border:1px solid #eee;
+    padding:20px;
+    margin-bottom:20px;
+}
+input{
+    background:#fff;
+    border:1px solid #ddd;
+    padding:12px;
+    border-radius:12px;
+    width:100%;
+    margin-bottom:12px;
+}
+input:focus{border-color:var(--gold);outline:none}
+.pay-btn{
+    border:2px solid #eee;
+    border-radius:16px;
+    padding:18px;
+    text-align:center;
+    cursor:pointer;
+}
+.pay-btn.active{
+    border-color:var(--gold);
+    background:rgba(212,175,55,.08);
+}
+.btn-main{
+    background:var(--black);
+    color:#fff;
+}
+.btn-main:hover{
+    background:var(--gold);
+    color:#000;
+}
+</style>
 </head>
 
-<body class="bg-neutral-50 p-4 max-w-xl mx-auto">
+<body>
 
-<h1 class="text-xl font-serif mb-4 text-center">Finalizar Pedido</h1>
+<header class="sticky top-0 bg-white/90 backdrop-blur border-b border-gray-100 z-50">
+    <div class="max-w-xl mx-auto p-4 flex justify-between items-center">
+        <button onclick="history.back()" class="text-[10px] font-bold uppercase text-gray-400">← Voltar</button>
+        <h1 class="serif text-lg">Finalizar Pedido</h1>
+        <div class="w-10"></div>
+    </div>
+</header>
 
-<input id="name" placeholder="Nome" class="border p-2 w-full mb-2">
-<input id="whats" placeholder="WhatsApp" class="border p-2 w-full mb-4">
+<main class="max-w-xl mx-auto p-4 pb-40">
 
-<button onclick="send()"
-  class="bg-black text-white w-full py-3">
-Enviar Pedido no WhatsApp
-</button>
+<div class="card">
+    <h2 class="serif text-[10px] uppercase tracking-widest text-center opacity-70 mb-4">Suas Semijoias</h2>
+    <div id="listaItens" class="space-y-4"></div>
+
+    <div class="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-gray-100">
+        <div class="bg-gray-50 p-3 rounded-xl text-center">
+            <span class="text-[8px] uppercase text-gray-400 font-bold">Modelos</span>
+            <b id="totalSkus">0</b>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-xl text-center">
+            <span class="text-[8px] uppercase text-gray-400 font-bold">Qtd Total</span>
+            <b id="totalPecas">0</b>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-xl text-center">
+            <span class="text-[8px] uppercase text-gray-400 font-bold">Peso</span>
+            <b id="pesoTotal">—</b>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="serif text-[10px] uppercase tracking-widest border-b pb-2 mb-4">Seus Dados</h2>
+    <input id="nomeCliente" placeholder="Nome Completo *">
+    <input id="telefoneCliente" placeholder="WhatsApp *">
+</div>
+
+<div class="card">
+    <h2 class="serif text-[10px] uppercase tracking-widest border-b pb-2 mb-4">Endereço</h2>
+    <input id="rua" placeholder="Rua e Número">
+    <div class="grid grid-cols-2 gap-2">
+        <input id="bairro" placeholder="Bairro">
+        <input id="cidade" placeholder="Cidade">
+    </div>
+    <input id="cepEntrega" placeholder="CEP">
+</div>
+
+<div class="card">
+    <h2 class="serif text-[10px] uppercase tracking-widest border-b pb-2 mb-4">Pagamento</h2>
+    <div class="grid grid-cols-2 gap-4">
+        <div class="pay-btn" onclick="setPagamento('Pix',this)">
+            <b>PIX</b>
+            <div id="txtDescPix" class="text-[9px] text-green-600 uppercase"></div>
+        </div>
+        <div class="pay-btn" onclick="setPagamento('Cartão',this)">
+            <b>Cartão</b>
+            <div id="txtParcelas" class="text-[9px] text-blue-500 uppercase"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="serif text-[10px] uppercase tracking-widest text-center border-b pb-2 mb-4">Resumo</h2>
+
+    <div class="flex justify-between text-sm mb-2">
+        <span>Subtotal</span>
+        <b id="subtotalTxt">R$ 0,00</b>
+    </div>
+
+    <div id="linhaCondicao" class="flex justify-between text-sm italic hidden">
+        <span id="labelCondicao"></span>
+        <b id="valorCondicao"></b>
+    </div>
+
+    <div class="flex justify-between items-center mt-6 pt-6 border-t-2 border-[var(--gold)]">
+        <span class="serif text-[var(--gold)] text-xl">TOTAL</span>
+        <span id="totalTxt" class="text-3xl font-bold">R$ 0,00</span>
+    </div>
+</div>
+
+</main>
+
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
+    <div class="max-w-xl mx-auto">
+        <button onclick="finalizarPedido()" class="w-full btn-main py-5 rounded-2xl font-bold uppercase tracking-widest shadow-xl">
+            Enviar Pedido no WhatsApp
+        </button>
+    </div>
+</footer>
 
 <script>
-const cart = JSON.parse(localStorage.getItem("cart")) || [];
-const payment = localStorage.getItem("payment");
-const phone = localStorage.getItem("storePhone");
+// FIREBASE — MARCINHA SEMIJOIAS
+const firebaseConfig={
+  apiKey:"AIzaSyAQMdBkCMssdrtM4q3btyTrVyO940WkJK0",
+  databaseURL:"https://marcinha-semijoias-ee0c0-default-rtdb.firebaseio.com"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
 
-function send(){
-  let total = 0;
-  let msg = "🛍️ Pedido:%0A";
+let carrinho=JSON.parse(localStorage.getItem('marcinha_cart')||'[]');
+let pagamento='';
+let configLoja={};
 
-  cart.forEach(i=>{
-    total += i.price * i.qty;
-    msg += `${i.qty}x ${i.name} - R$ ${i.price}%0A`;
-  });
+const fM=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-  msg += `%0A💳 Pagamento: ${payment}`;
-  msg += `%0A💰 Total: R$ ${total.toFixed(2)}`;
-
-  const orders = JSON.parse(localStorage.getItem("orders")) || [];
-  orders.push({
-    date: new Date().toLocaleString(),
-    total
-  });
-
-  localStorage.setItem("orders", JSON.stringify(orders));
-  localStorage.removeItem("cart");
-
-  window.open(`https://wa.me/${phone}?text=${msg}`);
+function carregarConfig(){
+    db.ref('settings').once('value',snap=>{
+        configLoja=snap.val()||{};
+        document.getElementById('txtDescPix').innerText=`${configLoja.empresa?.descPix||0}% OFF`;
+        document.getElementById('txtParcelas').innerText=`${configLoja.empresa?.parcelas||1}x sem juros`;
+        carregarCarrinho();
+    });
 }
-</script>
 
+function carregarCarrinho(){
+    const box=document.getElementById('listaItens');
+    box.innerHTML='';
+    let subtotal=0,pecas=0;
+
+    if(!carrinho.length){
+        box.innerHTML='<p class="text-center text-gray-400 py-10">Carrinho vazio</p>';
+        return;
+    }
+
+    carrinho.forEach((p,i)=>{
+        p.quantidade=p.quantidade||1;
+        subtotal+=p.price*p.quantidade;
+        pecas+=p.quantidade;
+
+        box.innerHTML+=`
+        <div class="flex gap-3 items-center border-b pb-4">
+            <img src="${p.image}" class="w-14 h-14 rounded-xl object-cover">
+            <div class="flex-1">
+                <b class="text-[10px] uppercase">${p.name}</b>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="altQtd(${i},-1)">-</button>
+                    <span>${p.quantidade}</span>
+                    <button onclick="altQtd(${i},1)">+</button>
+                </div>
+            </div>
+            <b class="text-[var(--gold)]">${fM(p.price*p.quantidade)}</b>
+        </div>`;
+    });
+
+    let desconto=0;
+    if(pagamento==='Pix'){
+        desconto=subtotal*(configLoja.empresa?.descPix||0)/100;
+        document.getElementById('linhaCondicao').classList.remove('hidden');
+        document.getElementById('labelCondicao').innerText='Desconto PIX';
+        document.getElementById('valorCondicao').innerText=`- ${fM(desconto)}`;
+    }else if(pagamento==='Cartão'){
+        document.getElementById('linhaCondicao').classList.remove('hidden');
+        document.getElementById('labelCondicao').innerText='Parcelamento';
+        document.getElementById('valorCondicao').innerText=`${configLoja.empresa?.parcelas||1}x`;
+    }else{
+        document.getElementById('linhaCondicao').classList.add('hidden');
+    }
+
+    const total=subtotal-desconto;
+    document.getElementById('subtotalTxt').innerText=fM(subtotal);
+    document.getElementById('totalTxt').innerText=fM(total);
+    document.getElementById('totalSkus').innerText=carrinho.length;
+    document.getElementById('totalPecas').innerText=pecas;
+
+    window.totalFinal=total;
+}
+
+function altQtd(i,d){
+    carrinho[i].quantidade+=d;
+    if(carrinho[i].quantidade<1)carrinho.splice(i,1);
+    localStorage.setItem('marcinha_cart',JSON.stringify(carrinho));
+    carregarCarrinho();
+}
+
+function setPagamento(p,el){
+    pagamento=p;
+    document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    carregarCarrinho();
+}
+
+async function finalizarPedido(){
+    const nome=nomeCliente.value;
+    const whats=telefoneCliente.value;
+    if(!nome||!whats||!pagamento){
+        alert("Preencha nome, WhatsApp e pagamento");
+        return;
+    }
+
+    const pedido={
+        cliente:{nome,whats},
+        endereco:{
+            rua:rua.value,
+            bairro:bairro.value,
+            cidade:cidade.value,
+            cep:cepEntrega.value
+        },
+        itens:carrinho,
+        pagamento,
+        total:window.totalFinal,
+        data:new Date().toLocaleString('pt-BR'),
+        status:'Novo'
+    };
+
+    await db.ref('orders').push(pedido);
+
+    const fone=configLoja.empresa?.whats||'55';
+    let msg=`*NOVO PEDIDO • MARCINHA SEMIJOIAS*\n\n`;
+    msg+=`👤 ${nome}\n💳 ${pagamento}\n💎 Total: ${fM(window.totalFinal)}`;
+
+    localStorage.removeItem('marcinha_cart');
+    window.location.href=`https://api.whatsapp.com/send?phone=${fone}&text=${encodeURIComponent(msg)}`;
+}
+
+window.onload=carregarConfig;
+</script>
 
 </body>
 </html>
